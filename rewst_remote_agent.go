@@ -8,7 +8,7 @@ import (
     "syscall"
     "time"
 
-    "github.com/Azure/azure-iot-sdk-go/device"
+    "github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/iothub/armiothub"
 )
 
 type Config struct {
