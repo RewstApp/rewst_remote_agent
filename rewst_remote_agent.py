@@ -2,6 +2,30 @@ import asyncio
 import json
 from azure.iot.device.aio import IoTHubDeviceClient
 
+async def execute_commands(commands):
+    command_results = []
+    with subprocess.Popen("/bin/bash", stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True) as process:
+        for command in commands:
+            process.stdin.write(command + '\n')
+            process.stdin.flush()
+            output, error = process.communicate()
+            command_results.append(output.strip() if output else "")
+    return command_results
+
+def message_handler(message):
+    message_data = json.loads(message.data)
+    if "commands" in message_data:
+        commands = message_data["commands"]
+        asyncio.create_task(handle_commands(commands))
+
+async def handle_commands(commands):
+    command_results = await execute_commands(commands)
+    # Now you can send back the command_results to the IoT Hub or do something else with them
+    print(command_results)  # Just printing the results for now
+
+def message_handler(message):
+    print(f"Received message: {message.data}")
+
 async def main():
     try:
         # Attempt to load configuration from JSON file
@@ -34,15 +58,12 @@ async def main():
     print("Connecting to IoT Hub...")
     await device_client.connect()
     
-    # Send a single message
-    print("Sending message...")
-    await device_client.send_message("Hello, IoT Hub!")
-    print("Message sent!")
+    # Set the message handler
+    device_client.on_message_received = message_handler
     
-    # Disconnect from the IoT hub
-    print("Disconnecting from IoT Hub...")
-    await device_client.disconnect()
-    print("Disconnected!")
+    # Create an event that will never be set to keep the script running
+    stop_event = asyncio.Event()
+    await stop_event.wait()
 
 # Run the main function
 if __name__ == "__main__":
