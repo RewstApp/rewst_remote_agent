@@ -1,0 +1,5 @@
+{
+    "azure_iot_hub_host": "<YourIoTHubName>.azure-devices.net",
+    "device_id": "<YourDeviceId>",
+    "shared_access_key": "<YourDeviceKey>"
+}
