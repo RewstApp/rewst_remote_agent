@@ -14,13 +14,15 @@ async def execute_commands(commands):
 
 def message_handler(message):
     message_data = json.loads(message.data)
+    print
     if "commands" in message_data:
         commands = message_data["commands"]
+        print("running commands")
         asyncio.create_task(handle_commands(commands))
 
 async def handle_commands(commands):
     command_results = await execute_commands(commands)
-    # Now you can send back the command_results to the IoT Hub or do something else with them
+    # Collect command results to send back to IoT Hub
     print(command_results)  # Just printing the results for now
 
 def message_handler(message):
