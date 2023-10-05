@@ -1,5 +1,6 @@
 import asyncio
 import json
+import subprocess
 from azure.iot.device.aio import IoTHubDeviceClient
 
 async def execute_commands(commands):
@@ -12,21 +13,19 @@ async def execute_commands(commands):
             command_results.append(output.strip() if output else "")
     return command_results
 
-def message_handler(message):
+async def message_handler(message):
+    print(f"Received message: {message.data}")
     message_data = json.loads(message.data)
-    print
     if "commands" in message_data:
         commands = message_data["commands"]
         print("running commands")
-        asyncio.create_task(handle_commands(commands))
+        await handle_commands(commands)  # use await instead of creating a new task
+
 
 async def handle_commands(commands):
     command_results = await execute_commands(commands)
     # Collect command results to send back to IoT Hub
     print(command_results)  # Just printing the results for now
-
-def message_handler(message):
-    print(f"Received message: {message.data}")
 
 async def main():
     try:
@@ -61,7 +60,7 @@ async def main():
     await device_client.connect()
     
     # Set the message handler
-    device_client.on_message_received = message_handler
+    device_client.on_message_received_handler = message_handler
     
     # Create an event that will never be set to keep the script running
     stop_event = asyncio.Event()
