@@ -1,25 +1,26 @@
-import asyncio
-import json
-import subprocess
-import os
-import tempfile
+#!/usr/bin/python3
+
 import argparse
+import asyncio
+import httpx
+import json
+import logging
+import os
 import psutil
+import subprocess
+import tempfile
 from concurrent.futures import ThreadPoolExecutor
 from azure.iot.device.aio import IoTHubDeviceClient
 
+status_update_checkin_time = 600
 executor = ThreadPoolExecutor()
+logging.basicConfig(level=logging.INFO)
 
 async def send_status_update():
     # Collect status data
     status_data = {
         "cpu_usage": psutil.cpu_percent(interval=1),  # CPU usage percentage
-        "memory_usage": psutil.virtual_memory().percent,  # Memory usage percentage
-        "disk_usage": psutil.disk_usage('/').percent,  # Disk usage percentage for the root directory
-        "network_io": {
-            "bytes_sent": psutil.net_io_counters().bytes_sent,
-            "bytes_recv": psutil.net_io_counters().bytes_recv
-        }  # Network IO statistics
+        "memory_usage": psutil.virtual_memory().percent  # Memory usage percentage
     }
     
     # Create message object
@@ -31,59 +32,120 @@ async def send_status_update():
     print("Status update sent!")
 
 
-def get_connection_string():
+def load_config():
     try:
         with open('config.json') as f:
             config = json.load(f)
     except Exception as e:
-        print(f"Error: {e}")
+        logging.error(f"Error: {e}")
         return None
-    
-    required_keys = ['azure_iot_hub_host', 'device_id', 'shared_access_key']
+
+    # Ensure all necessary configuration keys are present
+    required_keys = [
+        'azure_iot_hub_host', 
+        'device_id', 
+        'shared_access_key', 
+        'rewst_engine_host', 
+        'rewst_org_id'
+    ]
     for key in required_keys:
         if key not in config:
-            print(f"Error: Missing '{key}' in configuration.")
+            logging.error(f"Error: Missing '{key}' in configuration.")
             return None
     
-    conn_str = f"HostName={config['azure_iot_hub_host']};DeviceId={config['device_id']};SharedAccessKey={config['shared_access_key']}"
+    return config
+
+def get_connection_string(config):
+    # Build the connection string
+    conn_str = (
+        f"HostName={config['azure_iot_hub_host']};"
+        f"DeviceId={config['device_id']};"
+        f"SharedAccessKey={config['shared_access_key']}"
+    )
     return conn_str
+
 
 def message_handler(message):
     print(f"Received message: {message.data}")
     message_data = json.loads(message.data)
     if "commands" in message_data:
         commands = message_data["commands"]
+        post_id = message_data["post_id"]  # Get post_id, if present
         print("Running commands")
-        executor.submit(run_handle_commands, commands)
+        executor.submit(run_handle_commands, commands, post_id)  # Pass post_id to run_handle_commands
 
-def run_handle_commands(commands):
-    asyncio.run(handle_commands(commands))
+
+def run_handle_commands(commands, post_id=None):
+    asyncio.run(handle_commands(commands, post_id, rewst_engine_host)) 
 
 async def execute_commands(commands):
-    command_results = []
-    with subprocess.Popen("/bin/bash", stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True) as process:
-        for command in commands:
-            process.stdin.write(command + '\n')
-            process.stdin.flush()
-            output, error = process.communicate()
-            command_results.append(output.strip() if output else "")
-    return command_results
+    # Create a temporary file to hold the commands
+    fd, script_path = tempfile.mkstemp()
+    print("Running Commands")
+    try:
+        with os.fdopen(fd, 'w') as tmp:
+            # Write commands to temporary file
+            for command in commands:
+                print(command)
+                # Each command is followed by an echo statement to serve as a delimiter
+                tmp.write(f"{command}\necho '__COMMAND_SEPARATOR__'\n")
 
-async def handle_commands(commands):
+        # Execute temporary file as a script
+        process = await asyncio.create_subprocess_exec(
+            '/bin/bash', script_path,
+            stdout=asyncio.subprocess.PIPE,
+            stderr=asyncio.subprocess.PIPE,
+        )
+
+        # Gather output
+        stdout, stderr = await process.communicate()
+
+        # The output will be in binary, so decode it to text
+        stdout = stdout.decode('utf-8')
+
+        # Split the output by the command separator to get individual command results
+        command_results = stdout.strip().split('__COMMAND_SEPARATOR__\n')
+        command_results = [result.strip() for result in command_results if result.strip()]
+        
+        return command_results
+    finally:
+        # Ensure temporary file is deleted
+        os.remove(script_path)
+
+
+async def handle_commands(commands, post_id=None, rewst_engine_host=None):
     command_results = await execute_commands(commands)
     message_data = {"command_results": command_results}
     message_json = json.dumps(message_data)
-    print("Sending message to IoT Hub...")
     await device_client.send_message(message_json)
     print("Message sent!")
 
+    if post_id:
+        # Replace ':' with '/' in post_id
+        post_path = post_id.replace(":", "/")
+        url = f"https://{rewst_engine_host}/webhooks/custom/action/{post_path}"
+        print("Sending Results to Rewst.")
+        # Send POST request with command results
+        async with httpx.AsyncClient() as client:
+            response = await client.post(url, json=message_data)
+            print(f"POST request status: {response.status_code}")
+            if response.status_code != 200:
+                # Log error information if the request fails
+                print(f"Error response: {response.text}")
+
 async def main(check_mode=False):
-    conn_str = get_connection_string()
-    if conn_str is None:
-        return
+    global rewst_engine_host
+    config_data = load_config()
+    if config_data is None:
+        # Handle missing or invalid configuration
+        exit(1)
+
+    connection_string = get_connection_string(config_data)
+    rewst_engine_host = config_data['rewst_engine_host']
+    rewst_org_id = config_data['rewst_org_id']
 
     global device_client
-    device_client = IoTHubDeviceClient.create_from_connection_string(conn_str)
+    device_client = IoTHubDeviceClient.create_from_connection_string(connection_string)
     
     print("Connecting to IoT Hub...")
     await device_client.connect()
@@ -106,14 +168,14 @@ async def main(check_mode=False):
 
 
     else:
-        device_client.on_message_received_handler = message_handler
+        device_client.on_message_received = message_handler
     
         async def status_update_task():
             while True:
                 await send_status_update()
-                await asyncio.sleep(60)  # Send status update every 60 seconds
+                await asyncio.sleep(status_update_checkin_time)  # Send status update
         status_update_task = asyncio.create_task(status_update_task())
-                  
+
         stop_event = asyncio.Event()
         await stop_event.wait()
 
