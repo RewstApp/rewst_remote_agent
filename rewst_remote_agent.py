@@ -8,8 +8,6 @@ import logging
 import os
 import platform
 import psutil
-import subprocess
-import tempfile
 from concurrent.futures import ThreadPoolExecutor
 from azure.iot.device.aio import IoTHubDeviceClient
 
@@ -77,71 +75,94 @@ def message_handler(message):
         executor.submit(run_handle_commands, commands, post_id)  # Pass post_id to run_handle_commands
 
 
-def run_handle_commands(commands, post_id=None):
-    asyncio.run(handle_commands(commands, post_id, rewst_engine_host)) 
+def run_handle_commands(commands, post_id=None, rewst_engine_host=None, interpreter=None):
+    asyncio.run(handle_commands(commands, post_id, rewst_engine_host, interpreter))
 
-async def execute_commands(commands):
-    # Create a temporary file to hold the commands
-    fd, script_path = tempfile.mkstemp()
-    print("Running Commands")
-    if os_type == "Linux": 
-        try:
-            with os.fdopen(fd, 'w') as tmp:
-                # Write commands to temporary file
-                for command in commands:
-                    print(command)
-                    # Each command is followed by an echo statement to serve as a delimiter
-                    tmp.write(f"{command}\necho '__COMMAND_SEPARATOR__'\n")
+async def execute_commands(commands,  post_url=None, interpreter_override=None):
+    # Detect the platform and set the default interpreter
+    if os_type == 'windows':
+        default_interpreter = 'powershell'
+    elif os_type == 'darwin':  # MacOS
+        default_interpreter = '/bin/zsh'
+    else:  # Assuming Unix/Linux otherwise
+        default_interpreter = '/bin/bash'
 
-            # Execute temporary file as a script
-            process = await asyncio.create_subprocess_exec(
-                '/bin/bash', script_path,
-                stdout=asyncio.subprocess.PIPE,
-                stderr=asyncio.subprocess.PIPE,
-            )
-
-            # Gather output
-            stdout, stderr = await process.communicate()
-
-            # The output will be in binary, so decode it to text
-            stdout = stdout.decode('utf-8')
-
-            # Split the output by the command separator to get individual command results
-            command_results = stdout.strip().split('__COMMAND_SEPARATOR__\n')
-            command_results = [result.strip() for result in command_results if result.strip()]
-            
-            return command_results
-        finally:
-            # Ensure temporary file is deleted
-            os.remove(script_path)
-    elif os_type == "Windows":
-        try:
-            for command in commands:
-                result = subprocess.run(["powershell", "-Command", command], capture_output=True, text=True)
-                print(result.stdout)  # or process result.stdout as needed
-        finally:
-            
+    # Override the interpreter if specified
+    interpreter = interpreter_override or default_interpreter
 
 
-async def handle_commands(commands, post_id=None, rewst_engine_host=None):
-    command_results = await execute_commands(commands)
-    message_data = {"command_results": command_results}
-    message_json = json.dumps(message_data)
-    await device_client.send_message(message_json)
-    print("Message sent!")
+    # If PowerShell is the interpreter, update the commands to include the post_url variable
+    if "powershell" in interpreter:
+        preamble = (
+            f"[Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12\n"
+            f"$post_url = '{post_url}'\n"
+        )
+        # Prepend the preamble to the commands
+        commands = preamble + commands
 
-    if post_id:
-        # Replace ':' with '/' in post_id
-        post_path = post_id.replace(":", "/")
-        url = f"https://{rewst_engine_host}/webhooks/custom/action/{post_path}"
-        print("Sending Results to Rewst.")
+    # Prepare the command for execution
+    if interpreter_override:
+        # When an interpreter override is specified, prefix the commands with the interpreter
+        command = f'{interpreter} -c "{commands}"'
+    else:
+        # When using the default interpreter, no need to prefix the commands
+        command = commands
+
+    # Execute the command
+    process = await asyncio.create_subprocess_shell(
+        command,
+        stdout=asyncio.subprocess.PIPE,
+        stderr=asyncio.subprocess.PIPE,
+    )
+
+    # Gather output
+    stdout, stderr = await process.communicate()
+
+    # The output will be in binary, so decode it to text
+    stdout = stdout.decode('utf-8')
+
+    # The script is expected to generate its own JSON object, so just return stdout
+    return stdout.strip()
+
+    # Attempt to parse the command output as JSON
+    try:
+        message_data = json.loads(command_output)
+    except json.JSONDecodeError as e:
+        print(f"Error decoding command output as JSON: {e}")
+        message_data = {"error": f"Error decoding command output as JSON: {e}", "output": command_output}
+    
+    if "powershell" not in interpreter:
+        print("Sending Results to Rewst via httpx.")
         # Send POST request with command results
         async with httpx.AsyncClient() as client:
-            response = await client.post(url, json=message_data)
+            response = await client.post(post_url, json=message_data)
             print(f"POST request status: {response.status_code}")
             if response.status_code != 200:
                 # Log error information if the request fails
                 print(f"Error response: {response.text}")
+
+
+
+async def handle_commands(commands, post_id=None, rewst_engine_host=None, interpreter_override=None):    
+    if post_id:
+        # Replace ':' with '/' in post_id
+        post_path = post_id.replace(":", "/")
+        post_url = f"https://{rewst_engine_host}/webhooks/custom/action/{post_path}"
+    
+    # Execute the commands
+    command_output = await execute_commands(commands, rewst_engine_host, interpreter_override)
+    try:
+        message_data = json.loads(command_output)
+    except json.JSONDecodeError as e:
+        print(f"Error decoding command output as JSON: {e}")
+        message_data = {"error": f"Error decoding command output as JSON: {e}", "output": command_output}
+
+
+    # Send the command output (or error message) to IoT Hub
+    message_json = json.dumps(message_data)
+    await device_client.send_message(message_json)
+    print("Message sent!")
+
 
 async def main(check_mode=False):
     global rewst_engine_host
