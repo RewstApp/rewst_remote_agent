@@ -6,6 +6,7 @@ import httpx
 import json
 import logging
 import os
+import platform
 import psutil
 import subprocess
 import tempfile
@@ -13,6 +14,7 @@ from concurrent.futures import ThreadPoolExecutor
 from azure.iot.device.aio import IoTHubDeviceClient
 
 status_update_checkin_time = 600
+os_type = platform.system()
 executor = ThreadPoolExecutor()
 logging.basicConfig(level=logging.INFO)
 
@@ -82,35 +84,43 @@ async def execute_commands(commands):
     # Create a temporary file to hold the commands
     fd, script_path = tempfile.mkstemp()
     print("Running Commands")
-    try:
-        with os.fdopen(fd, 'w') as tmp:
-            # Write commands to temporary file
+    if os_type == "Linux": 
+        try:
+            with os.fdopen(fd, 'w') as tmp:
+                # Write commands to temporary file
+                for command in commands:
+                    print(command)
+                    # Each command is followed by an echo statement to serve as a delimiter
+                    tmp.write(f"{command}\necho '__COMMAND_SEPARATOR__'\n")
+
+            # Execute temporary file as a script
+            process = await asyncio.create_subprocess_exec(
+                '/bin/bash', script_path,
+                stdout=asyncio.subprocess.PIPE,
+                stderr=asyncio.subprocess.PIPE,
+            )
+
+            # Gather output
+            stdout, stderr = await process.communicate()
+
+            # The output will be in binary, so decode it to text
+            stdout = stdout.decode('utf-8')
+
+            # Split the output by the command separator to get individual command results
+            command_results = stdout.strip().split('__COMMAND_SEPARATOR__\n')
+            command_results = [result.strip() for result in command_results if result.strip()]
+            
+            return command_results
+        finally:
+            # Ensure temporary file is deleted
+            os.remove(script_path)
+    elif os_type == "Windows":
+        try:
             for command in commands:
-                print(command)
-                # Each command is followed by an echo statement to serve as a delimiter
-                tmp.write(f"{command}\necho '__COMMAND_SEPARATOR__'\n")
-
-        # Execute temporary file as a script
-        process = await asyncio.create_subprocess_exec(
-            '/bin/bash', script_path,
-            stdout=asyncio.subprocess.PIPE,
-            stderr=asyncio.subprocess.PIPE,
-        )
-
-        # Gather output
-        stdout, stderr = await process.communicate()
-
-        # The output will be in binary, so decode it to text
-        stdout = stdout.decode('utf-8')
-
-        # Split the output by the command separator to get individual command results
-        command_results = stdout.strip().split('__COMMAND_SEPARATOR__\n')
-        command_results = [result.strip() for result in command_results if result.strip()]
-        
-        return command_results
-    finally:
-        # Ensure temporary file is deleted
-        os.remove(script_path)
+                result = subprocess.run(["powershell", "-Command", command], capture_output=True, text=True)
+                print(result.stdout)  # or process result.stdout as needed
+        finally:
+            
 
 
 async def handle_commands(commands, post_id=None, rewst_engine_host=None):
