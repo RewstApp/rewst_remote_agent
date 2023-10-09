@@ -65,20 +65,32 @@ def get_connection_string(config):
 # Handler function for messages received from the IoT Hub
 def message_handler(message):
     print(f"Received message: {message.data}")
-    message_data = json.loads(message.data)
-    if "commands" in message_data:
-        commands = message_data["commands"]
-        post_id = message_data.get("post_id")  # Get post_id, if present
-        interpreter_delimiter = message_data.get("interpreter_delimiter", "\n")  # Get delimiter, if present
-        print("Running commands")
-        executor.submit(run_handle_commands, commands, post_id, None, None, interpreter_delimiter)
+    try:
+        message_data = json.loads(message.data)
+    except json.JSONDecodeError as e:
+        print(f"Error decoding message data as JSON: {e}")
+        return  # Exit the function if the data can't be decoded as JSON
+
+    commands = message_data.get("commands")
+    print(commands)
+    post_id = message_data.get("post_id")  # Get post_id, if present
+    print(post_id)
+    interpreter_override = message_data.get("interpreter_override")  # Get custom interpreter, if present
+    print(interpreter_override)
+
+    if commands:  # Check if commands is not None
+        executor.submit(run_handle_commands, commands, post_id, rewst_engine_host, interpreter_override)
+    else:
+        print("No commands to run")
+
 
 # Function to handle the execution of commands
-def run_handle_commands(commands, post_id=None, rewst_engine_host=None, interpreter=None, interpreter_delimiter="\n"):
-    asyncio.run(handle_commands(commands, post_id, rewst_engine_host, interpreter, interpreter_delimiter))
+def run_handle_commands(commands, post_id=None, rewst_engine_host=None, interpreter_override=None):
+    asyncio.run(handle_commands(commands, post_id, rewst_engine_host, interpreter_override))
 
 # Async function to execute the list of commands
-async def execute_commands(commands, post_url=None, interpreter_override=None, interpreter_delimiter="\n"):
+async def execute_commands(commands, post_url=None, interpreter_override=None):
+
     # Determine the interpreter based on the operating system
     if os_type == 'windows':
         default_interpreter = 'powershell'
@@ -86,9 +98,9 @@ async def execute_commands(commands, post_url=None, interpreter_override=None, i
         default_interpreter = '/bin/zsh'
     else:
         default_interpreter = '/bin/bash'
+
+    # Use the default interpreter if an override isn't provided
     interpreter = interpreter_override or default_interpreter
-    # Join commands using the specified delimiter
-    
     
     # If PowerShell is the interpreter, update the commands to include the post_url variable
     if "powershell" in interpreter:
@@ -99,42 +111,39 @@ async def execute_commands(commands, post_url=None, interpreter_override=None, i
         # Prepend the preamble to the commands
         commands = preamble + commands
 
-    # Prepare the command for execution
-    if interpreter_override:
-        # When an interpreter override is specified, prefix the commands with the interpreter
-        command = f'{interpreter} -c "{commands}"'
-    else:
-        # When using the default interpreter, no need to prefix the commands
-        command = commands# Create the command string
-    command = f'{interpreter} -c "{all_commands}"'
+    # Create the command string based on the interpreter
+    command = f'{interpreter} -c "{commands}"'
+
     # Execute the command
     process = await asyncio.create_subprocess_shell(
         command,
         stdout=asyncio.subprocess.PIPE,
         stderr=asyncio.subprocess.PIPE,
     )
+
     # Gather output
     stdout, stderr = await process.communicate()
+
     # Decode output from binary to text
     stdout = stdout.decode('utf-8')
-    return stdout.strip()
+    stderr = stderr.decode('utf-8')
 
-    # Attempt to parse the command output as JSON
-    try:
-        message_data = json.loads(command_output)
-    except json.JSONDecodeError as e:
-        print(f"Error decoding command output as JSON: {e}")
-        message_data = {"error": f"Error decoding command output as JSON: {e}", "output": command_output}
-    
-    if "powershell" not in interpreter:
+    # If the interpreter is not PowerShell, format the output as a JSON object and send it to the post_url
+    if (post_url) and ("powershell" not in interpreter):
+        message_data = {
+        "output": stdout.strip(),
+        "error": stderr.strip()
+    }
         print("Sending Results to Rewst via httpx.")
-        # Send POST request with command results
         async with httpx.AsyncClient() as client:
             response = await client.post(post_url, json=message_data)
             print(f"POST request status: {response.status_code}")
             if response.status_code != 200:
                 # Log error information if the request fails
                 print(f"Error response: {response.text}")
+        return None  # return None or an empty string if you don't want to return anything
+    else:
+        return stdout.strip()  # returning the PowerShell command output or other output you want to return
 
 
 # Async function to handle the execution of commands and send the output to IoT Hub
@@ -142,13 +151,14 @@ async def handle_commands(commands, post_id=None, rewst_engine_host=None, interp
     if post_id:
         post_path = post_id.replace(":", "/")
         post_url = f"https://{rewst_engine_host}/webhooks/custom/action/{post_path}"
+        print(post_url)
     # Execute the commands
-    command_output = await execute_commands(commands, rewst_engine_host, interpreter_override, interpreter_delimiter)
+    command_output = await execute_commands(commands, post_url, interpreter_override)
     try:
         # Try to parse the output as JSON
         message_data = json.loads(command_output)
     except json.JSONDecodeError as e:
-        print(f"Error decoding command output as JSON: {e}")
+        print(f"Error decoding command output as JSON: {e}, using string output instead")
         message_data = {"error": f"Error decoding command output as JSON: {e}", "output": command_output}
     # Send the command output to IoT Hub
     message_json = json.dumps(message_data)
