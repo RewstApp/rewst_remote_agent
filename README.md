@@ -22,5 +22,6 @@ Plan:
 
 Todo:
 - [ ] All the things
-- [ ] Add cross-platform support
+- [X] Add cross-platform support
+- [ ] Sign-up process
 - [ ] _Future:_ Watchdog service?
