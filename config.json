@@ -1,7 +1,7 @@
 {
-    "device_id": "dc0a3a0d-95e0-4f85-af08-49087cdefd72",
+    "device_id": "a259b55a-4331-4672-bcb9-1f5d2cc50c1f",
     "rewst_org_id": "40f8b55a-e8a9-42fc-8dc1-179616275f10",
     "rewst_engine_host": "engine.rewst.io",
-    "shared_access_key": "vmwJLoLoiHkjvoiFiwcTo/SF+rLEc1ga1AIoTKZGxOg=",
+    "shared_access_key": "Uf7aExiNmNdDGrhT86dKFzOhamEi8CPaXAIoTFUpTzU=",
     "azure_iot_hub_host": "rewst-staff-iothub.azure-devices.net"
 }

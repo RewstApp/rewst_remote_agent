@@ -169,13 +169,13 @@ async def handle_commands(commands, post_id=None, rewst_engine_host=None, interp
     print("Message sent!")
 
 # Main async function
-async def main(check_mode=False, config_url=None):
-    
+async def main(check_mode=False, config_url=None, config_secret=None):
+
     global rewst_engine_host
     config_data = load_config()
     if config_data is None and config_url:
         print("Configuration file not found. Fetching configuration...")
-        config_data = await config_module.fetch_configuration(config_url)
+        config_data = await config_module.fetch_configuration(config_url, config_secret)
         config_module.save_configuration(config_data)
         print(f"Configuration saved to config.json")
     elif config_data is None:
@@ -221,6 +221,6 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Run the IoT Hub device client.')
     parser.add_argument('--check', action='store_true', help='Run in check mode to test communication')
     parser.add_argument('--config-url', help='URL to fetch the configuration from.')
+    parser.add_argument('--config-secret', help='Secret to use when fetching the configuration.')
     args = parser.parse_args()
-    asyncio.run(main(check_mode=args.check, config_url=args.config_url))
-
+    asyncio.run(main(check_mode=args.check, config_url=args.config_url, config_secret=args.config_secret)) 

@@ -17,7 +17,7 @@ REQUIRED_KEYS = [
     'rewst_org_id'
 ]
 
-async def fetch_configuration(config_url):
+async def fetch_configuration(config_url, secret=None):
     # Collect host information
     host_info = {
         "hostname": socket.gethostname(),
@@ -27,6 +27,11 @@ async def fetch_configuration(config_url):
         "cpu_model": platform.processor(),
         "ram_gb": psutil.virtual_memory().total / (1024 ** 3)
     }
+
+    headers = {}
+    if secret:
+        headers['x-rewst-secret'] = secret
+    
     retry_intervals = [(5, 12), (60, 60), (300, float('inf'))]  # (interval, max_retries) for each phase
     for interval, max_retries in retry_intervals:
         retries = 0
@@ -37,6 +42,7 @@ async def fetch_configuration(config_url):
                     response = await client.post(
                         config_url,
                         json=host_info,
+                        headers=headers,
                         follow_redirects=True
                     )
                 except httpx.TimeoutException:
@@ -50,6 +56,8 @@ async def fetch_configuration(config_url):
                         return config_data
                     else:
                         logging.warning(f"Attempt {retries}: Missing required keys in configuration data. Retrying...")
+                elif response.status_code == 400 or response.status_code == 401:
+                    logging.error(f"Attempt {retries}: Not authorized. Check your config secret.")
                 else:
                     logging.warning(f"Attempt {retries}: Received status code {response.status_code}. Retrying...")
             await asyncio.sleep(interval)
@@ -77,17 +85,23 @@ def get_mac_address():
 
 
 def is_domain_controller():
-    # You'll need to implement logic to determine if the host is a domain controller
+    # We'll need to implement logic to determine if the host is a domain controller
     pass
 
 async def main():
+    parser = argparse.ArgumentParser(description='Fetch and save configuration.')
+    parser.add_argument('--config-secret', type=str, help='Secret to use when fetching the configuration.')
+    args = parser.parse_args()
+
     config = load_configuration()
     if config is None:
         print("Configuration file not found. Fetching configuration from Rewst...")
         config_url = "https://engine.rewst.io/webhooks/custom/trigger/<trigger_id>/<org_id>"  # Replace with the actual URL
-        config = await fetch_configuration(config_url)
+        config_secret = "your_secret_here"
+        config = await fetch_configuration(config_url, secret=config_secret)  # Pass the secret to fetch_configuration
         save_configuration(config)
         print(f"Configuration saved to config.json")
+    return config  # Return the configuration
 
 if __name__ == "__main__":
     import asyncio
