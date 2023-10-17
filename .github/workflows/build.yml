@@ -26,11 +26,13 @@ jobs:
     - name: Install PyInstaller
       run: pip install pyinstaller
 
-    - name: Run build script
+    - name: Run build script (Windows)
+      if: matrix.os == 'windows-latest'
+      shell: cmd
+      run: .github\workflows\build.bat
+    
+    - name: Run build script (Unix)
+      if: matrix.os != 'windows-latest'
       run: |
-        if [[ "$RUNNER_OS" == "Windows" ]]; then
-          ./.github/workflows/build.bat
-        else
-          chmod +x ./.github/workflows/build.sh
-          ./.github/workflows/build.sh
-        fi
+        chmod +x .github/workflows/build.sh
+        .github/workflows/build.sh
