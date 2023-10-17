@@ -1,7 +1,5 @@
 #!/usr/bin/python3
 
-# 2023-10-09 16:39
-
 import argparse
 import asyncio
 import httpx
@@ -11,6 +9,7 @@ import os
 import platform
 import psutil
 import config_module
+import traceback
 from concurrent.futures import ThreadPoolExecutor
 from azure.iot.device.aio import IoTHubDeviceClient
 
@@ -30,9 +29,9 @@ async def send_status_update():
     # Create message object
     message_json = json.dumps(status_data)
     # Send message
-    print("Sending status update to IoT Hub...")
+    logging.info("Sending status update to IoT Hub...")
     await device_client.send_message(message_json)
-    print("Status update sent!")
+    logging.info("Status update sent!")
 
 # Function to load configuration from a file
 def load_config():
@@ -67,32 +66,55 @@ def get_connection_string(config):
 
 # Handler function for messages received from the IoT Hub
 def message_handler(message):
-    print(f"Received message: {message.data}")
+    logging.info(f"Received message: {message.data}")
     try:
         message_data = json.loads(message.data)
     except json.JSONDecodeError as e:
-        print(f"Error decoding message data as JSON: {e}")
+        logging.error(f"Error decoding message data as JSON: {e}")
         return  # Exit the function if the data can't be decoded as JSON
 
     commands = message_data.get("commands")
-    print(commands)
+    logging.info(commands)
     post_id = message_data.get("post_id")  # Get post_id, if present
-    print(post_id)
+    logging.info(post_id)
     interpreter_override = message_data.get("interpreter_override")  # Get custom interpreter, if present
-    print(interpreter_override)
+    logging.info(interpreter_override)
+
+    if post_id:
+        post_path = post_id.replace(":", "/")
+        post_url = f"https://{rewst_engine_host}/webhooks/custom/action/{post_path}"
+        logging.info(f"Will POST results to {post_url}")
 
     if commands:  # Check if commands is not None
-        executor.submit(run_handle_commands, commands, post_id, rewst_engine_host, interpreter_override)
+        logging.info("Received commands in message")
+        loop = asyncio.get_running_loop()
+        if loop is None:
+            logging.error("No running event loop")
+        else:
+            task = loop.create_task(run_handle_commands(commands, post_url, interpreter_override))
+            task.add_done_callback(error_callback)
     else:
-        print("No commands to run")
+        logging.info("No commands to run")
 
 
 # Function to handle the execution of commands
-def run_handle_commands(commands, post_id=None, rewst_engine_host=None, interpreter_override=None):
-    asyncio.run(handle_commands(commands, post_id, rewst_engine_host, interpreter_override))
+async def run_handle_commands(commands, post_url=None, interpreter_override=None):
+    logging.info("In run_handle_commands")
+    await handle_commands(commands, post_url, interpreter_override)
+
+def error_callback(future):
+    exc = future.exception()
+    if exc:
+        logging.error(f"Exception in run_handle_commands: {exc}")
+        logging.error(traceback.format_exc())
+
+
 
 # Async function to execute the list of commands
 async def execute_commands(commands, post_url=None, interpreter_override=None):
+    logging.info("In execute_commands")
+    logging.info(f"post_url: {post_url}")
+
 
     # Determine the interpreter based on the operating system
     if os_type == 'windows':
@@ -105,6 +127,7 @@ async def execute_commands(commands, post_url=None, interpreter_override=None):
     # Use the default interpreter if an override isn't provided
     interpreter = interpreter_override or default_interpreter
     
+    logging.info(f"Using interpreter: {interpreter}")
     # If PowerShell is the interpreter, update the commands to include the post_url variable
     if "powershell" in interpreter:
         preamble = (
@@ -118,55 +141,59 @@ async def execute_commands(commands, post_url=None, interpreter_override=None):
     command = f'{interpreter} -c "{commands}"'
 
     # Execute the command
-    process = await asyncio.create_subprocess_shell(
-        command,
-        stdout=asyncio.subprocess.PIPE,
-        stderr=asyncio.subprocess.PIPE,
-    )
+    try:
+        logging.info("Executing Commands")
+        process = await asyncio.create_subprocess_shell(
+            command,
+            stdout=asyncio.subprocess.PIPE,
+            stderr=asyncio.subprocess.PIPE,
+        )
+        # Gather output
+        stdout, stderr = await process.communicate()
+            # Decode output from binary to text
+        stdout = stdout.decode('utf-8')
+        stderr = stderr.decode('utf-8')
 
-    # Gather output
-    stdout, stderr = await process.communicate()
-
-    # Decode output from binary to text
-    stdout = stdout.decode('utf-8')
-    stderr = stderr.decode('utf-8')
-
-    # If the interpreter is not PowerShell, format the output as a JSON object and send it to the post_url
-    if (post_url) and ("powershell" not in interpreter):
-        message_data = {
-        "output": stdout.strip(),
-        "error": stderr.strip()
-    }
-        print("Sending Results to Rewst via httpx.")
-        async with httpx.AsyncClient() as client:
-            response = await client.post(post_url, json=message_data)
-            print(f"POST request status: {response.status_code}")
-            if response.status_code != 200:
-                # Log error information if the request fails
-                print(f"Error response: {response.text}")
-        return None  # return None or an empty string if you don't want to return anything
-    else:
-        return stdout.strip()  # returning the PowerShell command output or other output you want to return
+        # If the interpreter is not PowerShell, format the output as a JSON object and send it to the post_url
+        if (post_url) and ("powershell" not in interpreter):
+            message_data = {
+            "output": stdout.strip(),
+            "error": stderr.strip()
+        }
+            logging.info("Sending Results to Rewst via httpx.")
+            async with httpx.AsyncClient() as client:
+                response = await client.post(post_url, json=message_data)
+                logging.info(f"POST request status: {response.status_code}")
+                if response.status_code != 200:
+                    # Log error information if the request fails
+                    logging.info(f"Error response: {response.text}")
+            return None  # return None or an empty string if you don't want to return anything
+        else:
+            return stdout.strip()  # returning the PowerShell command output or other output you want to return
+        
+    except Exception as e:
+        logging.error(f"Exception in execute_commands: {e}")
 
 
 # Async function to handle the execution of commands and send the output to IoT Hub
-async def handle_commands(commands, post_id=None, rewst_engine_host=None, interpreter_override=None, interpreter_delimiter="\n"):    
-    if post_id:
-        post_path = post_id.replace(":", "/")
-        post_url = f"https://{rewst_engine_host}/webhooks/custom/action/{post_path}"
-        print(post_url)
+async def handle_commands(commands, post_url=None, interpreter_override=None):    
+    logging.info(f"Handling commands: {commands}")
+
     # Execute the commands
+    logging.info(f"Executing commands: {commands}")
+
     command_output = await execute_commands(commands, post_url, interpreter_override)
+    logging.info("completed")
     try:
         # Try to parse the output as JSON
         message_data = json.loads(command_output)
     except json.JSONDecodeError as e:
-        print(f"Error decoding command output as JSON: {e}, using string output instead")
+        logging.info(f"Error decoding command output as JSON: {e}, using string output instead")
         message_data = {"error": f"Error decoding command output as JSON: {e}", "output": command_output}
     # Send the command output to IoT Hub
     message_json = json.dumps(message_data)
     await device_client.send_message(message_json)
-    print("Message sent!")
+    logging.info("Message sent!")
 
 # Main async function
 async def main(check_mode=False, config_url=None, config_secret=None):
@@ -174,12 +201,12 @@ async def main(check_mode=False, config_url=None, config_secret=None):
     global rewst_engine_host
     config_data = load_config()
     if config_data is None and config_url:
-        print("Configuration file not found. Fetching configuration...")
+        logging.info("Configuration file not found. Fetching configuration...")
         config_data = await config_module.fetch_configuration(config_url, config_secret)
         config_module.save_configuration(config_data)
-        print(f"Configuration saved to config.json")
+        logging.info(f"Configuration saved to config.json")
     elif config_data is None:
-        print("No configuration found and no config URL provided.")
+        logging.info("No configuration found and no config URL provided.")
         exit(1)
 
 
@@ -189,19 +216,19 @@ async def main(check_mode=False, config_url=None, config_secret=None):
     rewst_org_id = config_data['rewst_org_id']
     global device_client
     device_client = IoTHubDeviceClient.create_from_connection_string(connection_string)
-    print("Connecting to IoT Hub...")
+    logging.info("Connecting to IoT Hub...")
     await device_client.connect()
-    print("Connected!")
+    logging.info("Connected!")
     if check_mode:
         # Check mode for testing communication
-        print("Check mode: Sending a test message...")
+        logging.info("Check mode: Sending a test message...")
         e = None
         try:
             await device_client.send_message(json.dumps({"test_message": "Test message from device"}))
-            print("Check mode: Communication test successful. Test message sent.")
+            logging.info("Check mode: Communication test successful. Test message sent.")
         except Exception as ex:
             e = ex
-            print(f"Check mode: Communication test failed. Could not send test message: {e}")
+            logging.info(f"Check mode: Communication test failed. Could not send test message: {e}")
         finally:
             await device_client.disconnect()
             exit(0 if not e else 1)

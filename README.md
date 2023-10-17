@@ -20,8 +20,9 @@ Current phase: POC
 Plan:
 
 
-Todo:
+TodDo:
 - [ ] All the things
 - [X] Add cross-platform support
-- [ ] Sign-up process
+- [X] Sign-up process
+- [ ] Make it run as a service
 - [ ] _Future:_ Watchdog service?
