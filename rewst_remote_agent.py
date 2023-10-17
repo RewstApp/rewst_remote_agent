@@ -10,6 +10,7 @@ import platform
 import psutil
 import config_module
 import traceback
+import service_manager
 from concurrent.futures import ThreadPoolExecutor
 from azure.iot.device.aio import IoTHubDeviceClient
 
@@ -205,6 +206,8 @@ async def main(check_mode=False, config_url=None, config_secret=None):
         config_data = await config_module.fetch_configuration(config_url, config_secret)
         config_module.save_configuration(config_data)
         logging.info(f"Configuration saved to config.json")
+        install_service()
+        logging.info("The service has been isntalled.")
     elif config_data is None:
         logging.info("No configuration found and no config URL provided.")
         exit(1)
