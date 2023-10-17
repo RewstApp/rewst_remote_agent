@@ -1,7 +1,0 @@
-{
-    "azure_iot_hub_host": "rewst-iothub-test.azure-devices.net",
-    "device_id": "test_device",
-    "shared_access_key": "u0Hi2B3zz/G3PFXJajJD5Zn6OZyuXmsFfAIoTDTCCIA=",
-    "rewst_engine_host": "engine.rewst.io",
-    "rewst_org_id": "40f8b55a-e8a9-42fc-8dc1-179616275f10"
-}
