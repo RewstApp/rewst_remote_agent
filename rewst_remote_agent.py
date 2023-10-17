@@ -10,6 +10,7 @@ import logging
 import os
 import platform
 import psutil
+import config_module
 from concurrent.futures import ThreadPoolExecutor
 from azure.iot.device.aio import IoTHubDeviceClient
 
@@ -168,11 +169,21 @@ async def handle_commands(commands, post_id=None, rewst_engine_host=None, interp
     print("Message sent!")
 
 # Main async function
-async def main(check_mode=False):
+async def main(check_mode=False, config_url=None):
+    
     global rewst_engine_host
     config_data = load_config()
-    if config_data is None:
+    if config_data is None and config_url:
+        print("Configuration file not found. Fetching configuration...")
+        config_data = await config_module.fetch_configuration(config_url)
+        config_module.save_configuration(config_data)
+        print(f"Configuration saved to config.json")
+    elif config_data is None:
+        print("No configuration found and no config URL provided.")
         exit(1)
+
+
+    # Connect to IoT Hub
     connection_string = get_connection_string(config_data)
     rewst_engine_host = config_data['rewst_engine_host']
     rewst_org_id = config_data['rewst_org_id']
@@ -209,5 +220,7 @@ async def main(check_mode=False):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Run the IoT Hub device client.')
     parser.add_argument('--check', action='store_true', help='Run in check mode to test communication')
+    parser.add_argument('--config-url', help='URL to fetch the configuration from.')
     args = parser.parse_args()
-    asyncio.run(main(check_mode=args.check))
+    asyncio.run(main(check_mode=args.check, config_url=args.config_url))
+
