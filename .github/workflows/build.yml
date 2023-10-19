@@ -36,6 +36,14 @@ jobs:
       run: |
         chmod +x .github/workflows/build.sh
         .github/workflows/build.sh
+
+    - name: Bump version and push tag
+      id: create_tag
+      uses: mathieudutour/github-tag-action@v5
+      with:
+        github_token: ${{ secrets.GITHUB_TOKEN }}
+        default_bump: patch # can be one of: major, minor, patch
+  
     
     - name: Create Release
       id: create_release
@@ -44,10 +52,11 @@ jobs:
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
-        tag_name: ${{ github.sha }}
-        release_name: Release ${{ github.sha }}
+        tag_name: ${{ steps.create_tag.outputs.new_tag }}
+        release_name: Release ${{ steps.create_tag.outputs.new_tag }}
         draft: false
         prerelease: false
+  
   
     - name: Upload Release Asset
       id: upload-release-asset 
