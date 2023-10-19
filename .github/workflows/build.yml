@@ -43,9 +43,6 @@ jobs:
       with:
         github_token: ${{ secrets.GITHUB_TOKEN }}
         default_bump: patch # can be one of: major, minor, patch
-  
-    - name: List build directory contents
-      run: ls -la ./build/rewst_remote_agent && pwd
     
     - name: Create Release
       id: create_release
