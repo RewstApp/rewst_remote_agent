@@ -31,8 +31,14 @@ jobs:
       shell: cmd
       run: .github\workflows\build.bat
     
-    - name: Run build script (Unix)
-      if: matrix.os != 'windows-latest'
+    - name: Run build script (Ubuntu Linux)
+      if: matrix.os == 'ubuntu-latest'
+      run: |
+        chmod +x .github/workflows/build.sh
+        .github/workflows/build.sh
+
+    - name: Run build script (MacOS)
+      if: matrix.os == 'macos-latest'
       run: |
         chmod +x .github/workflows/build.sh
         .github/workflows/build.sh
@@ -65,6 +71,30 @@ jobs:
       with:
         upload_url: ${{ steps.create_release.outputs.upload_url }} 
         asset_path: ${{ 'D:\a\rewst_remote_agent\rewst_remote_agent\dist\rewst_remote_agent.exe' }}
-        asset_name: ${{ 'rewst_remote_agent.exe' }}
+        asset_name: ${{ 'rewst_remote_agent.win.exe' }}
+        asset_content_type: application/octet-stream
+
+
+    - name: Upload Release Asset - Linux
+      id: upload-release-asset-linux
+      if: matrix.os == 'ubuntu-latest' 
+      uses: actions/upload-release-asset@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        upload_url: ${{ steps.create_release.outputs.upload_url }} 
+        asset_path: ${{ '/home/runner/work/rewst_remote_agent/rewst_remote_agent/dist/rewst_remote_agent' }}
+        asset_name: ${{ 'rewst_remote_agent.linux.bin' }}
         asset_content_type: application/octet-stream
     
+    - name: Upload Release Asset - MacOS
+      id: upload-release-asset-macos
+      if: matrix.os == 'macos-latest' 
+      uses: actions/upload-release-asset@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        upload_url: ${{ steps.create_release.outputs.upload_url }} 
+        asset_path: ${{ '/Users/runner/work/rewst_remote_agent/rewst_remote_agent/dist/rewst_remote_agent' }}
+        asset_name: ${{ 'rewst_remote_agent.macos.bin' }}
+        asset_content_type: application/octet-stream
