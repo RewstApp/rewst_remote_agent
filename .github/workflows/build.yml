@@ -58,13 +58,13 @@ jobs:
   
     - name: Upload Release Asset - Windows
       id: upload-release-asset-win
-      if: matrix.os == 'windows-latest'
+      
       uses: actions/upload-release-asset@v1
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
         upload_url: ${{ steps.create_release.outputs.upload_url }} 
-        asset_path: ${{ matrix.os == 'windows-latest' && 'dist\rewst_remote_agent.exe' || '~/work/rewst_remote_agent/rewst_remote_agent/dist/rewst_remote_agent' }}
-        asset_name: ${{ matrix.os == 'windows-latest' && 'rewst_remote_agent.exe' || 'rewst_remote_agent.bin' }}
+        asset_path: ${{ '~/work/rewst_remote_agent/rewst_remote_agent/dist/rewst_remote_agent.exe' }}
+        asset_name: ${{ 'rewst_remote_agent.exe' }}
         asset_content_type: application/octet-stream
     
