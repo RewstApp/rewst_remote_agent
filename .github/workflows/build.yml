@@ -36,3 +36,27 @@ jobs:
       run: |
         chmod +x .github/workflows/build.sh
         .github/workflows/build.sh
+    
+    - name: Create Release
+      id: create_release
+      if: matrix.os == 'ubuntu-latest' # Only create a release from the Ubuntu job
+      uses: gh-actions/create-release@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        tag_name: ${{ github.sha }}
+        release_name: Release ${{ github.sha }}
+        draft: false
+        prerelease: false
+
+    - name: Upload Release Asset
+      id: upload-release-asset 
+      uses: actions/upload-release-asset@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        upload_url: ${{ steps.create_release.outputs.upload_url }} 
+        asset_path: ${{ matrix.os == 'windows-latest' && './build/rewst_remote_agent.exe' || './build/rewst_remote_agent' }}
+        asset_name: ${{ matrix.os == 'windows-latest' && 'rewst_remote_agent.exe' || 'rewst_remote_agent' }}
+        asset_content_type: application/octet-stream
+    
