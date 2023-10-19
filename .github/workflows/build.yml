@@ -64,7 +64,7 @@ jobs:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
         upload_url: ${{ steps.create_release.outputs.upload_url }} 
-        asset_path: ${{ '~/work/rewst_remote_agent/rewst_remote_agent/dist/rewst_remote_agent.exe' }}
+        asset_path: ${{ 'D:\a\rewst_remote_agent\rewst_remote_agent\dist\rewst_remote_agent.exe' }}
         asset_name: ${{ 'rewst_remote_agent.exe' }}
         asset_content_type: application/octet-stream
     
