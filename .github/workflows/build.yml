@@ -7,7 +7,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: [ubuntu-latest, macos-latest, windows-latest]
+        os: [windows-latest] #[ubuntu-latest, macos-latest, windows-latest]
         python-version: [3.12]
 
     steps:
@@ -43,6 +43,10 @@ jobs:
         chmod +x .github/workflows/build.sh
         .github/workflows/build.sh
 
+    - name: Install Windows SDK
+      if: matrix.os == 'windows-latest'
+      uses: microsoft/setup-msbuild@v1
+    
     - name: Sign Executable (Windows)
       run: |
         $certBytes = [System.Convert]::FromBase64String($env:SELF_SIGNED_CERT)
