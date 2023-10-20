@@ -12,6 +12,17 @@ jobs:
 
     steps:
     - uses: actions/checkout@v2
+    - name: Bump version and push tag
+      id: tag_version
+      uses: mathieudutour/github-tag-action@v6.1
+      with:
+        github_token: ${{ secrets.GITHUB_TOKEN }}
+    - name: Create a GitHub release
+      uses: ncipollo/release-action@v1
+      with:
+        tag: ${{ steps.tag_version.outputs.new_tag }}
+        name: Release ${{ steps.tag_version.outputs.new_tag }}
+        body: ${{ steps.tag_version.outputs.changelog }}
 
     - name: Set up Python ${{ matrix.python-version }}
       uses: actions/setup-python@v2
@@ -93,24 +104,24 @@ jobs:
     needs: build  # This job depends on the 'build' job
     runs-on: ubuntu-latest  # This job only runs on one runner
 
-    steps:
-    - name: Bump version and push tag
-      id: create_tag
-      uses: mathieudutour/github-tag-action@v5
-      with:
-        github_token: ${{ secrets.GITHUB_TOKEN }}
-        default_bump: patch # can be one of: major, minor, patch
+    # steps:
+    # - name: Bump version and push tag
+    #   id: create_tag
+    #   uses: mathieudutour/github-tag-action@v5
+    #   with:
+    #     github_token: ${{ secrets.GITHUB_TOKEN }}
+    #     default_bump: patch # can be one of: major, minor, patch
 
-    - name: Create Release
-      id: create_release 
-      uses: actions/create-release@v1
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      with:
-        tag_name: ${{ steps.create_tag.outputs.new_tag }}
-        release_name: Release ${{ steps.create_tag.outputs.new_tag }}
-        draft: false
-        prerelease: false
+    # - name: Create Release
+    #   id: create_release 
+    #   uses: actions/create-release@v1
+    #   env:
+    #     GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    #   with:
+    #     tag_name: ${{ steps.create_tag.outputs.new_tag }}
+    #     release_name: Release ${{ steps.create_tag.outputs.new_tag }}
+    #     draft: false
+    #     prerelease: false
 
     - name: Download all assets
       uses: actions/download-artifact@v2
