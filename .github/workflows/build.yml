@@ -87,6 +87,12 @@ jobs:
       with:
         name: windows-latest-signed-asset
         path: ./dist/rewst_remote_agent.exe 
+
+    - name: List directory contents
+      run: |
+        ls -al ./ubuntu-latest-asset/
+      if: failure()
+      
   
 
   release:
