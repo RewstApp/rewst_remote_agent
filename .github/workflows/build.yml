@@ -90,7 +90,7 @@ jobs:
 
     - name: List directory contents
       run: |
-        ls -al ./ubuntu-latest-asset/
+        ls -al ./linux-latest-asset/
       if: failure()
       
   
@@ -137,7 +137,7 @@ jobs:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
         upload_url: ${{ steps.create_release.outputs.upload_url }} 
-        asset_path: ./ubuntu-latest-asset/rewst_remote_agent
+        asset_path: ./linux-latest-asset/rewst_remote_agent
         asset_name: rewst_remote_agent.linux.bin
         asset_content_type: application/octet-stream
     
