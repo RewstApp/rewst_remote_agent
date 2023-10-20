@@ -89,7 +89,6 @@ jobs:
         path: ./dist/rewst_remote_agent.exe 
 
       
-
   release:
     needs: build  # This job depends on the 'build' job
     runs-on: ubuntu-latest  # This job only runs on one runner
