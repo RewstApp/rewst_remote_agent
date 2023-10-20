@@ -60,11 +60,19 @@ jobs:
         $certBytes = [System.Convert]::FromBase64String($env:SELF_SIGNED_CERT)
         [System.IO.File]::WriteAllBytes("cert.pfx", $certBytes)
         & '${{ steps.locate-signtool.outputs.signtoolPath }}' sign /f cert.pfx /p $env:SELF_SIGNED_CERT_PASSWORD /tr http://timestamp.digicert.com /td sha256 /fd sha256 /a D:\a\rewst_remote_agent\rewst_remote_agent\dist\rewst_remote_agent.exe
+
       if: matrix.os == 'windows-latest'
       shell: pwsh
       env:
         SELF_SIGNED_CERT: ${{ secrets.SELF_SIGNED_CERT }}
         SELF_SIGNED_CERT_PASSWORD: ${{ secrets.SELF_SIGNED_CERT_PASSWORD }}
+    
+    - name: Upload Signed Executable (Windows)
+      if: matrix.os == 'windows-latest'
+      uses: actions/upload-artifact@v2
+      with:
+        name: windows-latest-signed-asset
+        path: ./dist/rewst_remote_agent.exe 
   
 
   release:
@@ -99,7 +107,7 @@ jobs:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
         upload_url: ${{ steps.create_release.outputs.upload_url }} 
-        asset_path: ./windows-latest-asset/rewst_remote_agent.exe
+        asset_path: ./windows-latest-signed-asset/rewst_remote_agent.exe
         asset_name: rewst_remote_agent.win.exe
         asset_content_type: application/octet-stream
 
