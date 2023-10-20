@@ -46,12 +46,20 @@ jobs:
     - name: Install Windows SDK
       if: matrix.os == 'windows-latest'
       uses: microsoft/setup-msbuild@v1
+
+    - name: Locate signtool
+      if: matrix.os == 'windows-latest'
+      run: |
+        $signtoolPath = Get-ChildItem -Path "C:\Program Files (x86)\Windows Kits" -Recurse -Filter signtool.exe | Select-Object -First 1 -ExpandProperty FullName
+        echo "::set-output name=signtoolPath::$signtoolPath"
+      id: locate-signtool
+      shell: pwsh
     
     - name: Sign Executable (Windows)
       run: |
         $certBytes = [System.Convert]::FromBase64String($env:SELF_SIGNED_CERT)
         [System.IO.File]::WriteAllBytes("cert.pfx", $certBytes)
-        signtool sign /f cert.pfx /p $env:SELF_SIGNED_CERT_PASSWORD /tr http://timestamp.digicert.com /td sha256 /fd sha256 /a ./windows-latest-asset/rewst_remote_agent.exe
+        ${{ steps.locate-signtool.outputs.signtoolPath }} sign /f cert.pfx /p $env:SELF_SIGNED_CERT_PASSWORD /tr http://timestamp.digicert.com /td sha256 /fd sha256 /a ./windows-latest-asset/rewst_remote_agent.exe
       if: matrix.os == 'windows-latest'
       shell: pwsh
       env:
