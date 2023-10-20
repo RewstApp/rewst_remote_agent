@@ -44,23 +44,21 @@ jobs:
         .github/workflows/build.sh
 
 
-    - name: Setup Certificate (Windows)
-      if: matrix.os == 'windows-latest'
-      run: |
-        echo "${{ secrets.SELF_SIGNED_CERT }}" | base64 --decode > certificate.p12
-  
     - name: Sign Executable (Windows)
-      if: matrix.os == 'windows-latest'
       run: |
-        signtool sign /f certificate.p12 /p ${{ secrets.SELF_SIGNED_CERT_PASSWORD }}  /t http://timestamp.digicert.com /v ./dist/rewst_remote_agent.exe
-  
+        $certBytes = [System.Convert]::FromBase64String("$${{ secrets.SELF_SIGNED_CERT }}")
+        [System.IO.File]::WriteAllBytes("cert.pfx", $certBytes)
+        signtool sign /f cert.pfx /p ${{ secrets.SELF_SIGNED_CERT_PASSWORD }} /tr http://timestamp.digicert.com /td sha256 /fd sha256 /a ./windows-latest-asset/rewst_remote_agent.exe
+      if: matrix.os == 'windows-latest'
+      shell: pwsh
 
-    - name: Upload Build Asset
-      uses: actions/upload-artifact@v2
-      with:
-        name: ${{ matrix.os }}-asset
-        path: ${{ matrix.os == 'windows-latest' && './dist/rewst_remote_agent.exe' || './dist/rewst_remote_agent' }}
+    - name: Sign Executable (Unix)
+      run: |
+        echo ${{ secrets.SELF_SIGNED_CERT }} | base64 --decode > cert.pfx
+        osslsigncode sign -pkcs12 cert.pfx -pass ${{ secrets.SELF_SIGNED_CERT_PASSWORD }} -n "RewstRemoteAgent" -i http://rewst.io -t http://timestamp.digicert.com -in ./ubuntu-latest-asset/rewst_remote_agent -out ./ubuntu-latest-asset/rewst_remote_agent
+      if: matrix.os != 'windows-latest'
 
+      
   release:
     needs: build  # This job depends on the 'build' job
     runs-on: ubuntu-latest  # This job only runs on one runner
