@@ -52,16 +52,6 @@ jobs:
       if: matrix.os == 'windows-latest'
       shell: pwsh
 
-    - name: Sign Executable (MacOS)
-      if: matrix.os == 'macos-latest'
-      run: |
-        echo ${{ secrets.SELF_SIGNED_CERT }} | base64 --decode > cert.p12
-        security create-keychain -p actions my.keychain
-        security import cert.p12 -k my.keychain -P ${{ secrets.SELF_SIGNED_CERT_PASSWORD }} -T /usr/bin/codesign
-        security list-keychains -s my.keychain
-        codesign -s "certificate common name or identity" --keychain my.keychain ./macos-latest-asset/rewst_remote_agent
-        security delete-keychain my.keychain
-
   release:
     needs: build  # This job depends on the 'build' job
     runs-on: ubuntu-latest  # This job only runs on one runner
