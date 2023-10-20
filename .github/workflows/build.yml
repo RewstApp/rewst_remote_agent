@@ -36,12 +36,26 @@ jobs:
       run: |
         chmod +x .github/workflows/build.sh
         .github/workflows/build.sh
+    
+    - name: Upload Executable (Linux)
+      if: matrix.os == 'ubuntu-latest'
+      uses: actions/upload-artifact@v2
+      with:
+        name: linux-latest-asset
+        path: ./dist/rewst_remote_agent
 
     - name: Run build script (MacOS)
       if: matrix.os == 'macos-latest'
       run: |
         chmod +x .github/workflows/build.sh
         .github/workflows/build.sh
+      
+    - name: Upload Executable (MacOS)
+      if: matrix.os == 'macos-latest'
+      uses: actions/upload-artifact@v2
+      with:
+        name: macos-latest-asset
+        path: ./dist/rewst_remote_agent
 
     - name: Install Windows SDK
       if: matrix.os == 'windows-latest'
