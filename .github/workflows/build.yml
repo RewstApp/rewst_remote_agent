@@ -43,14 +43,17 @@ jobs:
         chmod +x .github/workflows/build.sh
         .github/workflows/build.sh
 
-
     - name: Sign Executable (Windows)
       run: |
-        $certBytes = [System.Convert]::FromBase64String("$${{ secrets.SELF_SIGNED_CERT }}")
+        $certBytes = [System.Convert]::FromBase64String($env:SELF_SIGNED_CERT)
         [System.IO.File]::WriteAllBytes("cert.pfx", $certBytes)
-        signtool sign /f cert.pfx /p ${{ secrets.SELF_SIGNED_CERT_PASSWORD }} /tr http://timestamp.digicert.com /td sha256 /fd sha256 /a ./windows-latest-asset/rewst_remote_agent.exe
+        signtool sign /f cert.pfx /p $env:SELF_SIGNED_CERT_PASSWORD /tr http://timestamp.digicert.com /td sha256 /fd sha256 /a ./windows-latest-asset/rewst_remote_agent.exe
       if: matrix.os == 'windows-latest'
       shell: pwsh
+      env:
+        SELF_SIGNED_CERT: ${{ secrets.SELF_SIGNED_CERT }}
+        SELF_SIGNED_CERT_PASSWORD: ${{ secrets.SELF_SIGNED_CERT_PASSWORD }}
+  
 
   release:
     needs: build  # This job depends on the 'build' job
