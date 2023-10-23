@@ -20,7 +20,8 @@ from service_manager import (
     stop_service,
     restart_service,
 )
-from config_module import load_configuration, save_configuration
+from config_module import fetch_configuration, load_configuration, save_configuration
+
 
 # Set the status update interval and get the operating system type
 status_update_checkin_time = 600
