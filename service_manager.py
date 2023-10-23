@@ -39,7 +39,7 @@ def install_service(org_id):
         win32serviceutil.InstallService(
             executable_path,
             service_name,
-            displayName=display_name
+            displayName=display_name,
             startType=win32service.SERVICE_AUTO_START
         )
     elif os_type == "Linux":
