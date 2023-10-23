@@ -71,6 +71,7 @@ def install_service(org_id):
         """
         with open(f"{os.path.expanduser('~/Library/LaunchAgents')}/{service_name}.plist", "w") as f:
             f.write(launchd_plist_content)
+        os.system(f"launchctl load {plist_path}")
 
 def uninstall_service(org_id):
     service_name = get_service_name(org_id)
@@ -82,22 +83,29 @@ def uninstall_service(org_id):
         os.system(f"rm /etc/systemd/system/{service_name}.service")
         os.system("systemctl daemon-reload")
     elif os_type == "Darwin":
-        os.system(f"launchctl unload -w {os.path.expanduser('~/Library/LaunchAgents')}/{service_name}.plist")
-        os.system(f"rm {os.path.expanduser('~/Library/LaunchAgents')}/{service_name}.plist")
+        plist_path = f"{os.path.expanduser('~/Library/LaunchAgents')}/{service_name}.plist"
+        os.system(f"launchctl unload {plist_path}")
+        os.system(f"rm {plist_path}")
 
 def start_service(org_id):
     service_name = get_service_name(org_id)
     if os_type == "Windows":
         os.system(f"net start {service_name}")
-    elif os_type == "Linux" or os_type == "Darwin":
+    elif os_type == "Linux":
         os.system(f"systemctl start {service_name}")
+    elif os_type == "Darwin":
+        os.system(f"launchctl start {service_name}")
+   
 
 def stop_service(org_id):
     service_name = get_service_name(org_id)
     if os_type == "Windows":
         os.system(f"net stop {service_name}")
-    elif os_type == "Linux" or os_type == "Darwin":
+    elif os_type == "Linux":
         os.system(f"systemctl stop {service_name}")
+    elif os_type == "Darwin":
+        os.system(f"launchctl stop {service_name}")
+
 
 def restart_service(org_id):
     stop_service(org_id)
