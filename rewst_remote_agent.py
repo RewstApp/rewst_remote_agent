@@ -291,8 +291,9 @@ if __name__ == "__main__":
         check_mode=args.check,
         config_url=args.config_url,
         config_secret=args.config_secret,
-        install_service=args.install_service,
-        uninstall_service=args.uninstall_service,
-        restart_service=args.restart_service,
-        stop_service=args.stop_service
+        install_service_flag=args.install_service,
+        uninstall_service_flag=args.uninstall_service,
+        restart_service_flag=args.restart_service,
+        stop_service_flag=args.stop_service
     ))
+
