@@ -1,8 +1,7 @@
+import os
 import platform
 
 os_type = platform.system()
-
-
 
 
 def install_service():
@@ -51,3 +50,25 @@ def install_service():
         """
         with open(f"{os.path.expanduser('~')}/Library/LaunchAgents/com.rewst_remote_agent.plist", "w") as f:
             f.write(launchd_plist_content)
+
+def uninstall_service():
+    if os_type == "Windows":
+        import win32serviceutil
+        win32serviceutil.RemoveService("Rewst_Remote_Agent")
+    elif os_type == "Linux":
+        os.system("systemctl disable rewst_remote_agent")
+        os.system("rm /etc/systemd/system/rewst_remote_agent.service")
+        os.system("systemctl daemon-reload")
+    elif os_type == "Darwin":
+        os.system("launchctl unload ~/Library/LaunchAgents/com.rewst_remote_agent.plist")
+        os.system("rm ~/Library/LaunchAgents/com.rewst_remote_agent.plist")
+
+def restart_service():
+    if os_type == "Windows":
+        import win32serviceutil
+        win32serviceutil.RestartService("Rewst_Remote_Agent")
+    elif os_type == "Linux":
+        os.system("systemctl restart rewst_remote_agent")
+    elif os_type == "Darwin":
+        os.system("launchctl unload ~/Library/LaunchAgents/com.rewst_remote_agent.plist")
+        os.system("launchctl load ~/Library/LaunchAgents/com.rewst_remote_agent.plist")

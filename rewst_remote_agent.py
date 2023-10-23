@@ -206,8 +206,6 @@ async def main(check_mode=False, config_url=None, config_secret=None):
         config_data = await config_module.fetch_configuration(config_url, config_secret)
         config_module.save_configuration(config_data)
         logging.info(f"Configuration saved to config.json")
-        install_service()
-        logging.info("The service has been isntalled.")
     elif config_data is None:
         logging.info("No configuration found and no config URL provided.")
         exit(1)
@@ -252,5 +250,20 @@ if __name__ == "__main__":
     parser.add_argument('--check', action='store_true', help='Run in check mode to test communication')
     parser.add_argument('--config-url', help='URL to fetch the configuration from.')
     parser.add_argument('--config-secret', help='Secret to use when fetching the configuration.')
+    parser.add_argument('--install-service', action='store_true', help='Install the service.')
+    parser.add_argument('--uninstall-service', action='store_true', help='Uninstall the service.')
+    parser.add_argument('--restart-service', action='store_true', help='Restart the service.')
+
+
+    # Process commandline arguments
     args = parser.parse_args()
-    asyncio.run(main(check_mode=args.check, config_url=args.config_url, config_secret=args.config_secret)) 
+
+    if args.install_service:
+        service_manager.install_service()
+
+    if args.uninstall_service:
+        service_manager.uninstall_service()
+    elif args.restart_service:
+        service_manager.restart_service()
+    else:
+        asyncio.run(main(check_mode=args.check, config_url=args.config_url, config_secret=args.config_secret))

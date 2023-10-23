@@ -1,3 +1,4 @@
+import argparse
 import json
 import logging
 import platform
@@ -49,6 +50,10 @@ async def fetch_configuration(config_url, secret=None):
                     logging.warning(f"Attempt {retries}: Request timed out. Retrying...")
                     continue  # Skip the rest of the loop and retry
 
+                except httpx.RequestError as e:
+                    logging.warning(f"Attempt {retries}: Network error: {e}. Retrying...")
+                    continue
+
                 if response.status_code == 200:
                     data = response.json()
                     config_data = data.get('configuration')
@@ -96,8 +101,8 @@ async def main():
     config = load_configuration()
     if config is None:
         print("Configuration file not found. Fetching configuration from Rewst...")
-        config_url = "https://engine.rewst.io/webhooks/custom/trigger/<trigger_id>/<org_id>"  # Replace with the actual URL
-        config_secret = "your_secret_here"
+        config_url = args.config_url
+        config_secret = args.config_secret
         config = await fetch_configuration(config_url, secret=config_secret)  # Pass the secret to fetch_configuration
         save_configuration(config)
         print(f"Configuration saved to config.json")
