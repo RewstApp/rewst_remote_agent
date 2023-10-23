@@ -222,15 +222,20 @@ async def main(
     global rewst_engine_host
     global device_client
 
-    # Get Org ID and Config
-    executable_path = os.path.basename(__file__)  # Gets the file name of the current script
-    pattern = re.compile(r'rewst_remote_agent_(.+?)\.')
-    match = pattern.search(executable_path)
-    if match:
-        org_id = match.group(1)
+    if config_file:
+        logging(f"Using config file {config_file}.")
         config_data = load_configuration(config_file)
     else:
-        config_data = None
+        # Get Org ID for Config
+        executable_path = os.path.basename(__file__)  # Gets the file name of the current script
+        pattern = re.compile(r'rewst_remote_agent_(.+?)\.')
+        match = pattern.search(executable_path)
+        if match:
+            org_id = match.group(1)
+            logging.info(f"Found Org ID {org_id}")
+            config_data = load_configuration(config_file)
+        else:
+            config_data = None
 
     if config_data is None and config_url:
         logging.info("Configuration file not found. Fetching configuration...")
