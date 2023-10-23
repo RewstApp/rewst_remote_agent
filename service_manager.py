@@ -23,6 +23,7 @@ def get_executable_path(org_id):
 def install_service(org_id):
     service_name = get_service_name(org_id)
     executable_path = get_executable_path(org_id)
+    display_name = f"Rewst Remote Agent {org_id}"
 
     # Copy the executable to the appropriate location
     if os_type == "Windows":
@@ -38,6 +39,7 @@ def install_service(org_id):
         win32serviceutil.InstallService(
             executable_path,
             service_name,
+            displayName=display_name
             startType=win32service.SERVICE_AUTO_START
         )
     elif os_type == "Linux":
