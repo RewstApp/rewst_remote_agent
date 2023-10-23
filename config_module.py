@@ -7,6 +7,7 @@ import socket
 import asyncio
 import uuid
 import psutil
+import os
 
 logging.basicConfig(level=logging.INFO)
 
@@ -17,6 +18,38 @@ REQUIRED_KEYS = [
     'rewst_engine_host',
     'rewst_org_id'
 ]
+
+
+def get_config_file_path():
+    os_type = platform.system()
+    if os_type == "Windows":
+        config_dir = os.path.expanduser("~\\AppData\\Local\\RewstRemoteAgent")
+    elif os_type == "Linux":
+        config_dir = "/etc/rewst_remote_agent"
+    elif os_type == "Darwin":
+        config_dir = os.path.expanduser("~/Library/Application Support/RewstRemoteAgent")
+    
+    if not os.path.exists(config_dir):
+        os.makedirs(config_dir, exist_ok=True)
+    
+    config_file_path = os.path.join(config_dir, "config.json")
+    return config_file_path
+
+
+def save_configuration(config_data):
+    config_file_path = get_config_file_path()
+    with open(config_file_path, 'w') as f:
+        json.dump(config_data, f, indent=4)
+
+
+def load_configuration():
+    config_file_path = get_config_file_path()
+    try:
+        with open(config_file_path) as f:
+            return json.load(f)
+    except FileNotFoundError:
+        return None
+    
 
 async def fetch_configuration(config_url, secret=None):
     # Collect host information
@@ -68,19 +101,6 @@ async def fetch_configuration(config_url, secret=None):
             await asyncio.sleep(interval)
         logging.info(f"Moving to next retry phase: {interval}s interval for {max_retries} retries.")
 
-
-def save_configuration(config_data, file_path='config.json'):
-    # Save configuration to a file
-    with open(file_path, 'w') as f:
-        json.dump(config_data, f, indent=4)
-
-def load_configuration(file_path='config.json'):
-    # Load configuration from a file
-    try:
-        with open(file_path) as f:
-            return json.load(f)
-    except FileNotFoundError:
-        return None
  
 def get_mac_address():
     # Returns the MAC address of the host without colons
@@ -95,6 +115,7 @@ def is_domain_controller():
 
 async def main():
     parser = argparse.ArgumentParser(description='Fetch and save configuration.')
+    parser.add_argument('--config-url', type=str, help='URL to fetch the configuration from.')
     parser.add_argument('--config-secret', type=str, help='Secret to use when fetching the configuration.')
     args = parser.parse_args()
 

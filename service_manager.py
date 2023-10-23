@@ -1,74 +1,104 @@
-import os
 import platform
+import os
+import shutil
 
 os_type = platform.system()
 
+def get_service_name(org_id):
+    return f"Rewst_Remote_Agent_{org_id}"
 
-def install_service():
+def get_executable_path(org_id):
     if os_type == "Windows":
-        # For Windows, using pywin32
+        executable_path = os.path.expanduser(f"~\\AppData\\Local\\RewstRemoteAgent\\rewst_remote_agent_{org_id}.win.exe")
+    elif os_type == "Linux":
+        executable_path = f"/usr/local/bin/rewst_remote_agent_{org_id}.linux.bin"
+    elif os_type == "Darwin":
+        executable_path = os.path.expanduser(f"~/Library/Application Support/RewstRemoteAgent/rewst_remote_agent_{org_id}.macos.bin")
+    return executable_path
+
+def install_service(org_id):
+    service_name = get_service_name(org_id)
+    executable_path = get_executable_path(org_id)
+
+    # Copy the executable to the appropriate location
+    if os_type == "Windows":
+        shutil.copy("rewst_remote_agent.win.exe", executable_path)
+    elif os_type == "Linux":
+        shutil.copy("rewst_remote_agent.linux.bin", executable_path)
+    elif os_type == "Darwin":
+        shutil.copy("rewst_remote_agent.macos.bin", executable_path)
+
+    # Install the service
+    if os_type == "Windows":
         import win32serviceutil
         win32serviceutil.InstallService(
-            "rewst_remote_agent.exe",  # Your script
-            "Rewst_Remote_Agent",  # Service name
+            executable_path,
+            service_name,
             startType=win32service.SERVICE_AUTO_START
         )
     elif os_type == "Linux":
-        # For Linux, using systemd
         systemd_service_content = f"""
         [Unit]
-        Description=RewstRemoteAgent
+        Description={service_name}
 
         [Service]
-        ExecStart={os.path.abspath(__file__)}
+        ExecStart={executable_path}
         Restart=always
 
         [Install]
         WantedBy=multi-user.target
         """
-        with open("/etc/systemd/system/rewst_remote_agent.service", "w") as f:
+        with open(f"/etc/systemd/system/{service_name}.service", "w") as f:
             f.write(systemd_service_content)
         os.system("systemctl daemon-reload")
-        os.system("systemctl enable rewst_remote_agent")
+        os.system(f"systemctl enable {service_name}")
     elif os_type == "Darwin":
-        # For macOS, using launchd
         launchd_plist_content = f"""
         <?xml version="1.0" encoding="UTF-8"?>
         <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
         <plist version="1.0">
         <dict>
             <key>Label</key>
-            <string>com.rewst_remote_agent</string>
+            <string>{service_name}</string>
             <key>ProgramArguments</key>
             <array>
-                <string>{os.path.abspath(__file__)}</string>
+                <string>{executable_path}</string>
             </array>
             <key>RunAtLoad</key>
             <true/>
         </dict>
         </plist>
         """
-        with open(f"{os.path.expanduser('~')}/Library/LaunchAgents/com.rewst_remote_agent.plist", "w") as f:
+        with open(f"{os.path.expanduser('~/Library/LaunchAgents')}/{service_name}.plist", "w") as f:
             f.write(launchd_plist_content)
 
-def uninstall_service():
+def uninstall_service(org_id):
+    service_name = get_service_name(org_id)
     if os_type == "Windows":
         import win32serviceutil
-        win32serviceutil.RemoveService("Rewst_Remote_Agent")
+        win32serviceutil.RemoveService(service_name)
     elif os_type == "Linux":
-        os.system("systemctl disable rewst_remote_agent")
-        os.system("rm /etc/systemd/system/rewst_remote_agent.service")
+        os.system(f"systemctl disable {service_name}")
+        os.system(f"rm /etc/systemd/system/{service_name}.service")
         os.system("systemctl daemon-reload")
     elif os_type == "Darwin":
-        os.system("launchctl unload ~/Library/LaunchAgents/com.rewst_remote_agent.plist")
-        os.system("rm ~/Library/LaunchAgents/com.rewst_remote_agent.plist")
+        os.system(f"launchctl unload -w {os.path.expanduser('~/Library/LaunchAgents')}/{service_name}.plist")
+        os.system(f"rm {os.path.expanduser('~/Library/LaunchAgents')}/{service_name}.plist")
 
-def restart_service():
+def start_service(org_id):
+    service_name = get_service_name(org_id)
     if os_type == "Windows":
-        import win32serviceutil
-        win32serviceutil.RestartService("Rewst_Remote_Agent")
-    elif os_type == "Linux":
-        os.system("systemctl restart rewst_remote_agent")
-    elif os_type == "Darwin":
-        os.system("launchctl unload ~/Library/LaunchAgents/com.rewst_remote_agent.plist")
-        os.system("launchctl load ~/Library/LaunchAgents/com.rewst_remote_agent.plist")
+        os.system(f"net start {service_name}")
+    elif os_type == "Linux" or os_type == "Darwin":
+        os.system(f"systemctl start {service_name}")
+
+def stop_service(org_id):
+    service_name = get_service_name(org_id)
+    if os_type == "Windows":
+        os.system(f"net stop {service_name}")
+    elif os_type == "Linux" or os_type == "Darwin":
+        os.system(f"systemctl stop {service_name}")
+
+def restart_service(org_id):
+    stop_service(org_id)
+    start_service(org_id)

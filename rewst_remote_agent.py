@@ -13,6 +13,14 @@ import traceback
 import service_manager
 from concurrent.futures import ThreadPoolExecutor
 from azure.iot.device.aio import IoTHubDeviceClient
+from service_manager import (
+    install_service,
+    uninstall_service,
+    start_service,
+    stop_service,
+    restart_service,
+)
+from config_module import load_configuration, save_configuration
 
 # Set the status update interval and get the operating system type
 status_update_checkin_time = 600
@@ -196,53 +204,76 @@ async def handle_commands(commands, post_url=None, interpreter_override=None):
     await device_client.send_message(message_json)
     logging.info("Message sent!")
 
+
 # Main async function
-async def main(check_mode=False, config_url=None, config_secret=None):
+async def main(
+    check_mode=False,
+    config_url=None,
+    config_secret=None,
+    install_service_flag=False,
+    uninstall_service_flag=False,
+    start_service_flag=False,
+    stop_service_flag=False,
+    restart_service_flag=False,
+):
 
     global rewst_engine_host
-    config_data = load_config()
+    global device_client
+
+    # Load configuration from file
+    config_data = load_configuration()
     if config_data is None and config_url:
         logging.info("Configuration file not found. Fetching configuration...")
-        config_data = await config_module.fetch_configuration(config_url, config_secret)
-        config_module.save_configuration(config_data)
-        logging.info(f"Configuration saved to config.json")
+        config_data = await fetch_configuration(config_url, config_secret)
+        save_configuration(config_data)
+        logging.info(f"Configuration saved to {get_config_path()}")
+        install_service(config_data['rewst_org_id'])  # Install the service if config_url is provided
+        logging.info("The service has been installed.")
     elif config_data is None:
         logging.info("No configuration found and no config URL provided.")
         exit(1)
 
+    # Retrieve org_id from the configuration
+    org_id = config_data['rewst_org_id']
+
+    # Service management
+    if install_service_flag:
+        install_service(org_id)
+        start_service(org_id)  # Start the service after installation
+    elif uninstall_service_flag:
+        uninstall_service(org_id)
+    elif start_service_flag:
+        start_service(org_id)
+    elif stop_service_flag:
+        stop_service(org_id)
+    elif restart_service_flag:
+        restart_service(org_id)
+
+    # Exit if any of the service management flags are set
+    if any([
+        install_service_flag,
+        uninstall_service_flag,
+        start_service_flag,
+        stop_service_flag,
+        restart_service_flag,
+    ]):
+        exit(0)
 
     # Connect to IoT Hub
     connection_string = get_connection_string(config_data)
     rewst_engine_host = config_data['rewst_engine_host']
     rewst_org_id = config_data['rewst_org_id']
-    global device_client
     device_client = IoTHubDeviceClient.create_from_connection_string(connection_string)
     logging.info("Connecting to IoT Hub...")
     await device_client.connect()
     logging.info("Connected!")
-    if check_mode:
-        # Check mode for testing communication
-        logging.info("Check mode: Sending a test message...")
-        e = None
-        try:
-            await device_client.send_message(json.dumps({"test_message": "Test message from device"}))
-            logging.info("Check mode: Communication test successful. Test message sent.")
-        except Exception as ex:
-            e = ex
-            logging.info(f"Check mode: Communication test failed. Could not send test message: {e}")
-        finally:
-            await device_client.disconnect()
-            exit(0 if not e else 1)
-    else:
-        # Set the message handler and start the status update task
-        device_client.on_message_received = message_handler
-        async def status_update_task():
-            while True:
-                await send_status_update()
-                await asyncio.sleep(status_update_checkin_time)
-        status_update_task = asyncio.create_task(status_update_task())
-        stop_event = asyncio.Event()
-        await stop_event.wait()
+
+    # ... Rest of your code ...
+
+    stop_event = asyncio.Event()
+    await stop_event.wait()
+
+
 
 # Entry point of the script
 if __name__ == "__main__":
@@ -253,17 +284,15 @@ if __name__ == "__main__":
     parser.add_argument('--install-service', action='store_true', help='Install the service.')
     parser.add_argument('--uninstall-service', action='store_true', help='Uninstall the service.')
     parser.add_argument('--restart-service', action='store_true', help='Restart the service.')
+    parser.add_argument('--stop-service', action='store_true', help='Stop the service.')
 
-
-    # Process commandline arguments
     args = parser.parse_args()
-
-    if args.install_service:
-        service_manager.install_service()
-
-    if args.uninstall_service:
-        service_manager.uninstall_service()
-    elif args.restart_service:
-        service_manager.restart_service()
-    else:
-        asyncio.run(main(check_mode=args.check, config_url=args.config_url, config_secret=args.config_secret))
+    asyncio.run(main(
+        check_mode=args.check,
+        config_url=args.config_url,
+        config_secret=args.config_secret,
+        install_service=args.install_service,
+        uninstall_service=args.uninstall_service,
+        restart_service=args.restart_service,
+        stop_service=args.stop_service
+    ))
