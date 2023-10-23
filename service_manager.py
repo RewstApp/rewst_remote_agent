@@ -2,6 +2,7 @@ import logging
 import platform
 import os
 import shutil
+from config_module import get_config_file_path
 
 os_type = platform.system()
 
@@ -36,10 +37,11 @@ def get_executable_path(org_id):
         executable_path = os.path.expanduser(f"~/Library/Application Support/RewstRemoteAgent/rewst_remote_agent_{org_id}.macos.bin")
     return executable_path
 
-def install_service(org_id):
+def install_service(org_id, config_file=None):
     service_name = get_service_name(org_id)
     executable_path = get_executable_path(org_id)
     display_name = f"Rewst Remote Agent {org_id}"
+    config_file_path = get_config_file_path(org_id,config_file)
 
     # Copy the executable to the appropriate location
     if os_type == "Windows":
@@ -51,15 +53,14 @@ def install_service(org_id):
 
     # Check if the service is already installed
     if is_service_installed(service_name):
-        logging.info(f"Service {service_name} is already installed. Restarting service.")
-        restart_service(org_id)
-        return
+        logging.info(f"Service {service_name} is already installed. Reinstalling service.")
+        uninstall_service(org_id)
 
     # Install the service
     if os_type == "Windows":
         import win32serviceutil
         win32serviceutil.InstallService(
-            executable_path,
+            f"{executable_path} --config-file {config_file_path}",
             service_name,
             displayName=display_name,
             startType=win32service.SERVICE_AUTO_START
@@ -70,7 +71,7 @@ def install_service(org_id):
         Description={service_name}
 
         [Service]
-        ExecStart={executable_path}
+        ExecStart={executable_path} --config-file {config_file_path}
         Restart=always
 
         [Install]
@@ -91,6 +92,8 @@ def install_service(org_id):
             <key>ProgramArguments</key>
             <array>
                 <string>{executable_path}</string>
+                <string>--config-file</string>
+                <string>{config_file_path}</string>
             </array>
             <key>RunAtLoad</key>
             <true/>

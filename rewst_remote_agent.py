@@ -209,6 +209,7 @@ async def handle_commands(commands, post_url=None, interpreter_override=None):
 # Main async function
 async def main(
     check_mode=False,
+    config_file=None,
     config_url=None,
     config_secret=None,
     install_service_flag=False,
@@ -227,8 +228,9 @@ async def main(
     match = pattern.search(executable_path)
     if match:
         org_id = match.group(1)
-        config_data = load_configuration(org_id)
-    else: config_data = None
+        config_data = load_configuration(config_file)
+    else:
+        config_data = None
 
     if config_data is None and config_url:
         logging.info("Configuration file not found. Fetching configuration...")
@@ -288,6 +290,7 @@ async def main(
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Run the IoT Hub device client.')
     parser.add_argument('--check', action='store_true', help='Run in check mode to test communication')
+    parser.add_argument('--config-file', help='Path to the configuration file.')
     parser.add_argument('--config-url', help='URL to fetch the configuration from.')
     parser.add_argument('--config-secret', help='Secret to use when fetching the configuration.')
     parser.add_argument('--install-service', action='store_true', help='Install the service.')
@@ -298,6 +301,7 @@ if __name__ == "__main__":
     args = parser.parse_args()
     asyncio.run(main(
         check_mode=args.check,
+        config_file=args.config_file,
         config_url=args.config_url,
         config_secret=args.config_secret,
         install_service_flag=args.install_service,

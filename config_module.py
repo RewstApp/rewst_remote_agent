@@ -20,7 +20,9 @@ REQUIRED_KEYS = [
 ]
 
 
-def get_config_file_path(org_id):
+def get_config_file_path(org_id=None, config_file=None):
+    if config_file:
+        return config_file
     os_type = platform.system()
     if os_type == "Windows":
         config_dir = os.path.expanduser(f"~\\AppData\\Local\\RewstRemoteAgent\\{org_id}")
@@ -36,15 +38,15 @@ def get_config_file_path(org_id):
     return config_file_path
 
 
-def save_configuration(config_data):
+def save_configuration(config_data, config_file=None):
     org_id = config_data["rewst_org_id"]
-    config_file_path = get_config_file_path(org_id)
+    config_file_path = get_config_file_path(org_id, config_file)
     with open(config_file_path, 'w') as f:
         json.dump(config_data, f, indent=4)
 
 
-def load_configuration(org_id=None):
-    config_file_path = get_config_file_path(org_id)
+def load_configuration(org_id=None, config_file=None):
+    config_file_path = get_config_file_path(org_id, config_file)
     try:
         with open(config_file_path) as f:
             return json.load(f)
