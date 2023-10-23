@@ -271,7 +271,7 @@ async def main(
         uninstall_service_flag,
         start_service_flag,
         stop_service_flag,
-        restart_service_flag,
+        restart_service_flag
     ]):
         exit(0)
 

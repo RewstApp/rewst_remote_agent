@@ -14,7 +14,8 @@ if os_type == "Windows":
 def get_service_name(org_id):
     return f"Rewst_Remote_Agent_{org_id}"
 
-def is_service_installed(service_name):
+def is_service_installed(org_id=None):
+    service_name = get_service_name(org_id)
     if os_type == "Windows":
         import win32serviceutil
         try:
@@ -40,7 +41,8 @@ def get_executable_path(org_id):
 
 def install_service(org_id, config_file=None):
     # Uninstall the service if it's already installed
-    if is_service_installed(service_name):  # Assuming you have a function to check if service is installed
+    if is_service_installed(org_id):
+        logging.info(f"Service is already installed. Reinstalling service.")
         uninstall_service(org_id)
         # Wait for the service to be deleted
         while is_service_installed(service_name):
@@ -58,10 +60,6 @@ def install_service(org_id, config_file=None):
     elif os_type == "Darwin":
         shutil.copy("rewst_remote_agent.macos.bin", executable_path)
 
-    # Check if the service is already installed
-    if is_service_installed(service_name):
-        logging.info(f"Service {service_name} is already installed. Reinstalling service.")
-        uninstall_service(org_id)
 
     # Install the service
     if os_type == "Windows":
