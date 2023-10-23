@@ -7,7 +7,6 @@ import socket
 import asyncio
 import uuid
 import psutil
-import re
 import os
 
 logging.basicConfig(level=logging.INFO)
@@ -24,11 +23,11 @@ REQUIRED_KEYS = [
 def get_config_file_path(org_id):
     os_type = platform.system()
     if os_type == "Windows":
-        config_dir = os.path.expanduser("~\\AppData\\Local\\RewstRemoteAgent")
+        config_dir = os.path.expanduser(f"~\\AppData\\Local\\RewstRemoteAgent\\{org_id}")
     elif os_type == "Linux":
-        config_dir = "/etc/rewst_remote_agent"
+        config_dir = f"/etc/rewst_remote_agent/{org_id}"
     elif os_type == "Darwin":
-        config_dir = os.path.expanduser("~/Library/Application Support/RewstRemoteAgent")
+        config_dir = os.path.expanduser(f"~/Library/Application Support/RewstRemoteAgent/{org_id}")
     
     if not os.path.exists(config_dir):
         os.makedirs(config_dir)
@@ -38,13 +37,14 @@ def get_config_file_path(org_id):
 
 
 def save_configuration(config_data):
-    config_file_path = get_config_file_path()
+    org_id = config_data["rewst_org_id"]
+    config_file_path = get_config_file_path(org_id)
     with open(config_file_path, 'w') as f:
         json.dump(config_data, f, indent=4)
 
 
-def load_configuration():
-    config_file_path = get_config_file_path()
+def load_configuration(org_id=None):
+    config_file_path = get_config_file_path(org_id)
     try:
         with open(config_file_path) as f:
             return json.load(f)
@@ -114,21 +114,12 @@ def is_domain_controller():
     # We'll need to implement logic to determine if the host is a domain controller
     pass
 
-async def main():
+async def main(org_id):
     parser = argparse.ArgumentParser(description='Fetch and save configuration.')
     parser.add_argument('--config-url', type=str, help='URL to fetch the configuration from.')
     parser.add_argument('--config-secret', type=str, help='Secret to use when fetching the configuration.')
     args = parser.parse_args()
 
-
-    executable_path = os.path.basename(__file__)  # Gets the file name of the current script
-    pattern = re.compile(r'rewst_remote_agent_(.+?)\.')
-    match = pattern.search(executable_path)
-    if match:
-        org_id = match.group(1)
-        config = load_configuration(org_id)
-    else:
-        config = None
 
     if config is None:
         print("Configuration file not found. Fetching configuration from Rewst...")

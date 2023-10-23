@@ -8,6 +8,7 @@ import logging
 import os
 import platform
 import psutil
+import re
 import config_module
 import traceback
 from concurrent.futures import ThreadPoolExecutor
@@ -220,14 +221,22 @@ async def main(
     global rewst_engine_host
     global device_client
 
-    # Load configuration from file
-    config_data = load_configuration()
+    # Get Org ID and Config
+    executable_path = os.path.basename(__file__)  # Gets the file name of the current script
+    pattern = re.compile(r'rewst_remote_agent_(.+?)\.')
+    match = pattern.search(executable_path)
+    if match:
+        org_id = match.group(1)
+        config_data = load_configuration(org_id)
+    else: config_data = None
+
     if config_data is None and config_url:
         logging.info("Configuration file not found. Fetching configuration...")
         config_data = await fetch_configuration(config_url, config_secret)
         save_configuration(config_data)
+        org_id = config_data['rewst_org_id']
         logging.info(f"Configuration saved to {config_module.get_config_file_path(org_id)}")
-        install_service(config_data['rewst_org_id'])  # Install the service if config_url is provided
+        install_service(org_id)  # Install the service if config_url is provided
         logging.info("The service has been installed.")
     elif config_data is None:
         logging.info("No configuration found and no config URL provided.")
