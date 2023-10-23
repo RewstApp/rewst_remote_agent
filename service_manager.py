@@ -4,6 +4,10 @@ import shutil
 
 os_type = platform.system()
 
+if os_type == "Windows":
+    import win32service
+    import win32serviceutil
+
 def get_service_name(org_id):
     return f"Rewst_Remote_Agent_{org_id}"
 
