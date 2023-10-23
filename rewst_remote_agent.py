@@ -10,7 +10,6 @@ import platform
 import psutil
 import config_module
 import traceback
-import service_manager
 from concurrent.futures import ThreadPoolExecutor
 from azure.iot.device.aio import IoTHubDeviceClient
 from service_manager import (
