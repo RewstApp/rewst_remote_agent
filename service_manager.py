@@ -2,6 +2,7 @@ import logging
 import platform
 import os
 import shutil
+import time
 from config_module import get_config_file_path
 
 os_type = platform.system()
@@ -38,6 +39,12 @@ def get_executable_path(org_id):
     return executable_path
 
 def install_service(org_id, config_file=None):
+    # Uninstall the service if it's already installed
+    if is_service_installed(service_name):  # Assuming you have a function to check if service is installed
+        uninstall_service(org_id)
+        # Wait for the service to be deleted
+        while is_service_installed(service_name):
+            time.sleep(2)  # wait for 2 seconds
     service_name = get_service_name(org_id)
     executable_path = get_executable_path(org_id)
     display_name = f"Rewst Remote Agent {org_id}"
@@ -106,6 +113,10 @@ def install_service(org_id, config_file=None):
 
 def uninstall_service(org_id):
     service_name = get_service_name(org_id)
+    logging.info(f"Uninstalling service {service_name}.")
+
+    stop_service(org_id)
+         
     if os_type == "Windows":
         import win32serviceutil
         win32serviceutil.RemoveService(service_name)
@@ -131,6 +142,12 @@ def start_service(org_id):
 def stop_service(org_id):
     service_name = get_service_name(org_id)
     if os_type == "Windows":
+        try:
+            win32serviceutil.StopService(service_name)
+        except pywintypes.error as e:
+            # handle any exceptions as needed, for example:
+            if e.winerror != winerror.ERROR_SERVICE_DOES_NOT_EXIST:
+                raise            
         os.system(f"net stop {service_name}")
     elif os_type == "Linux":
         os.system(f"systemctl stop {service_name}")
