@@ -7,6 +7,7 @@ import socket
 import asyncio
 import uuid
 import psutil
+import re
 import os
 
 logging.basicConfig(level=logging.INFO)
@@ -23,18 +24,17 @@ REQUIRED_KEYS = [
 def get_config_file_path(org_id):
     os_type = platform.system()
     if os_type == "Windows":
-        config_dir = os.path.expanduser(f"~\\AppData\\Local\\RewstRemoteAgent\\{org_id}")
+        config_dir = os.path.expanduser("~\\AppData\\Local\\RewstRemoteAgent")
     elif os_type == "Linux":
-        config_dir = f"/etc/rewst_remote_agent/{org_id}"
+        config_dir = "/etc/rewst_remote_agent"
     elif os_type == "Darwin":
-        config_dir = os.path.expanduser(f"~/Library/Application Support/RewstRemoteAgent/{org_id}")
+        config_dir = os.path.expanduser("~/Library/Application Support/RewstRemoteAgent")
     
     if not os.path.exists(config_dir):
         os.makedirs(config_dir)
     
     config_file_path = os.path.join(config_dir, "config.json")
     return config_file_path
-
 
 
 def save_configuration(config_data):
@@ -120,7 +120,16 @@ async def main():
     parser.add_argument('--config-secret', type=str, help='Secret to use when fetching the configuration.')
     args = parser.parse_args()
 
-    config = load_configuration()
+
+    executable_path = os.path.basename(__file__)  # Gets the file name of the current script
+    pattern = re.compile(r'rewst_remote_agent_(.+?)\.')
+    match = pattern.search(executable_path)
+    if match:
+        org_id = match.group(1)
+        config = load_configuration(org_id)
+    else:
+        config = None
+
     if config is None:
         print("Configuration file not found. Fetching configuration from Rewst...")
         config_url = args.config_url
