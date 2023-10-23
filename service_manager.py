@@ -11,6 +11,21 @@ if os_type == "Windows":
 def get_service_name(org_id):
     return f"Rewst_Remote_Agent_{org_id}"
 
+def is_service_installed(service_name):
+    if os_type == "Windows":
+        import win32serviceutil
+        try:
+            win32serviceutil.QueryServiceStatus(service_name)
+            return True  # Service is installed
+        except Exception as e:
+            return False  # Service is not installed
+    elif os_type == "Linux":
+        service_path = f"/etc/systemd/system/{service_name}.service"
+        return os.path.exists(service_path)
+    elif os_type == "Darwin":
+        plist_path = f"{os.path.expanduser('~/Library/LaunchAgents')}/{service_name}.plist"
+        return os.path.exists(plist_path)
+    
 def get_executable_path(org_id):
     if os_type == "Windows":
         executable_path = os.path.expanduser(f"~\\AppData\\Local\\RewstRemoteAgent\\rewst_remote_agent_{org_id}.win.exe")
@@ -32,6 +47,12 @@ def install_service(org_id):
         shutil.copy("rewst_remote_agent.linux.bin", executable_path)
     elif os_type == "Darwin":
         shutil.copy("rewst_remote_agent.macos.bin", executable_path)
+
+    # Check if the service is already installed
+    if is_service_installed(service_name):
+        logging.info(f"Service {service_name} is already installed. Restarting service.")
+        restart_service(org_id)
+        return
 
     # Install the service
     if os_type == "Windows":

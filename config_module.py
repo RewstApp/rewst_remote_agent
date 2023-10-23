@@ -20,20 +20,21 @@ REQUIRED_KEYS = [
 ]
 
 
-def get_config_file_path():
+def get_config_file_path(org_id):
     os_type = platform.system()
     if os_type == "Windows":
-        config_dir = os.path.expanduser("~\\AppData\\Local\\RewstRemoteAgent")
+        config_dir = os.path.expanduser(f"~\\AppData\\Local\\RewstRemoteAgent\\{org_id}")
     elif os_type == "Linux":
-        config_dir = "/etc/rewst_remote_agent"
+        config_dir = f"/etc/rewst_remote_agent/{org_id}"
     elif os_type == "Darwin":
-        config_dir = os.path.expanduser("~/Library/Application Support/RewstRemoteAgent")
+        config_dir = os.path.expanduser(f"~/Library/Application Support/RewstRemoteAgent/{org_id}")
     
     if not os.path.exists(config_dir):
-        os.makedirs(config_dir, exist_ok=True)
+        os.makedirs(config_dir)
     
     config_file_path = os.path.join(config_dir, "config.json")
     return config_file_path
+
 
 
 def save_configuration(config_data):
