@@ -226,7 +226,7 @@ async def main(
         logging.info("Configuration file not found. Fetching configuration...")
         config_data = await fetch_configuration(config_url, config_secret)
         save_configuration(config_data)
-        logging.info(f"Configuration saved to {config_module.get_config_file_path()}")
+        logging.info(f"Configuration saved to {config_module.get_config_file_path(org_id)}")
         install_service(config_data['rewst_org_id'])  # Install the service if config_url is provided
         logging.info("The service has been installed.")
     elif config_data is None:
