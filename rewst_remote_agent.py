@@ -127,6 +127,7 @@ def execute_commands(commands, post_url=None, interpreter_override=None):
     # Create the command string based on the interpreter
     command = f'{interpreter} -c "{commands}"'
 
+    logging.info(f"Running Commands:\n{command}")
     # Execute the command
     try:
         logging.info("Executing Commands")
