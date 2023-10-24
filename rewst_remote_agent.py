@@ -9,6 +9,7 @@ import os
 import platform
 import psutil
 import re
+import subprocess
 import sys
 import config_module
 # import traceback
@@ -193,75 +194,81 @@ async def main(
     global rewst_engine_host
     global device_client
 
-    if config_file:
-        logging(f"Using config file {config_file}.")
-        config_data = load_configuration(config_file)
-    else:
-        # Get Org ID for Config
-        executable_path = os.path.basename(__file__)  # Gets the file name of the current script
-        pattern = re.compile(r'rewst_remote_agent_(.+?)\.')
-        match = pattern.search(executable_path)
-        if match:
-            org_id = match.group(1)
-            logging.info(f"Found Org ID {org_id}")
+    try:
+        if config_file:
+            logging(f"Using config file {config_file}.")
             config_data = load_configuration(config_file)
         else:
-            config_data = None
+            # Get Org ID for Config
+            executable_path = os.path.basename(__file__)  # Gets the file name of the current script
+            pattern = re.compile(r'rewst_remote_agent_(.+?)\.')
+            match = pattern.search(executable_path)
+            if match:
+                org_id = match.group(1)
+                logging.info(f"Found Org ID {org_id}")
+                config_data = load_configuration(config_file)
+            else:
+                config_data = None
 
-    if config_data is None and config_url:
-        logging.info("Configuration file not found. Fetching configuration...")
-        config_data = await fetch_configuration(config_url, config_secret)
-        save_configuration(config_data)
+        if config_data is None and config_url:
+            logging.info("Configuration file not found. Fetching configuration...")
+            config_data = await fetch_configuration(config_url, config_secret)
+            save_configuration(config_data)
+            org_id = config_data['rewst_org_id']
+            logging.info(f"Configuration saved to {config_module.get_config_file_path(org_id)}")
+            # install_service(org_id)  # Install the service if config_url is provided
+            # logging.info("The service has been installed.")
+        elif config_data is None:
+            logging.info("No configuration found and no config URL provided.")
+            sys.exit(1)
+
+        # Retrieve org_id from the configuration
         org_id = config_data['rewst_org_id']
-        logging.info(f"Configuration saved to {config_module.get_config_file_path(org_id)}")
-        # install_service(org_id)  # Install the service if config_url is provided
-        # logging.info("The service has been installed.")
-    elif config_data is None:
-        logging.info("No configuration found and no config URL provided.")
-        sys.exit(1)
 
-    # Retrieve org_id from the configuration
-    org_id = config_data['rewst_org_id']
+        # Service management
+        if install_service_flag and not config_url:
+            install_service(org_id)
+            start_service(org_id)  # Start the service after installation
+        elif uninstall_service_flag:
+            uninstall_service(org_id)
+        elif start_service_flag:
+            start_service(org_id)
+        elif stop_service_flag:
+            stop_service(org_id)
+        elif restart_service_flag:
+            restart_service(org_id)
 
-    # Service management
-    if install_service_flag and not config_url:
-        install_service(org_id)
-        start_service(org_id)  # Start the service after installation
-    elif uninstall_service_flag:
-        uninstall_service(org_id)
-    elif start_service_flag:
-        start_service(org_id)
-    elif stop_service_flag:
-        stop_service(org_id)
-    elif restart_service_flag:
-        restart_service(org_id)
+        # Exit if any of the service management flags are set
+        if any([
+            install_service_flag,
+            uninstall_service_flag,
+            start_service_flag,
+            stop_service_flag,
+            restart_service_flag
+        ]):
+            sys.exit(0)
 
-    # Exit if any of the service management flags are set
-    if any([
-        install_service_flag,
-        uninstall_service_flag,
-        start_service_flag,
-        stop_service_flag,
-        restart_service_flag
-    ]):
-        sys.exit(0)
+        # Connect to IoT Hub
+        connection_string = get_connection_string(config_data)
+        rewst_engine_host = config_data['rewst_engine_host']
+        rewst_org_id = config_data['rewst_org_id']
+        device_client = IoTHubDeviceClient.create_from_connection_string(connection_string)
+        logging.info("Connecting to IoT Hub...")
+        
+        # Await client connection
+        await device_client.connect()
+        logging.info("Connected!")
 
-    # Connect to IoT Hub
-    connection_string = get_connection_string(config_data)
-    rewst_engine_host = config_data['rewst_engine_host']
-    rewst_org_id = config_data['rewst_org_id']
-    device_client = IoTHubDeviceClient.create_from_connection_string(connection_string)
-    logging.info("Connecting to IoT Hub...")
+        # Await incoming messages
+        await setup_message_handler(device_client)
+
+        stop_event = asyncio.Event()
     
-    # Await client connection
-    await device_client.connect()
-    logging.info("Connected!")
 
-    # Await incoming messages
-    await setup_message_handler(device_client)
-
-    stop_event = asyncio.Event()
-    await stop_event.wait()
+        await stop_event.wait()
+    except KeyboardInterrupt:
+        logging.info("Received keyboard interrupt. Shutting down...")
+        await device_client.disconnect()
 
 
 
