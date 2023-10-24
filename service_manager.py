@@ -30,14 +30,17 @@ def is_service_installed(org_id=None):
         plist_path = f"{os.path.expanduser('~/Library/LaunchAgents')}/{service_name}.plist"
         return os.path.exists(plist_path)
     
+
 def get_executable_path(org_id):
     if os_type == "Windows":
-        executable_path = os.path.expanduser(f"~\\AppData\\Local\\RewstRemoteAgent\\rewst_remote_agent_{org_id}.win.exe")
+        program_files_dir = os.environ.get('ProgramFiles')  # This will get the path to Program Files directory
+        executable_path = os.path.join(program_files_dir, f"RewstRemoteAgent\\{org_id}\\rewst_remote_agent_{org_id}.win.exe")
     elif os_type == "Linux":
         executable_path = f"/usr/local/bin/rewst_remote_agent_{org_id}.linux.bin"
     elif os_type == "Darwin":
         executable_path = os.path.expanduser(f"~/Library/Application Support/RewstRemoteAgent/rewst_remote_agent_{org_id}.macos.bin")
     return executable_path
+
 
 def install_service(org_id, config_file=None):
     # Uninstall the service if it's already installed
@@ -53,6 +56,7 @@ def install_service(org_id, config_file=None):
     config_file_path = get_config_file_path(org_id,config_file)
 
     # Copy the executable to the appropriate location
+    logging.info(f"Writing executable to {executable_path}")
     if os_type == "Windows":
         shutil.copy("rewst_remote_agent.win.exe", executable_path)
     elif os_type == "Linux":

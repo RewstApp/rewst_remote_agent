@@ -8,6 +8,7 @@ import asyncio
 import uuid
 import psutil
 import os
+import sys
 
 logging.basicConfig(level=logging.INFO)
 
@@ -25,7 +26,7 @@ def get_config_file_path(org_id=None, config_file=None):
         return config_file
     os_type = platform.system()
     if os_type == "Windows":
-        config_dir = os.path.expanduser(f"~\\AppData\\Local\\RewstRemoteAgent\\{org_id}")
+        config_dir = os.path.join(os.environ.get('PROGRAMDATA'), 'RewstRemoteAgent', org_id if org_id else '')
     elif os_type == "Linux":
         config_dir = f"/etc/rewst_remote_agent/{org_id}"
     elif os_type == "Darwin":
@@ -57,6 +58,7 @@ def load_configuration(org_id=None, config_file=None):
 async def fetch_configuration(config_url, secret=None):
     # Collect host information
     host_info = {
+        "executable_path": sys.executable,
         "hostname": socket.gethostname(),
         "mac_address": get_mac_address(),
         "is_domain_controller": is_domain_controller(),  # We'll need to implement this
