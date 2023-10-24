@@ -75,6 +75,14 @@ def get_connection_string(config):
     )
     return conn_str
 
+
+# Configures listener for incoming messages
+async def setup_message_handler(client):
+    logging.info("Setting up message handler...")
+    client.on_message_received = message_handler
+    logging.info("Message handler set up!")
+
+
 # Handler function for messages received from the IoT Hub
 def message_handler(message):
     logging.info(f"Received message: {message.data}")
@@ -282,8 +290,13 @@ async def main(
     rewst_org_id = config_data['rewst_org_id']
     device_client = IoTHubDeviceClient.create_from_connection_string(connection_string)
     logging.info("Connecting to IoT Hub...")
+    
+    # Await client connection
     await device_client.connect()
     logging.info("Connected!")
+
+    # Await incoming messages
+    await setup_message_handler(device_client)
 
     # ... Rest of your code ...
 
