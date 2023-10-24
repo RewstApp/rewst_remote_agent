@@ -302,6 +302,7 @@ if __name__ == "__main__":
     parser.add_argument('--config-secret', help='Secret to use when fetching the configuration.')
     parser.add_argument('--install-service', action='store_true', help='Install the service.')
     parser.add_argument('--uninstall-service', action='store_true', help='Uninstall the service.')
+    parser.add_argument('--start-service', action='store_true', help='Start the service.')
     parser.add_argument('--restart-service', action='store_true', help='Restart the service.')
     parser.add_argument('--stop-service', action='store_true', help='Stop the service.')
 
@@ -314,7 +315,7 @@ if __name__ == "__main__":
         install_service_flag=args.install_service,
         uninstall_service_flag=args.uninstall_service,
         start_service_flag=args.start_service,
-        stop_service_flag=args.restart_service,
-        restart_service_flag=args.stop_service
+        stop_service_flag=args.stop_service,
+        restart_service_flag=args.restart_service
     ))
 
