@@ -9,6 +9,7 @@ import os
 import platform
 import psutil
 import re
+import sys
 import config_module
 import traceback
 from concurrent.futures import ThreadPoolExecutor
@@ -247,7 +248,7 @@ async def main(
         # logging.info("The service has been installed.")
     elif config_data is None:
         logging.info("No configuration found and no config URL provided.")
-        exit(1)
+        sys.exit(1)
 
     # Retrieve org_id from the configuration
     org_id = config_data['rewst_org_id']
@@ -275,7 +276,7 @@ async def main(
         stop_service_flag,
         restart_service_flag
     ]):
-        exit(0)
+        sys.exit(0)
 
     # Connect to IoT Hub
     connection_string = get_connection_string(config_data)
