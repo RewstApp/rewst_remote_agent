@@ -23,7 +23,6 @@ from service_manager import (
 )
 from config_module import fetch_configuration, load_configuration, save_configuration
 
-
 # Set the status update interval and get the operating system type
 status_update_checkin_time = 600
 os_type = platform.system()
@@ -64,7 +63,7 @@ async def setup_message_handler(client):
 
 
 # Handler function for messages received from the IoT Hub
-def message_handler(message):
+async def message_handler(message):
     logging.info(f"Received message: {message.data}")
     try:
         message_data = json.loads(message.data)
@@ -90,29 +89,14 @@ def message_handler(message):
         if loop is None:
             logging.error("No running event loop")
         else:
-            task = loop.create_task(run_handle_commands(commands, post_url, interpreter_override))
-            task.add_done_callback(error_callback)
-    else:
-        logging.info("No commands to run")
+            # Schedule your synchronous function to run in the executor
+            task = loop.run_in_executor(executor, handle_commands, commands, post_url, interpreter_override)
+            # Await the completion of the task
+            await task
 
 
-# Async function to handle the execution of commands
-async def run_handle_commands(commands, post_url=None, interpreter_override=None):
-    logging.info("In run_handle_commands")
-    await handle_commands(commands, post_url, interpreter_override)
-
-
-def error_callback(future):
-    exc = future.exception()
-    if exc:
-        logging.error(f"Exception in run_handle_commands: {exc}")
-        logging.error(traceback.format_exc())
-
-
-
-
-# Async function to execute the list of commands
-async def execute_commands(commands, post_url=None, interpreter_override=None):
+# Function to execute the list of commands
+def execute_commands(commands, post_url=None, interpreter_override=None):
     logging.info("In execute_commands")
     logging.info(f"post_url: {post_url}")
 
@@ -144,16 +128,16 @@ async def execute_commands(commands, post_url=None, interpreter_override=None):
     # Execute the command
     try:
         logging.info("Executing Commands")
-        process = await asyncio.create_subprocess_shell(
+        process = subprocess.Popen(  # Use subprocess.Popen instead of asyncio.create_subprocess_shell
             command,
-            stdout=asyncio.subprocess.PIPE,
-            stderr=asyncio.subprocess.PIPE,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            shell=True,
+            text=True  # This replaces stdout/err binary data with text
         )
         # Gather output
-        stdout, stderr = await process.communicate()
-        # Decode output from binary to text
-        stdout = stdout.decode('utf-8')
-        stderr = stderr.decode('utf-8')
+        stdout, stderr = process.communicate()  # Use process.communicate instead of await process.communicate()
+
 
         # If the interpreter is not PowerShell, format the output as a JSON object and send it to the post_url
         if (post_url) and ("powershell" not in interpreter):
@@ -162,13 +146,11 @@ async def execute_commands(commands, post_url=None, interpreter_override=None):
             "error": stderr.strip()
         }
             logging.info("Sending Results to Rewst via httpx.")
-            async with httpx.AsyncClient() as client:
-                response = await client.post(post_url, json=message_data)
-                logging.info(f"POST request status: {response.status_code}")
-                if response.status_code != 200:
-                    # Log error information if the request fails
-                    logging.info(f"Error response: {response.text}")
-            return None  # return None or an empty string if you don't want to return anything
+            response = httpx.post(post_url, json=message_data)  # Use httpx.post instead of httpx.AsyncClient().post
+            logging.info(f"POST request status: {response.status_code}")
+            if response.status_code != 200:
+                # Log error information if the request fails
+                logging.info(f"Error response: {response.text}")
         else:
             return stdout.strip()  # returning the PowerShell command output or other output you want to return
         
@@ -176,13 +158,12 @@ async def execute_commands(commands, post_url=None, interpreter_override=None):
         logging.error(f"Exception in execute_commands: {e}")
 
 
-# Async function to handle the execution of commands and send the output to IoT Hub
-async def handle_commands(commands, post_url=None, interpreter_override=None):    
+# Function to handle the execution of commands and send the output to IoT Hub
+def handle_commands(commands, post_url=None, interpreter_override=None):    
     logging.info(f"Handling commands.")
 
     command_output = await execute_commands(commands, post_url, interpreter_override)
-    logging.info("Task execution completed.
-                 ")
+
     try:
         # Try to parse the output as JSON
         message_data = json.loads(command_output)
