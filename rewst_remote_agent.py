@@ -25,7 +25,7 @@ from config_module import fetch_configuration, load_configuration, save_configur
 
 # Set the status update interval and get the operating system type
 status_update_checkin_time = 600
-os_type = platform.system()
+os_type = platform.system().lower()
 executor = ThreadPoolExecutor()
 logging.basicConfig(level=logging.INFO)
 logging.info(f"Running on {os_type}")
