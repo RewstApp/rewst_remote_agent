@@ -44,27 +44,6 @@ async def send_status_update():
     await device_client.send_message(message_json)
     logging.info("Status update sent!")
 
-# Function to load configuration from a file
-def load_config():
-    try:
-        with open('config.json') as f:
-            config = json.load(f)
-    except Exception as e:
-        logging.error(f"Error: {e}")
-        return None
-    # Check for required keys in the configuration
-    required_keys = [
-        'azure_iot_hub_host',
-        'device_id',
-        'shared_access_key',
-        'rewst_engine_host',
-        'rewst_org_id'
-    ]
-    for key in required_keys:
-        if key not in config:
-            logging.error(f"Error: Missing '{key}' in configuration.")
-            return None
-    return config
 
 # Function to construct a connection string from the configuration
 def get_connection_string(config):
@@ -123,7 +102,7 @@ async def run_handle_commands(commands, post_url=None, interpreter_override=None
     await handle_commands(commands, post_url, interpreter_override)
 
 
-async def error_callback(future):
+def error_callback(future):
     exc = future.exception()
     if exc:
         logging.error(f"Exception in run_handle_commands: {exc}")
@@ -172,7 +151,7 @@ async def execute_commands(commands, post_url=None, interpreter_override=None):
         )
         # Gather output
         stdout, stderr = await process.communicate()
-            # Decode output from binary to text
+        # Decode output from binary to text
         stdout = stdout.decode('utf-8')
         stderr = stderr.decode('utf-8')
 
@@ -199,13 +178,11 @@ async def execute_commands(commands, post_url=None, interpreter_override=None):
 
 # Async function to handle the execution of commands and send the output to IoT Hub
 async def handle_commands(commands, post_url=None, interpreter_override=None):    
-    logging.info(f"Handling commands: {commands}")
-
-    # Execute the commands
-    logging.info(f"Executing commands: {commands}")
+    logging.info(f"Handling commands.")
 
     command_output = await execute_commands(commands, post_url, interpreter_override)
-    logging.info("completed")
+    logging.info("Task execution completed.
+                 ")
     try:
         # Try to parse the output as JSON
         message_data = json.loads(command_output)
@@ -300,8 +277,6 @@ async def main(
 
     # Await incoming messages
     await setup_message_handler(device_client)
-
-    # ... Rest of your code ...
 
     stop_event = asyncio.Event()
     await stop_event.wait()
