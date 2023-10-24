@@ -28,6 +28,7 @@ status_update_checkin_time = 600
 os_type = platform.system()
 executor = ThreadPoolExecutor()
 logging.basicConfig(level=logging.INFO)
+logging.info(f"Running on {os_type}")
 
 # Function to send a status update to the IoT Hub
 async def send_status_update():
