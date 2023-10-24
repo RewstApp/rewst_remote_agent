@@ -133,6 +133,7 @@ def uninstall_service(org_id):
 
 def start_service(org_id):
     service_name = get_service_name(org_id)
+    logging.info(f"Starting Service {service_name}")
     if os_type == "Windows":
         os.system(f"net start {service_name}")
     elif os_type == "Linux":

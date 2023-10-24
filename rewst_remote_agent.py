@@ -214,6 +214,7 @@ async def main(
     config_secret=None,
     install_service_flag=False,
     uninstall_service_flag=False,
+    start_service_flag=False,
     stop_service_flag=False,
     restart_service_flag=False,
 ):
@@ -266,9 +267,11 @@ async def main(
 
     # Exit if any of the service management flags are set
     if any([
+        check_mode,
         config_url,
         install_service_flag,
         uninstall_service_flag,
+        start_service_flag,
         stop_service_flag,
         restart_service_flag
     ]):
@@ -310,6 +313,7 @@ if __name__ == "__main__":
         config_secret=args.config_secret,
         install_service_flag=args.install_service,
         uninstall_service_flag=args.uninstall_service,
+        start_service_flag=args.start_service,
         stop_service_flag=args.restart_service,
         restart_service_flag=args.stop_service
     ))
