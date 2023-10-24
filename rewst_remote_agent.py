@@ -268,8 +268,6 @@ async def main(
 
     # Exit if any of the service management flags are set
     if any([
-        check_mode,
-        config_url,
         install_service_flag,
         uninstall_service_flag,
         start_service_flag,
