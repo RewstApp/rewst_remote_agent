@@ -11,7 +11,7 @@ import psutil
 import re
 import sys
 import config_module
-import traceback
+# import traceback
 from concurrent.futures import ThreadPoolExecutor
 from azure.iot.device.aio import IoTHubDeviceClient
 from service_manager import (
@@ -162,7 +162,7 @@ def execute_commands(commands, post_url=None, interpreter_override=None):
 def handle_commands(commands, post_url=None, interpreter_override=None):    
     logging.info(f"Handling commands.")
 
-    command_output = await execute_commands(commands, post_url, interpreter_override)
+    command_output = execute_commands(commands, post_url, interpreter_override)
 
     try:
         # Try to parse the output as JSON
@@ -171,9 +171,9 @@ def handle_commands(commands, post_url=None, interpreter_override=None):
         logging.info(f"Error decoding command output as JSON: {e}, using string output instead")
         message_data = {"error": f"Error decoding command output as JSON: {e}", "output": command_output}
     # Send the command output to IoT Hub
-    message_json = json.dumps(message_data)
-    await device_client.send_message(message_json)
-    logging.info("Message sent!")
+    # message_json = json.dumps(message_data)
+    # device_client.send_message(message_json)
+    # logging.info("Message sent!")
 
 
 # Main async function
