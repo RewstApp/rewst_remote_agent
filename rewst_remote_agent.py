@@ -83,6 +83,7 @@ async def setup_message_handler(client):
     logging.info("Message handler set up!")
 
 
+
 # Handler function for messages received from the IoT Hub
 def message_handler(message):
     logging.info(f"Received message: {message.data}")
@@ -116,16 +117,18 @@ def message_handler(message):
         logging.info("No commands to run")
 
 
-# Function to handle the execution of commands
+# Async function to handle the execution of commands
 async def run_handle_commands(commands, post_url=None, interpreter_override=None):
     logging.info("In run_handle_commands")
     await handle_commands(commands, post_url, interpreter_override)
 
-def error_callback(future):
+
+async def error_callback(future):
     exc = future.exception()
     if exc:
         logging.error(f"Exception in run_handle_commands: {exc}")
         logging.error(traceback.format_exc())
+
 
 
 
