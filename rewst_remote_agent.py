@@ -122,7 +122,7 @@ def execute_commands(commands, post_url=None, interpreter_override=None):
             f"$post_url = '{post_url}'\n"
         )
         # Prepend the preamble to the commands
-        commands = preamble + commands
+        commands = preamble + commands.replace('')
 
     # Create the command string based on the interpreter
     command = f'{interpreter} -c "{commands}"'
@@ -171,8 +171,8 @@ def handle_commands(commands, post_url=None, interpreter_override=None):
         # Try to parse the output as JSON
         message_data = json.loads(command_output)
     except json.JSONDecodeError as e:
-        logging.info(f"Error decoding command output as JSON: {e}, using string output instead")
-        message_data = {"error": f"Error decoding command output as JSON: {e}", "output": command_output}
+        logging.info(f"Unable to decode command output as JSON: {e}, using string output instead")
+        message_data = {"error": f"Unable to decode command output as JSON:: {e}", "output": command_output}
     # Send the command output to IoT Hub
     # message_json = json.dumps(message_data)
     # device_client.send_message(message_json)
