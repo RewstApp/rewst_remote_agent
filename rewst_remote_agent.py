@@ -124,6 +124,7 @@ def execute_commands(commands, post_url=None, interpreter_override=None):
         )
         # Prepend the preamble to the commands
         commands = preamble + commands.replace('')
+        logging.info(f"Preamble added to commands: {commands}")
 
     logging.info(f"Commands: {commands}")
     # Create the command string based on the interpreter
@@ -133,7 +134,8 @@ def execute_commands(commands, post_url=None, interpreter_override=None):
 
     # Execute the command
     try:
-        logging.info("Executing Commands")
+        logging.info("Opening Process")
+        
         process = subprocess.Popen(  # Use subprocess.Popen instead of asyncio.create_subprocess_shell
             shell_command,
             stdout=subprocess.PIPE,
