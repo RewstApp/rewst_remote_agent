@@ -144,21 +144,14 @@ def execute_commands(commands, post_url=None, interpreter_override=None):
         # Gather output
         stdout, stderr = process.communicate()
         logging.info("Process Completed.")
-    except subprocess.CalledProcessError as e:
-        logging.error(f"Command '{shell_command}' failed with error code {e.returncode}")
-        logging.error(f"Error output: {e.output}")
-    except OSError as e:
-        logging.error(f"OS error occurred: {e}")
-    except Exception as e:
-        logging.error(f"An unexpected error occurred: {e}")
 
-
-        # If the interpreter is not PowerShell, format the output as a JSON object and send it to the post_url
-        if (post_url) and ("powershell" not in interpreter):
-            message_data = {
+        message_data = {
             "output": stdout.strip(),
             "error": stderr.strip()
         }
+
+        # If the interpreter is not PowerShell, format the output as a JSON object and send it to the post_url
+        if (post_url) and ("powershell" not in interpreter):
             logging.info("Sending Results to Rewst via httpx.")
             response = httpx.post(post_url, json=message_data)
             logging.info(f"POST request status: {response.status_code}")
@@ -166,10 +159,15 @@ def execute_commands(commands, post_url=None, interpreter_override=None):
                 # Log error information if the request fails
                 logging.info(f"Error response: {response.text}")
         else:
-            return stdout.strip()  # returning the PowerShell command output or other output you want to return
-        
+            return message_data  # returning the PowerShell command output or other output you want to return
+    
+    except subprocess.CalledProcessError as e:
+        logging.error(f"Command '{shell_command}' failed with error code {e.returncode}")
+        logging.error(f"Error output: {e.output}")
+    except OSError as e:
+        logging.error(f"OS error occurred: {e}")
     except Exception as e:
-        logging.error(f"Exception in execute_commands: {e}")
+        logging.error(f"An unexpected error occurred: {e}")   
 
     logging.info("Completed execute_commands")
 
@@ -185,10 +183,11 @@ def handle_commands(commands, post_url=None, interpreter_override=None):
     except json.JSONDecodeError as e:
         logging.info(f"Unable to decode command output as JSON: {e}, using string output instead")
         message_data = {"error": f"Unable to decode command output as JSON:: {e}", "output": command_output}
+    
     # Send the command output to IoT Hub
-    # message_json = json.dumps(message_data)
-    # device_client.send_message(message_json)
-    # logging.info("Message sent!")
+    message_json = json.dumps(message_data)
+    device_client.send_message(message_json)
+    logging.info("Message sent!")
 
 
 # Main async function
