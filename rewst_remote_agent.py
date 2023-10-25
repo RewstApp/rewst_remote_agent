@@ -123,7 +123,7 @@ def execute_commands(commands, post_url=None, interpreter_override=None):
         commands = commands.replace('"','\\"').replace("'","\\'").replace('\n',' ; ')
 
     # Create the command string based on the interpreter
-    shell_command = f'{interpreter} -Command "{script_block}"'
+    shell_command = f'{interpreter} -EncodedCommand "{commands}"'
 
     logging.info(f"Running Commands via:{shell_command}")
 
