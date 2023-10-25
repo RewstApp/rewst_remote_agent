@@ -151,16 +151,16 @@ def execute_commands(commands, post_url=None, interpreter_override=None):
         }
 
         # If the interpreter is not PowerShell, format the output as a JSON object and send it to the post_url
-        if (post_url) and ("powershell" not in interpreter):
+        if (post_url) and (interpreter != "powershell"):
             logging.info("Sending Results to Rewst via httpx.")
             response = httpx.post(post_url, json=message_data)
             logging.info(f"POST request status: {response.status_code}")
             if response.status_code != 200:
-                # Log error information if the request fails
                 logging.info(f"Error response: {response.text}")
-        else:
-            return message_data  # returning the PowerShell command output or other output you want to return
     
+        logging.info(f"Returning message_data back to calling function:\n{message_data}")
+        return message_data
+
     except subprocess.CalledProcessError as e:
         logging.error(f"Command '{shell_command}' failed with error code {e.returncode}")
         logging.error(f"Error output: {e.output}")
@@ -169,13 +169,12 @@ def execute_commands(commands, post_url=None, interpreter_override=None):
     except Exception as e:
         logging.error(f"An unexpected error occurred: {e}")   
 
-    logging.info("Completed execute_commands")
-
-# Function to handle the execution of commands and send the output to IoT Hub
 def handle_commands(commands, post_url=None, interpreter_override=None):    
     logging.info(f"Handling commands.")
 
     command_output = execute_commands(commands, post_url, interpreter_override)
+
+    logging.info("returned from execute_commands")
 
     try:
         # Try to parse the output as JSON
@@ -186,8 +185,11 @@ def handle_commands(commands, post_url=None, interpreter_override=None):
     
     # Send the command output to IoT Hub
     message_json = json.dumps(message_data)
-    device_client.send_message(message_json)
-    logging.info("Message sent!")
+    try:
+        device_client.send_message(message_json)
+        logging.info("Message sent!")
+    except Exception as e:
+        logging.error(f"An unexpected error occurred: {e}")   
 
 
 # Main async function
