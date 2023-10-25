@@ -147,7 +147,7 @@ def execute_commands(commands, post_url=None, interpreter_override=None):
 
         message_data = {
             'output': stdout.strip(),
-            'error' stderr.strip()
+            'error': stderr.strip()
         }
 
         # If the interpreter is not PowerShell, format the output as a JSON object and send it to the post_url
