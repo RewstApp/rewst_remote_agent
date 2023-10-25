@@ -123,7 +123,7 @@ def execute_commands(commands, post_url=None, interpreter_override=None):
             f"$post_url = '{post_url}'\n"
         )
         # Prepend the preamble to the commands
-        commands = preamble + commands.replace('')
+        commands = preamble + commands
         logging.info(f"Preamble added")
         logging.info(f"Will run: {commands}")
 
