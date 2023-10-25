@@ -115,7 +115,7 @@ def execute_commands(commands, post_url=None, interpreter_override=None):
             f"$post_url = '{post_url}'\n"
         )
         # Prepend the preamble to the commands
-        commands = preamble + commands
+        # commands = preamble + commands
         script_block = f'{{{commands}}}'
     else:
         preamble = (f"post_url = '{post_url}'\n")
