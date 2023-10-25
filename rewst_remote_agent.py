@@ -115,9 +115,10 @@ def execute_commands(commands, post_url=None, interpreter_override=None):
             f"$post_url = '{post_url}'\n"
         )
         # Prepend the preamble to the commands
-        commands = preamble + commands.replace('"','\\"').replace("'","\\'")
+        commands = preamble + commands
 
     # Create the command string based on the interpreter
+    commands = commands.replace('"','\\"').replace("'","\\'")
     shell_command = f'{interpreter} -c "{commands}"'
 
     logging.info(f"Running Commands via:{shell_command}")
