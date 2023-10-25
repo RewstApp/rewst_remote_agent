@@ -117,6 +117,7 @@ def execute_commands(commands, post_url=None, interpreter_override=None):
     logging.info(f"Using interpreter: {interpreter}")
     # If PowerShell is the interpreter, update the commands to include the post_url variable
     if "powershell" in interpreter:
+        logging.info(f"Adding preamble to handle secure posting back to rewst")
         preamble = (
             f"[Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12\n"
             f"$post_url = '{post_url}'\n"
