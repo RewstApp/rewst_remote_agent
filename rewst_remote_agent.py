@@ -124,14 +124,11 @@ def execute_commands(commands, post_url=None, interpreter_override=None):
         )
         # Prepend the preamble to the commands
         commands = preamble + commands
-        logging.info(f"Preamble added")
-        logging.info(f"Will run: {commands}")
 
-    logging.info(f"Commands: {commands}")
     # Create the command string based on the interpreter
     shell_command = f'{interpreter} -c "{commands}"'
 
-    logging.info(f"Running Commands via:\n{shell_command}")
+    logging.info(f"Running Commands via:{shell_command}")
 
     # Execute the command
     try:
@@ -146,6 +143,13 @@ def execute_commands(commands, post_url=None, interpreter_override=None):
         )
         # Gather output
         stdout, stderr = process.communicate()
+    except subprocess.CalledProcessError as e:
+        logging.error(f"Command '{shell_command}' failed with error code {e.returncode}")
+        logging.error(f"Error output: {e.output}")
+    except OSError as e:
+        logging.error(f"OS error occurred: {e}")
+    except Exception as e:
+        logging.error(f"An unexpected error occurred: {e}")
 
 
         # If the interpreter is not PowerShell, format the output as a JSON object and send it to the post_url
