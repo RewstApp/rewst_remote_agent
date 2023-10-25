@@ -174,7 +174,7 @@ def handle_commands(commands, post_url=None, interpreter_override=None):
 
     command_output = execute_commands(commands, post_url, interpreter_override)
 
-    logging.info("returned from execute_commands")
+    logging.info(f"returned from execute_commands: {command_output}")
 
     try:
         # Try to parse the output as JSON
