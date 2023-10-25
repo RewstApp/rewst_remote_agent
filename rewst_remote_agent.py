@@ -143,6 +143,7 @@ def execute_commands(commands, post_url=None, interpreter_override=None):
         )
         # Gather output
         stdout, stderr = process.communicate()
+        logging.info("Process Completed.")
     except subprocess.CalledProcessError as e:
         logging.error(f"Command '{shell_command}' failed with error code {e.returncode}")
         logging.error(f"Error output: {e.output}")
@@ -170,6 +171,7 @@ def execute_commands(commands, post_url=None, interpreter_override=None):
     except Exception as e:
         logging.error(f"Exception in execute_commands: {e}")
 
+    logging.info("Completed execute_commands")
 
 # Function to handle the execution of commands and send the output to IoT Hub
 def handle_commands(commands, post_url=None, interpreter_override=None):    
