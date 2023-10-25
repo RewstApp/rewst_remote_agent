@@ -116,9 +116,11 @@ def execute_commands(commands, post_url=None, interpreter_override=None):
         )
         # Prepend the preamble to the commands
         commands = preamble + commands
-        commands = commands.replace('"','`"').replace("'","`'")
+        commands = commands.replace('"','`"').replace("'","`'").replace('\n',' ; ')
     else:
-        commands = commands.replace('"','\\"').replace("'","\\'")
+        preamble = (f"post_url = '{post_url}'\n")
+        commands = preamble + commands
+        commands = commands.replace('"','\\"').replace("'","\\'").replace('\n',' ; ')
 
     # Create the command string based on the interpreter
     shell_command = f'{interpreter} -c "{commands}"'
