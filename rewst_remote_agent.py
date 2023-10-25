@@ -146,8 +146,8 @@ def execute_commands(commands, post_url=None, interpreter_override=None):
         logging.info("Process Completed.")
 
         message_data = {
-            "output": stdout.strip(),
-            "error": stderr.strip()
+            'output': stdout.strip(),
+            'error"' stderr.strip()
         }
 
         # If the interpreter is not PowerShell, format the output as a JSON object and send it to the post_url
@@ -179,7 +179,7 @@ def handle_commands(commands, post_url=None, interpreter_override=None):
     try:
         # Try to parse the output as JSON
         logging.info(f"trying a json.loads on command_output")
-        message_data = json.loads(command_output)
+        message_data = command_output
         logging.info(f"Loaded message_data: {message_data}")
     except json.JSONDecodeError as e:
         logging.info(f"Unable to decode command output as JSON: {e}, using string output instead")
