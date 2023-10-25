@@ -179,12 +179,15 @@ def handle_commands(commands, post_url=None, interpreter_override=None):
     try:
         # Try to parse the output as JSON
         message_data = json.loads(command_output)
+        logging.info(f"Loaded message_data: {message_data}")
     except json.JSONDecodeError as e:
         logging.info(f"Unable to decode command output as JSON: {e}, using string output instead")
         message_data = {"error": f"Unable to decode command output as JSON:: {e}", "output": command_output}
     
     # Send the command output to IoT Hub
+    logging.info("dumping message_data to json")
     message_json = json.dumps(message_data)
+    logging.info(f"Attempting to send message_json to iothub: {message_json}")
     try:
         device_client.send_message(message_json)
         logging.info("Message sent!")
