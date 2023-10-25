@@ -124,7 +124,8 @@ def execute_commands(commands, post_url=None, interpreter_override=None):
         )
         # Prepend the preamble to the commands
         commands = preamble + commands.replace('')
-        logging.info(f"Preamble added to commands: {commands}")
+        logging.info(f"Preamble added")
+        logging.info(f"Will run: {commands}")
 
     logging.info(f"Commands: {commands}")
     # Create the command string based on the interpreter
@@ -136,15 +137,15 @@ def execute_commands(commands, post_url=None, interpreter_override=None):
     try:
         logging.info("Opening Process")
         
-        process = subprocess.Popen(  # Use subprocess.Popen instead of asyncio.create_subprocess_shell
+        process = subprocess.Popen(
             shell_command,
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
             shell=True,
-            text=True  # This replaces stdout/err binary data with text
+            text=True
         )
         # Gather output
-        stdout, stderr = process.communicate()  # Use process.communicate instead of await process.communicate()
+        stdout, stderr = process.communicate()
 
 
         # If the interpreter is not PowerShell, format the output as a JSON object and send it to the post_url
@@ -154,7 +155,7 @@ def execute_commands(commands, post_url=None, interpreter_override=None):
             "error": stderr.strip()
         }
             logging.info("Sending Results to Rewst via httpx.")
-            response = httpx.post(post_url, json=message_data)  # Use httpx.post instead of httpx.AsyncClient().post
+            response = httpx.post(post_url, json=message_data)
             logging.info(f"POST request status: {response.status_code}")
             if response.status_code != 200:
                 # Log error information if the request fails
