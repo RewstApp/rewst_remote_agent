@@ -84,7 +84,7 @@ async def message_handler(message):
         if commands:  # Check if commands is not None
             logging.info("Received commands in message")
             await handle_commands(commands, post_url, interpreter_override)
-            
+
     except json.JSONDecodeError as e:
         logging.error(f"Error decoding message data as JSON: {e}")
         return  # Exit the function if the data can't be decoded as JSON
@@ -135,7 +135,12 @@ def execute_commands(commands, post_url=None, interpreter_override=None):
         )
         # Gather output
         stdout, stderr = process.communicate()
-        logging.info("Process Completed.")
+        exit_code = process.returncode  # Get the exit code
+
+        logging.info(f"Process Completed with exit code {exit_code}.")
+        logging.info(f"Standard Output: {stdout}")
+        if stderr:
+            logging.error(f"Standard Error: {stderr}")
 
         message_data = {
             'output': stdout.strip(),
