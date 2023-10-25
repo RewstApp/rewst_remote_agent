@@ -69,33 +69,25 @@ async def message_handler(message):
     logging.info(f"Received message: {message.data}")
     try:
         message_data = json.loads(message.data)
+        commands = message_data.get("commands")
+        logging.info(commands)
+        post_id = message_data.get("post_id")  # Get post_id, if present
+        logging.info(post_id)
+        interpreter_override = message_data.get("interpreter_override")  # Get custom interpreter, if present
+        logging.info(interpreter_override)
+
+        if post_id: # Post ID in message body
+            post_path = post_id.replace(":", "/")
+            post_url = f"https://{rewst_engine_host}/webhooks/custom/action/{post_path}"
+            logging.info(f"Will POST results to {post_url}")
+
+        if commands:  # Check if commands is not None
+            logging.info("Received commands in message")
+            await handle_commands(commands, post_url, interpreter_override)
+            
     except json.JSONDecodeError as e:
         logging.error(f"Error decoding message data as JSON: {e}")
         return  # Exit the function if the data can't be decoded as JSON
-
-    commands = message_data.get("commands")
-    logging.info(commands)
-    post_id = message_data.get("post_id")  # Get post_id, if present
-    logging.info(post_id)
-    interpreter_override = message_data.get("interpreter_override")  # Get custom interpreter, if present
-    logging.info(interpreter_override)
-
-    if post_id:
-        post_path = post_id.replace(":", "/")
-        post_url = f"https://{rewst_engine_host}/webhooks/custom/action/{post_path}"
-        logging.info(f"Will POST results to {post_url}")
-
-    if commands:  # Check if commands is not None
-        logging.info("Received commands in message")
-        loop = asyncio.get_running_loop()
-        if loop is None:
-            logging.error("No running event loop")
-        else:
-            # Schedule your synchronous function to run in the executor
-            task = loop.run_in_executor(executor, handle_commands, commands, post_url, interpreter_override)
-            # Await the completion of the task
-            await task
-
 
 # Function to execute the list of commands
 def execute_commands(commands, post_url=None, interpreter_override=None):
@@ -169,7 +161,7 @@ def execute_commands(commands, post_url=None, interpreter_override=None):
     except Exception as e:
         logging.error(f"An unexpected error occurred: {e}")   
 
-def handle_commands(commands, post_url=None, interpreter_override=None):    
+async def handle_commands(commands, post_url=None, interpreter_override=None):    
     logging.info(f"Handling commands.")
 
     command_output = execute_commands(commands, post_url, interpreter_override)
@@ -192,7 +184,7 @@ def handle_commands(commands, post_url=None, interpreter_override=None):
     message_json = json.dumps(message_data)
     logging.info(f"Attempting to send message_json to iothub: {message_json}")
     try:
-        device_client.send_message(message_json)
+        await device_client.send_message(message_json)
         logging.info("Message sent!")
     except Exception as e:
         logging.error(f"An unexpected error occurred: {e}")   
