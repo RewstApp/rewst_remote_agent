@@ -233,11 +233,11 @@ async def main(
 
     try:
         if config_file:
-            logging(f"Using config file {config_file}.")
+            logging.info(f"Using config file {config_file}.")
             config_data = load_configuration(config_file=config_file)
         else:
             # Get Org ID for Config
-            executable_path = os.path.basename(__file__)  # Gets the file name of the current script
+            executable_path = sys.argv[0] # Gets the file name of the current script
             pattern = re.compile(r'rewst_remote_agent_(.+?)\.')
             match = pattern.search(executable_path)
             if match:
