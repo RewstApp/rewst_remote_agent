@@ -11,8 +11,6 @@ import psutil
 import re
 import subprocess
 import sys
-import config_module
-import service_manager
 # import traceback
 from concurrent.futures import ThreadPoolExecutor
 from azure.iot.device.aio import IoTHubDeviceClient
