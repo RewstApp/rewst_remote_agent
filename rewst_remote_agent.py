@@ -28,7 +28,13 @@ from config_module import fetch_configuration, load_configuration, save_configur
 status_update_checkin_time = 600
 os_type = platform.system().lower()
 executor = ThreadPoolExecutor()
-logging.basicConfig(level=logging.INFO)
+
+# Put Timestamps on logging entries
+logging.basicConfig(
+    level=logging.DEBUG,  
+    format='%(asctime)s %(levelname)s: %(message)s',
+    datefmt='%Y-%m-%d %H:%M:%S',
+)
 logging.info(f"Running on {os_type}")
 
 # Function to send a status update to the IoT Hub
@@ -43,7 +49,6 @@ async def send_status_update():
     # Send message
     logging.info("Sending status update to IoT Hub...")
     await device_client.send_message(message_json)
-    logging.info("Status update sent!")
 
 
 # Function to construct a connection string from the configuration
