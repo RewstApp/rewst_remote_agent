@@ -243,7 +243,7 @@ async def main(
             if match:
                 org_id = match.group(1)
                 logging.info(f"Found Org ID {org_id}")
-                config_data = load_configuration(config_file)
+                config_data = load_configuration(org_id=org_id)
             else:
                 config_data = None
 
