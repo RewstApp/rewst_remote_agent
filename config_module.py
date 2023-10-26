@@ -114,6 +114,7 @@ async def fetch_configuration(config_url, secret=None):
             await asyncio.sleep(interval)
 
         logging.info(f"Moving to next retry phase: {interval}s interval for {max_retries} retries.")
+    logging.INFO("This process will end when the service is installed.")
 
  
 def get_mac_address():
