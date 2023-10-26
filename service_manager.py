@@ -7,6 +7,13 @@ from config_module import get_config_file_path
 
 os_type = platform.system()
 
+# Put Timestamps on logging entries
+logging.basicConfig(
+    level=logging.DEBUG,  
+    format='%(asctime)s %(levelname)s: %(message)s',
+    datefmt='%Y-%m-%d %H:%M:%S',
+)
+
 if os_type == "Windows":
     import win32service
     import win32serviceutil
@@ -42,20 +49,9 @@ def get_executable_path(org_id):
     return executable_path
 
 
-def install_service(org_id, config_file=None):
-    # Uninstall the service if it's already installed
-    if is_service_installed(org_id):
-        logging.info(f"Service is already installed. Reinstalling service.")
-        uninstall_service(org_id)
-        # Wait for the service to be deleted
-        while is_service_installed(service_name):
-            time.sleep(2)  # wait for 2 seconds
-    service_name = get_service_name(org_id)
-    executable_path = get_executable_path(org_id)
-    display_name = f"Rewst Remote Agent {org_id}"
-    config_file_path = get_config_file_path(org_id,config_file)
-
+def install_binaries(org_id):
     # Copy the executable to the appropriate location
+    executable_path = get_executable_path(org_id)
     logging.info(f"Writing executable to {executable_path}")
     if os_type == "Windows":
         shutil.copy("rewst_remote_agent.win.exe", executable_path)
@@ -64,6 +60,20 @@ def install_service(org_id, config_file=None):
     elif os_type == "Darwin":
         shutil.copy("rewst_remote_agent.macos.bin", executable_path)
 
+
+def install_service(org_id, config_file=None):
+    executable_path = get_executable_path(org_id)
+    service_name = get_service_name(org_id)
+    # Uninstall the service if it's already installed
+    if is_service_installed(org_id):
+        logging.info(f"Service is already installed. Reinstalling service.")
+        uninstall_service(org_id)
+        # Wait for the service to be deleted
+        while is_service_installed(service_name):
+            time.sleep(2)  # wait for 2 seconds
+    
+    display_name = f"Rewst Remote Agent {org_id}"
+    config_file_path = get_config_file_path(org_id,config_file)
 
     # Install the service
     if os_type == "Windows":

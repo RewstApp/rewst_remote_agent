@@ -10,7 +10,12 @@ import psutil
 import os
 import sys
 
-logging.basicConfig(level=logging.INFO)
+# Put Timestamps on logging entries
+logging.basicConfig(
+    level=logging.DEBUG,  
+    format='%(asctime)s %(levelname)s: %(message)s',
+    datefmt='%Y-%m-%d %H:%M:%S',
+)
 
 REQUIRED_KEYS = [
     'azure_iot_hub_host',

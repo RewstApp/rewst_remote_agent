@@ -12,17 +12,25 @@ import re
 import subprocess
 import sys
 import config_module
+import service_manager
 # import traceback
 from concurrent.futures import ThreadPoolExecutor
 from azure.iot.device.aio import IoTHubDeviceClient
 from service_manager import (
+    get_executable_path,
     install_service,
+    install_binaries,
     uninstall_service,
     start_service,
     stop_service,
     restart_service,
 )
-from config_module import fetch_configuration, load_configuration, save_configuration
+from config_module import (
+    get_config_file_path,
+    fetch_configuration,
+    load_configuration,
+    save_configuration
+)
 
 # Set the status update interval and get the operating system type
 status_update_checkin_time = 600
@@ -87,10 +95,31 @@ async def message_handler(message):
         if commands:  # Check if commands is not None
             logging.info("Received commands in message")
             await handle_commands(commands, post_url, interpreter_override)
+        
+        if get_installation(org_id, post_url):
+            logging.info("Received request for installation paths")
+            await get_installation()
 
     except json.JSONDecodeError as e:
         logging.error(f"Error decoding message data as JSON: {e}")
         return  # Exit the function if the data can't be decoded as JSON
+    
+
+async def get_installation(org_id, post_url):
+    executable_path = get_executable_path(org_id)
+    config_file_path = get_config_file_path(org_id)
+    
+    paths_data = {
+        "executable_path": executable_path,
+        "config_file_path": config_file_path
+    }
+    
+    async with httpx.AsyncClient() as client:
+        response = await client.post(post_url, json=paths_data)
+        
+    if response.status_code != 200:
+        logging.error(f"Failed to post data: {response.status_code} - {response.text}")
+
 
 # Function to execute the list of commands
 def execute_commands(commands, post_url=None, interpreter_override=None):
@@ -201,6 +230,7 @@ async def main(
 
     global rewst_engine_host
     global device_client
+    global org_id
 
     try:
         if config_file:
@@ -224,8 +254,7 @@ async def main(
             save_configuration(config_data)
             org_id = config_data['rewst_org_id']
             logging.info(f"Configuration saved to {config_module.get_config_file_path(org_id)}")
-            # install_service(org_id)  # Install the service if config_url is provided
-            # logging.info("The service has been installed.")
+            install_binaries(org_id)
         elif config_data is None:
             logging.info("No configuration found and no config URL provided.")
             sys.exit(1)
