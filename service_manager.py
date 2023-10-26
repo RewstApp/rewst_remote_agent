@@ -53,6 +53,12 @@ def install_binaries(org_id):
     # Copy the executable to the appropriate location
     executable_path = get_executable_path(org_id)
     logging.info(f"Writing executable to {executable_path}")
+    
+    # Create missing directories
+    directory = os.path.dirname(executable_path)
+    os.makedirs(directory, exist_ok=True)
+    
+    # Copy executable
     if os_type == "Windows":
         shutil.copy("rewst_remote_agent.win.exe", executable_path)
     elif os_type == "Linux":
