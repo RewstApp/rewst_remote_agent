@@ -115,7 +115,7 @@ def execute_commands(commands, post_url=None, interpreter_override=None):
         preamble = (f"post_url = '{post_url}'\n")
         commands = preamble + commands
         commands = commands.replace('"','\\"').replace("'","\\'").replace('\n',' ; ')
-        shell_command = (f"base64 --decode "{commands}" | interpreter")
+        shell_command = (f"base64 --decode '{commands}' | interpreter")
 
     # Execute the command
     try:
