@@ -9,7 +9,7 @@ os_type = platform.system()
 
 # Put Timestamps on logging entries
 logging.basicConfig(
-    level=logging.DEBUG,  
+    level=logging.INFO,  
     format='%(asctime)s %(levelname)s: %(message)s',
     datefmt='%Y-%m-%d %H:%M:%S',
 )
@@ -18,8 +18,10 @@ if os_type == "Windows":
     import win32service
     import win32serviceutil
 
+
 def get_service_name(org_id):
     return f"Rewst_Remote_Agent_{org_id}"
+
 
 def is_service_installed(org_id=None):
     service_name = get_service_name(org_id)

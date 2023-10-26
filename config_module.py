@@ -97,7 +97,9 @@ async def fetch_configuration(config_url, secret=None):
                     logging.warning(f"Attempt {retries}: Network error: {e}. Retrying...")
                     continue
 
-                if response.status_code == 200:
+                if response.status_code == 303:
+                    logging.info("Waiting while Rewst processes Agent Registration...")  # Custom message for 303
+                elif response.status_code == 200:
                     data = response.json()
                     config_data = data.get('configuration')
                     if config_data and all(key in config_data for key in REQUIRED_KEYS):
@@ -108,7 +110,9 @@ async def fetch_configuration(config_url, secret=None):
                     logging.error(f"Attempt {retries}: Not authorized. Check your config secret.")
                 else:
                     logging.warning(f"Attempt {retries}: Received status code {response.status_code}. Retrying...")
+
             await asyncio.sleep(interval)
+
         logging.info(f"Moving to next retry phase: {interval}s interval for {max_retries} retries.")
 
  
