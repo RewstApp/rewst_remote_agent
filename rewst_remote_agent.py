@@ -80,6 +80,7 @@ async def message_handler(message):
     logging.info(f"Received message: {message.data}")
     try:
         message_data = json.loads(message.data)
+        get_installation_info = message_data.get("get_installation")
         commands = message_data.get("commands")
         logging.info(commands)
         post_id = message_data.get("post_id")  # Get post_id, if present
@@ -96,9 +97,9 @@ async def message_handler(message):
             logging.info("Received commands in message")
             await handle_commands(commands, post_url, interpreter_override)
         
-        if get_installation(org_id, post_url):
+        if get_installation_info:
             logging.info("Received request for installation paths")
-            await get_installation()
+            await get_installation(org_id, post_url)
 
     except json.JSONDecodeError as e:
         logging.error(f"Error decoding message data as JSON: {e}")
