@@ -65,8 +65,6 @@ def get_connection_string(config):
 async def setup_message_handler(client):
     logging.info("Setting up message handler...")
     client.on_message_received = message_handler
-    logging.info("Message handler set up!")
-
 
 
 # Handler function for messages received from the IoT Hub
@@ -96,10 +94,7 @@ async def message_handler(message):
 
 # Function to execute the list of commands
 def execute_commands(commands, post_url=None, interpreter_override=None):
-    logging.info("In execute_commands")
-    logging.info(f"post_url: {post_url}")
-
-
+    
     # Determine the interpreter based on the operating system
     if os_type == 'windows':
         default_interpreter = 'powershell'
@@ -114,28 +109,16 @@ def execute_commands(commands, post_url=None, interpreter_override=None):
     logging.info(f"Using interpreter: {interpreter}")
     # If PowerShell is the interpreter, update the commands to include the post_url variable
     if "powershell" in interpreter:
-        logging.info(f"Adding preamble to handle secure posting back to rewst")
-        preamble = (
-            f"[Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12\n"
-            f"$post_url = '{post_url}'\n"
-        )
-        # Prepend the preamble to the commands
-        # commands = preamble + commands
         script_block = f'{{{commands}}}'
+        shell_command = f'{interpreter} -EncodedCommand "{commands}"'
     else:
         preamble = (f"post_url = '{post_url}'\n")
         commands = preamble + commands
         commands = commands.replace('"','\\"').replace("'","\\'").replace('\n',' ; ')
-
-    # Create the command string based on the interpreter
-    shell_command = f'{interpreter} -EncodedCommand "{commands}"'
-
-    logging.info(f"Running Commands via:{shell_command}")
+        shell_command = (f"base64 --decode "{commands}" | interpreter")
 
     # Execute the command
     try:
-        logging.info("Opening Process")
-        
         process = subprocess.Popen(
             shell_command,
             stdout=subprocess.PIPE,
@@ -176,7 +159,8 @@ def execute_commands(commands, post_url=None, interpreter_override=None):
     except Exception as e:
         logging.error(f"An unexpected error occurred: {e}")   
 
-async def handle_commands(commands, post_url=None, interpreter_override=None):    
+
+async def handle_commands(commands, post_url=None, interpreter_override=None):
     logging.info(f"Handling commands.")
 
     command_output = execute_commands(commands, post_url, interpreter_override)
@@ -185,7 +169,6 @@ async def handle_commands(commands, post_url=None, interpreter_override=None):
 
     try:
         # Try to parse the output as JSON
-        logging.info(f"trying a json.loads on command_output")
         message_data = command_output
         logging.info(f"Loaded message_data: {message_data}")
     except json.JSONDecodeError as e:
@@ -195,12 +178,10 @@ async def handle_commands(commands, post_url=None, interpreter_override=None):
     except Exception as e:
         logging.error(f"An unexpected error occurred decoding JSON: {e}")    
     # Send the command output to IoT Hub
-    logging.info("dumping message_data to json")
     message_json = json.dumps(message_data)
-    logging.info(f"Attempting to send message_json to iothub: {message_json}")
     try:
         await device_client.send_message(message_json)
-        logging.info("Message sent!")
+        logging.info("Message sent to IoT Hub!")
     except Exception as e:
         logging.error(f"An unexpected error occurred: {e}")   
 
