@@ -9,6 +9,7 @@ import os
 import platform
 import psutil
 import re
+import signal
 import subprocess
 import sys
 # import traceback
@@ -29,6 +30,15 @@ from config_module import (
     load_configuration,
     save_configuration
 )
+
+stop_event = asyncio.Event()
+
+def signal_handler(signum, frame):
+    logging.info(f"Received signal {signum}. Initiating graceful shutdown.")
+    stop_event.set()
+
+signal.signal(signal.SIGTERM, signal_handler)
+signal.signal(signal.SIGINT, signal_handler)
 
 # Set the status update interval and get the operating system type
 status_update_checkin_time = 600
@@ -300,10 +310,10 @@ async def main(
         # Await incoming messages
         await setup_message_handler(device_client)
 
-        stop_event = asyncio.Event()
-    
 
+        stop_event = asyncio.Event()
         await stop_event.wait()
+
     except KeyboardInterrupt:
         logging.info("Received keyboard interrupt. Shutting down...")
         await device_client.disconnect()
