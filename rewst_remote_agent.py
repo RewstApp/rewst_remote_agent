@@ -241,10 +241,12 @@ async def main(
             pattern = re.compile(r'rewst_remote_agent_(.+?)\.')
             match = pattern.search(executable_path)
             if match:
+                logging.info("Found GUID")
                 org_id = match.group(1)
                 logging.info(f"Found Org ID {org_id}")
-                config_data = load_configuration(org_id=org_id)
+                config_data = load_configuration(org_id,None)
             else:
+                logging.warn(f"Did not find guid in file {executable_path}")
                 config_data = None
 
         if config_data is None and config_url:

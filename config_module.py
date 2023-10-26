@@ -41,6 +41,7 @@ def get_config_file_path(org_id=None, config_file=None):
         os.makedirs(config_dir)
     
     config_file_path = os.path.join(config_dir, "config.json")
+    logging.info(f"Config File Path: {config_file_path}")
     return config_file_path
 
 
