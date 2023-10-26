@@ -252,7 +252,7 @@ async def main(
             config_data = await fetch_configuration(config_url, config_secret)
             save_configuration(config_data)
             org_id = config_data['rewst_org_id']
-            logging.info(f"Configuration saved to {config_module.get_config_file_path(org_id)}")
+            logging.info(f"Configuration saved to {get_config_file_path(org_id)}")
             install_binaries(org_id)
         elif config_data is None:
             logging.info("No configuration found and no config URL provided.")
