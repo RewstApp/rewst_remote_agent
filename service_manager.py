@@ -19,6 +19,7 @@ if os_type == "Windows":
     import win32service
     import win32serviceutil
     import win32event
+    import pywintypes
 
 class RewstService(win32serviceutil.ServiceFramework):
     _svc_name_ = None  # Placeholder, will be set in __init__
@@ -194,10 +195,7 @@ def stop_service(org_id):
         try:
             win32serviceutil.StopService(service_name)
         except pywintypes.error as e:
-            # handle any exceptions as needed, for example:
-            if e.winerror != winerror.ERROR_SERVICE_DOES_NOT_EXIST:
-                raise            
-        os.system(f"net stop {service_name}")
+            logging.error(f"Failed to stop service: {e.strerror}") 
     elif os_type == "Linux":
         os.system(f"systemctl stop {service_name}")
     elif os_type == "Darwin":
