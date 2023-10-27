@@ -29,7 +29,8 @@ from config_module import (
     get_config_file_path,
     fetch_configuration,
     load_configuration,
-    save_configuration
+    save_configuration,
+    parse_args
 )
 
 stop_event = asyncio.Event()
@@ -244,6 +245,11 @@ async def main(
     global device_client
     global org_id
 
+    args = config_module.parse_args()
+
+    config_url = args.config_url
+    config_secret = args.config_secret
+    
     try:
         if config_file:
             logging.info(f"Using config file {config_file}.")
