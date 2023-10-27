@@ -12,7 +12,7 @@ import re
 import signal
 import subprocess
 import sys
-# import traceback
+import win32serviceutil
 from concurrent.futures import ThreadPoolExecutor
 from azure.iot.device.aio import IoTHubDeviceClient
 from service_manager import (
