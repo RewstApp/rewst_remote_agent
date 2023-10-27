@@ -5,7 +5,6 @@ import os
 import shutil
 import time
 from config_module import get_config_file_path, load_configuration
-from rewst_remote_agent import main
 
 os_type = platform.system()
 
