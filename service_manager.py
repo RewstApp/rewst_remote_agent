@@ -21,12 +21,20 @@ if os_type == "Windows":
     import win32event
 
 class RewstService(win32serviceutil.ServiceFramework):
+    _svc_name_ = None  # Placeholder, will be set in __init__
+    _svc_display_name_ = None  # Placeholder, will be set in __init__
 
     def __init__(self, args):
         super().__init__(args)
-        self.hWaitStop = win32event.CreateEvent(None, 0, 0, None)
         config_data = load_configuration()  # Load the configuration
         self.org_id = config_data.get('rewst_org_id')
+        self.set_service_name(self.org_id)
+        self.hWaitStop = win32event.CreateEvent(None, 0, 0, None)
+        
+    @classmethod
+    def set_service_name(cls, org_id):
+        cls._svc_name_ = f"RewstService_{org_id}"
+        cls._svc_display_name_ = f"Rewst Remote Service {org_id}"
 
     def SvcDoRun(self):
         self.ReportServiceStatus(win32service.SERVICE_RUNNING)
