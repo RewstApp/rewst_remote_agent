@@ -38,7 +38,12 @@ def get_config_file_path(org_id=None, config_file=None):
         config_dir = os.path.expanduser(f"~/Library/Application Support/RewstRemoteAgent/{org_id}")
     
     if not os.path.exists(config_dir):
-        os.makedirs(config_dir)
+        try:
+            if not os.path.exists(config_dir):
+                os.makedirs(config_dir)
+        except Exception as e:
+            logging.error(f"Failed to create directory {config_dir}: {str(e)}")
+            raise 
     
     config_file_path = os.path.join(config_dir, "config.json")
     logging.info(f"Config File Path: {config_file_path}")
@@ -67,7 +72,6 @@ async def fetch_configuration(config_url, secret=None):
         "executable_path": sys.executable,
         "hostname": socket.gethostname(),
         "mac_address": get_mac_address(),
-        "is_domain_controller": is_domain_controller(),  # We'll need to implement this
         "operating_system": platform.platform(),
         "cpu_model": platform.processor(),
         "ram_gb": psutil.virtual_memory().total / (1024 ** 3)
@@ -125,10 +129,6 @@ def get_mac_address():
     return mac_address.replace(':', '')
 
 
-def is_domain_controller():
-    # We'll need to implement logic to determine if the host is a domain controller
-    pass
-
 async def main(org_id):
     parser = argparse.ArgumentParser(description='Fetch and save configuration.')
     parser.add_argument('--config-url', type=str, help='URL to fetch the configuration from.')
@@ -146,5 +146,4 @@ async def main(org_id):
     return config  # Return the configuration
 
 if __name__ == "__main__":
-    import asyncio
     asyncio.run(main())

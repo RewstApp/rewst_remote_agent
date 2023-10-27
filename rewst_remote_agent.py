@@ -147,13 +147,13 @@ def execute_commands(commands, post_url=None, interpreter_override=None):
     logging.info(f"Using interpreter: {interpreter}")
     # If PowerShell is the interpreter, update the commands to include the post_url variable
     if "powershell" in interpreter:
-        script_block = f'{{{commands}}}'
         shell_command = f'{interpreter} -EncodedCommand "{commands}"'
     else:
-        preamble = (f"post_url = '{post_url}'\n")
-        commands = preamble + commands
-        commands = commands.replace('"','\\"').replace("'","\\'").replace('\n',' ; ')
-        shell_command = (f"base64 --decode '{commands}' | interpreter")
+        decoded_commands = base64.b64decode(commands).decode('utf-16-le')
+        preamble = f"post_url = '{post_url}'\n"
+        combined_commands = preamble + decoded_commands
+        re_encoded_commands = base64.b64encode(combined_commands.encode('utf-8'))
+        shell_command = (f"base64 --decode '{re_encoded_commands}' | interpreter")
 
     # Execute the command
     try:
@@ -168,6 +168,10 @@ def execute_commands(commands, post_url=None, interpreter_override=None):
         stdout, stderr = process.communicate()
         exit_code = process.returncode  # Get the exit code
 
+        if exit_code != 0:
+            logging.error(f"Command '{shell_command}' failed with exit code {exit_code}")
+            logging.error(f"Standard Error: {stderr}")
+            
         logging.info(f"Process Completed with exit code {exit_code}.")
         logging.info(f"Standard Output: {stdout}")
         if stderr:
@@ -177,25 +181,24 @@ def execute_commands(commands, post_url=None, interpreter_override=None):
             'output': stdout.strip(),
             'error': stderr.strip()
         }
-
-        # If the interpreter is not PowerShell, format the output as a JSON object and send it to the post_url
-        if (post_url) and (interpreter != "powershell"):
-            logging.info("Sending Results to Rewst via httpx.")
-            response = httpx.post(post_url, json=message_data)
-            logging.info(f"POST request status: {response.status_code}")
-            if response.status_code != 200:
-                logging.info(f"Error response: {response.text}")
-    
-        logging.info(f"Returning message_data back to calling function:\n{message_data}")
-        return message_data
-
     except subprocess.CalledProcessError as e:
         logging.error(f"Command '{shell_command}' failed with error code {e.returncode}")
         logging.error(f"Error output: {e.output}")
     except OSError as e:
         logging.error(f"OS error occurred: {e}")
     except Exception as e:
-        logging.error(f"An unexpected error occurred: {e}")   
+        logging.error(f"An unexpected error occurred: {e}")
+
+    # If the interpreter is not PowerShell, format the output as a JSON object and send it to the post_url
+    if (post_url) and (interpreter != "powershell"):
+        logging.info("Sending Results to Rewst via httpx.")
+        response = httpx.post(post_url, json=message_data)
+        logging.info(f"POST request status: {response.status_code}")
+        if response.status_code != 200:
+            logging.info(f"Error response: {response.text}")
+
+    logging.info(f"Returning message_data back to calling function:\n{message_data}")
+    return message_data
 
 
 async def handle_commands(commands, post_url=None, interpreter_override=None):
@@ -236,7 +239,6 @@ async def main(
     stop_service_flag=False,
     restart_service_flag=False,
 ):
-
     global rewst_engine_host
     global device_client
     global org_id
@@ -247,31 +249,33 @@ async def main(
             config_data = load_configuration(config_file=config_file)
         else:
             # Get Org ID for Config
-            executable_path = sys.argv[0] # Gets the file name of the current script
+            executable_path = sys.argv[0]  # Gets the file name of the current script
             pattern = re.compile(r'rewst_remote_agent_(.+?)\.')
             match = pattern.search(executable_path)
             if match:
                 logging.info("Found GUID")
                 org_id = match.group(1)
                 logging.info(f"Found Org ID {org_id}")
-                config_data = load_configuration(org_id,None)
+                config_data = load_configuration(org_id, None)
             else:
                 logging.warn(f"Did not find guid in file {executable_path}")
                 config_data = None
 
+        # If config_data is still None, fetch the configuration
         if config_data is None and config_url:
             logging.info("Configuration file not found. Fetching configuration...")
             config_data = await fetch_configuration(config_url, config_secret)
             save_configuration(config_data)
-            org_id = config_data['rewst_org_id']
+            org_id = config_data['rewst_org_id']  # Update org_id from config_data
             logging.info(f"Configuration saved to {get_config_file_path(org_id)}")
             install_binaries(org_id)
         elif config_data is None:
             logging.info("No configuration found and no config URL provided.")
             sys.exit(1)
 
-        # Retrieve org_id from the configuration
-        org_id = config_data['rewst_org_id']
+        # Retrieve org_id from the configuration if it wasn't already found
+        if not org_id:
+            org_id = config_data['rewst_org_id']
 
         # Service management
         if install_service_flag and not config_url:
@@ -322,27 +326,30 @@ async def main(
 
 # Entry point of the script
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description='Run the IoT Hub device client.')
-    parser.add_argument('--check', action='store_true', help='Run in check mode to test communication')
-    parser.add_argument('--config-file', help='Path to the configuration file.')
-    parser.add_argument('--config-url', help='URL to fetch the configuration from.')
-    parser.add_argument('--config-secret', help='Secret to use when fetching the configuration.')
-    parser.add_argument('--install-service', action='store_true', help='Install the service.')
-    parser.add_argument('--uninstall-service', action='store_true', help='Uninstall the service.')
-    parser.add_argument('--start-service', action='store_true', help='Start the service.')
-    parser.add_argument('--restart-service', action='store_true', help='Restart the service.')
-    parser.add_argument('--stop-service', action='store_true', help='Stop the service.')
+    if len(sys.argv) == 1:
+        parser = argparse.ArgumentParser(description='Run the IoT Hub device client.')
+        parser.add_argument('--check', action='store_true', help='Run in check mode to test communication')
+        parser.add_argument('--config-file', help='Path to the configuration file.')
+        parser.add_argument('--config-url', help='URL to fetch the configuration from.')
+        parser.add_argument('--config-secret', help='Secret to use when fetching the configuration.')
+        parser.add_argument('--install-service', action='store_true', help='Install the service.')
+        parser.add_argument('--uninstall-service', action='store_true', help='Uninstall the service.')
+        parser.add_argument('--start-service', action='store_true', help='Start the service.')
+        parser.add_argument('--restart-service', action='store_true', help='Restart the service.')
+        parser.add_argument('--stop-service', action='store_true', help='Stop the service.')
 
-    args = parser.parse_args()
-    asyncio.run(main(
-        check_mode=args.check,
-        config_file=args.config_file,
-        config_url=args.config_url,
-        config_secret=args.config_secret,
-        install_service_flag=args.install_service,
-        uninstall_service_flag=args.uninstall_service,
-        start_service_flag=args.start_service,
-        stop_service_flag=args.stop_service,
-        restart_service_flag=args.restart_service
-    ))
+        args = parser.parse_args()
+        asyncio.run(main(
+            check_mode=args.check,
+            config_file=args.config_file,
+            config_url=args.config_url,
+            config_secret=args.config_secret,
+            install_service_flag=args.install_service,
+            uninstall_service_flag=args.uninstall_service,
+            start_service_flag=args.start_service,
+            stop_service_flag=args.stop_service,
+            restart_service_flag=args.restart_service
+        ))
+    else:
+        win32serviceutil.HandleCommandLine(RewstService)
 

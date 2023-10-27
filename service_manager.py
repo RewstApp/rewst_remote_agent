@@ -1,9 +1,11 @@
+import asyncio
 import logging
 import platform
 import os
 import shutil
 import time
-from config_module import get_config_file_path
+from config_module import get_config_file_path, load_configuration
+from rewst_remote_agent import main
 
 os_type = platform.system()
 
@@ -17,7 +19,24 @@ logging.basicConfig(
 if os_type == "Windows":
     import win32service
     import win32serviceutil
+    import win32event
 
+class RewstService(win32serviceutil.ServiceFramework):
+
+    def __init__(self, args):
+        super().__init__(args)
+        self.hWaitStop = win32event.CreateEvent(None, 0, 0, None)
+        config_data = load_configuration()  # Load the configuration
+        self.org_id = config_data.get('rewst_org_id')
+
+    def SvcDoRun(self):
+        self.ReportServiceStatus(win32service.SERVICE_RUNNING)
+        asyncio.run(main(org_id=self.org_id))  # pass org_id to the main function
+
+    def SvcStop(self):
+        self.ReportServiceStatus(win32service.SERVICE_STOP_PENDING)
+        stop_event.set()
+        self.ReportServiceStatus(win32service.SERVICE_STOPPED)
 
 def get_service_name(org_id):
     return f"Rewst_Remote_Agent_{org_id}"
@@ -87,10 +106,12 @@ def install_service(org_id, config_file=None):
     if os_type == "Windows":
         import win32serviceutil
         win32serviceutil.InstallService(
-            f"{executable_path} --config-file {config_file_path}",
+            f"{RewstService.__module__}.{RewstService.__name__}",
             service_name,
             displayName=display_name,
-            startType=win32service.SERVICE_AUTO_START
+            startType=win32service.SERVICE_AUTO_START,
+            exeName=sys.executable,
+            args=[get_executable_path(org_id), f'--config-file {config_file_path}']
         )
     elif os_type == "Linux":
         systemd_service_content = f"""
