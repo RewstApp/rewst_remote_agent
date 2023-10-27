@@ -249,7 +249,7 @@ async def main(
 
     config_url = args.config_url
     config_secret = args.config_secret
-    
+
     try:
         if config_file:
             logging.info(f"Using config file {config_file}.")
@@ -333,7 +333,7 @@ async def main(
 
 # Entry point of the script
 if __name__ == "__main__":
-    if len(sys.argv) == 1:
+    if len(sys.argv) > 1:
         parser = argparse.ArgumentParser(description='Run the IoT Hub device client.')
         parser.add_argument('--check', action='store_true', help='Run in check mode to test communication')
         parser.add_argument('--config-file', help='Path to the configuration file.')
