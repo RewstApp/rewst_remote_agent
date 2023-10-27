@@ -120,8 +120,9 @@ def install_service(org_id, config_file=None):
             displayName=display_name,
             startType=win32service.SERVICE_AUTO_START,
             exeName=sys.executable,
-            args=[get_executable_path(org_id), f'--config-file {config_file_path}']
+            cmdline=[get_executable_path(org_id), f'--config-file {config_file_path}']
         )
+
     elif os_type == "Linux":
         systemd_service_content = f"""
         [Unit]
