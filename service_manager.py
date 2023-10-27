@@ -119,7 +119,7 @@ def install_service(org_id, config_file=None):
             service_name,
             displayName=display_name,
             startType=win32service.SERVICE_AUTO_START,
-            exeName=f"{sys.executable} {get_executable_path(org_id)} --config-file {config_file_path}"
+            exeName=executable_path
         )
 
     elif os_type == "Linux":
