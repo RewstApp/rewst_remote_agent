@@ -23,6 +23,7 @@ from service_manager import (
     start_service,
     stop_service,
     restart_service,
+    RewstService
 )
 from config_module import (
     get_config_file_path,
