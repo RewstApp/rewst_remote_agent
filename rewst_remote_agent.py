@@ -245,8 +245,6 @@ async def main(
     global device_client
     global org_id
 
-    args = config_module.parse_args()
-
     config_url = args.config_url
     config_secret = args.config_secret
 
