@@ -58,17 +58,23 @@ jobs:
         name: macos-latest-asset
         path: ./dist/rewst_remote_agent
 
-    - name: Install Windows SDK
-      if: matrix.os == 'windows-latest'
-      uses: microsoft/setup-msbuild@v1
-
-    - name: Locate signtool (Windows)
-      if: matrix.os == 'windows-latest'
+    - name: See where we are in Linux
+      if: matrix.os == 'ubuntu-latest'
       run: |
-        $signtoolPath = Get-ChildItem -Path "C:\Program Files (x86)\Windows Kits" -Recurse -Filter signtool.exe | Select-Object -First 1 -ExpandProperty FullName
-        echo "::set-output name=signtoolPath::$signtoolPath"
-      id: locate-signtool
-      shell: pwsh
+        find .github
+        pwd
+
+    # - name: Install Windows SDK
+    #   if: matrix.os == 'windows-latest'
+    #   uses: microsoft/setup-msbuild@v1
+
+    # - name: Locate signtool (Windows)
+    #   if: matrix.os == 'windows-latest'
+    #   run: |
+    #     $signtoolPath = Get-ChildItem -Path "C:\Program Files (x86)\Windows Kits" -Recurse -Filter signtool.exe | Select-Object -First 1 -ExpandProperty FullName
+    #     echo "::set-output name=signtoolPath::$signtoolPath"
+    #   id: locate-signtool
+    #   shell: pwsh
     
     # - name: Sign Executable (Windows) #Self-Sign
     #   run: |
@@ -92,7 +98,7 @@ jobs:
           password: ${{ secrets.SSL_COM_PASSWORD }}
           credential_id: ${{ secrets.SSL_COM_CREDENTIAL_ID }}
           totp_secret: ${{ secrets.SSL_COM_OTP }}
-          file_path: ./dist/rewst_remote_agent.exe
+          file_path: ./a/rewst_remote_agent/rewst_remote_agent/dist/rewst_remote_agent.exe
           output_path: ./dist
 
 
