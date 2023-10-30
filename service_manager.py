@@ -120,8 +120,7 @@ def install_service(org_id, config_file=None):
             service_name,
             displayName=display_name,
             startType=win32service.SERVICE_AUTO_START,
-            exeName=executable_path,
-            errorControl= 'ERROR_IGNORE'
+            exeName=executable_path
         )
 
     elif os_type == "Linux":

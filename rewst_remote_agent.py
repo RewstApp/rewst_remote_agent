@@ -86,7 +86,7 @@ async def setup_message_handler(client):
 
 # Handler function for messages received from the IoT Hub
 async def message_handler(message):
-    logging.info(f"Received message: {message.data}")
+    logging.info(f"Received IoT Hub message: {message.data}")
     try:
         message_data = json.loads(message.data)
         get_installation_info = message_data.get("get_installation")
