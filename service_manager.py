@@ -169,14 +169,14 @@ def uninstall_service(org_id):
 
     try:
         stop_service(org_id)
-    except Exception as {e}:
+    except Exception as e:
         logging.warn(f"Unable to stop service: {e}")
          
     if os_type == "Windows":
         import win32serviceutil
         try:
             win32serviceutil.RemoveService(service_name)
-        except Exception as {e}:
+        except Exception as e:
             logging.warn(f"Exception removing service: {e}")
     elif os_type == "Linux":
         os.system(f"systemctl disable {service_name}")
