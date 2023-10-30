@@ -70,24 +70,37 @@ jobs:
       id: locate-signtool
       shell: pwsh
     
-    - name: Sign Executable (Windows)
-      run: |
-        $certBytes = [System.Convert]::FromBase64String($env:SELF_SIGNED_CERT)
-        [System.IO.File]::WriteAllBytes("cert.pfx", $certBytes)
-        & '${{ steps.locate-signtool.outputs.signtoolPath }}' sign /f cert.pfx /p $env:SELF_SIGNED_CERT_PASSWORD /tr http://timestamp.digicert.com /td sha256 /fd sha256 /a D:\a\rewst_remote_agent\rewst_remote_agent\dist\rewst_remote_agent.exe
+    # - name: Sign Executable (Windows) #Self-Sign
+    #   run: |
+    #     $certBytes = [System.Convert]::FromBase64String($env:SELF_SIGNED_CERT)
+    #     [System.IO.File]::WriteAllBytes("cert.pfx", $certBytes)
+    #     & '${{ steps.locate-signtool.outputs.signtoolPath }}' sign /f cert.pfx /p $env:SELF_SIGNED_CERT_PASSWORD /tr http://timestamp.digicert.com /td sha256 /fd sha256 /a D:\a\rewst_remote_agent\rewst_remote_agent\dist\rewst_remote_agent.exe
 
-      if: matrix.os == 'windows-latest'
-      shell: pwsh
-      env:
-        SELF_SIGNED_CERT: ${{ secrets.SELF_SIGNED_CERT }}
-        SELF_SIGNED_CERT_PASSWORD: ${{ secrets.SELF_SIGNED_CERT_PASSWORD }}
+    #   if: matrix.os == 'windows-latest'
+    #   shell: pwsh
+    #   env:
+    #     SELF_SIGNED_CERT: ${{ secrets.SELF_SIGNED_CERT }}
+    #     SELF_SIGNED_CERT_PASSWORD: ${{ secrets.SELF_SIGNED_CERT_PASSWORD }}
     
+
+    - name: Sign with SSL.com CodeSignTool
+      if: matrix.os == 'windows-latest'
+      uses: sslcom/actions-codesigner@develop
+      with:
+          command: sign
+          username: ${{ secrets.SSL_COM_USERNAME }}
+          password: ${{ secrets.SSL_COM_PASSWORD }}
+          credential_id: ${{ secrets.SSL_COM_CREDENTIAL_ID }}
+          totp_secret: ${{ secrets.SSL_COM_OTP }}
+          file_path: D:\a\rewst_remote_agent\rewst_remote_agent\dist\rewst_remote_agent.exe
+          output_path: D:\a\rewst_remote_agent\rewst_remote_agent\dist\rewst_remote_agent_signed.exe
+
     - name: Upload Signed Executable (Windows)
       if: matrix.os == 'windows-latest'
       uses: actions/upload-artifact@v2
       with:
         name: windows-latest-signed-asset
-        path: ./dist/rewst_remote_agent.exe 
+        path: ./dist/rewst_remote_agent_signed.exe 
 
   release:
     needs: build  # This job depends on the 'build' job
@@ -122,7 +135,7 @@ jobs:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
         upload_url: ${{ steps.create_release.outputs.upload_url }} 
-        asset_path: ./windows-latest-signed-asset/rewst_remote_agent.exe
+        asset_path: ./windows-latest-signed-asset/rewst_remote_agent_signed.exe
         asset_name: rewst_remote_agent.win.exe
         asset_content_type: application/octet-stream
 
