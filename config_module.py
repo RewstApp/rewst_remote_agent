@@ -128,20 +128,3 @@ def get_mac_address():
     mac_address = ':'.join(mac_num[i: i + 2] for i in range(0, 11, 2))
     return mac_address.replace(':', '')
 
-
-async def main(org_id):
-    parser = argparse.ArgumentParser(description='Fetch and save configuration.')
-    parser.add_argument('--config-url', type=str, help='URL to fetch the configuration from.')
-    parser.add_argument('--config-secret', type=str, help='Secret to use when fetching the configuration.'
-
-    if config is None:
-        print("Configuration file not found. Fetching configuration from Rewst...")
-        config_url = args.config_url
-        config_secret = args.config_secret
-        config = await fetch_configuration(config_url, secret=config_secret)  # Pass the secret to fetch_configuration
-        save_configuration(config)
-        print(f"Configuration saved to config.json")
-    return config  # Return the configuration
-
-if __name__ == "__main__":
-    asyncio.run(main())
