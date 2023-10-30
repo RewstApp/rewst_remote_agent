@@ -61,7 +61,7 @@ jobs:
     - name: See where we are in Linux
       if: matrix.os == 'ubuntu-latest'
       run: |
-        find .github
+        find .
         pwd
 
     # - name: Install Windows SDK
