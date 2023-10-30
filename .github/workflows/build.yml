@@ -93,14 +93,15 @@ jobs:
           credential_id: ${{ secrets.SSL_COM_CREDENTIAL_ID }}
           totp_secret: ${{ secrets.SSL_COM_OTP }}
           file_path: ./dist/rewst_remote_agent.exe
-          output_path: ./dist/rewst_remote_agent_signed.exe
+          output_path: ./dist
+
 
     - name: Upload Signed Executable (Windows)
       if: matrix.os == 'windows-latest'
       uses: actions/upload-artifact@v2
       with:
         name: windows-latest-signed-asset
-        path: ./dist/rewst_remote_agent_signed.exe 
+        path: ./dist/rewst_remote_agent.exe 
 
   release:
     needs: build  # This job depends on the 'build' job
@@ -135,7 +136,7 @@ jobs:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
         upload_url: ${{ steps.create_release.outputs.upload_url }} 
-        asset_path: ./windows-latest-signed-asset/rewst_remote_agent_signed.exe
+        asset_path: ./windows-latest-signed-asset/rewst_remote_agent.exe
         asset_name: rewst_remote_agent.win.exe
         asset_content_type: application/octet-stream
 
