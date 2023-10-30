@@ -84,7 +84,7 @@ jobs:
     
 
     - name: Sign with SSL.com CodeSignTool
-      if: matrix.os == 'windows-latest'
+      if: matrix.os == 'ubuntu-latest'
       uses: sslcom/actions-codesigner@develop
       with:
           command: sign
