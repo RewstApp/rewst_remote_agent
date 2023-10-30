@@ -113,13 +113,15 @@ def install_service(org_id, config_file=None):
 
     # Install the service
     if os_type == "Windows":
+        logging.info(f"Installing Windows Service: {service_name}")
         import win32serviceutil
         win32serviceutil.InstallService(
             f"{RewstService.__module__}.{RewstService.__name__}",
             service_name,
             displayName=display_name,
             startType=win32service.SERVICE_AUTO_START,
-            exeName=executable_path
+            exeName=executable_path,
+            errorControl= 'ERROR_IGNORE'
         )
 
     elif os_type == "Linux":
@@ -165,11 +167,17 @@ def uninstall_service(org_id):
     service_name = get_service_name(org_id)
     logging.info(f"Uninstalling service {service_name}.")
 
-    stop_service(org_id)
+    try:
+        stop_service(org_id)
+    except Exception as {e}:
+        logging.warn(f"Unable to stop service: {e}")
          
     if os_type == "Windows":
         import win32serviceutil
-        win32serviceutil.RemoveService(service_name)
+        try:
+            win32serviceutil.RemoveService(service_name)
+        except Exception as {e}:
+            logging.warn(f"Exception removing service: {e}")
     elif os_type == "Linux":
         os.system(f"systemctl disable {service_name}")
         os.system(f"rm /etc/systemd/system/{service_name}.service")
@@ -193,10 +201,11 @@ def start_service(org_id):
 def stop_service(org_id):
     service_name = get_service_name(org_id)
     if os_type == "Windows":
-        try:
-            win32serviceutil.StopService(service_name)
-        except pywintypes.error as e:
-            logging.error(f"Failed to stop service: {e.strerror}") 
+        if win32serviceutil.QueryServiceStatus(service_name):
+            try:
+                win32serviceutil.StopService(service_name)
+            except pywintypes.error as e:
+                logging.error(f"Failed to stop service: {e.strerror}") 
     elif os_type == "Linux":
         os.system(f"systemctl stop {service_name}")
     elif os_type == "Darwin":
