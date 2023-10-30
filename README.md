@@ -21,8 +21,8 @@ Plan:
 
 
 TodDo:
-- [ ] All the things
 - [X] Add cross-platform support
 - [X] Sign-up process
-- [ ] Make it run as a service
+- [X] Make it run as a service
+- [ ] Actual Code Signing
 - [ ] _Future:_ Watchdog service?
