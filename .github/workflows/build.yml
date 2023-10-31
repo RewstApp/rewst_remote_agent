@@ -94,13 +94,6 @@ jobs:
       shell: pwsh
       run: |
         .\.github\workflows\ssl_com_sign_binaries.ps1 -downloadUrl "https://www.ssl.com/download/codesigntool-for-windows/" -username "${{ secrets.SSL_COM_USERNAME }}" -password "${{ secrets.SSL_COM_PASSWORD }}" -credentialId "${{ secrets.SSL_COM_CREDENTIAL_ID }}" -totpSecret "${{ secrets.SSL_COM_OTP }}" -appDistPath "D:\a\rewst_remote_agent\rewst_remote_agent\dist"
-      env:
-        DOWNLOAD_URL: "https://www.ssl.com/download/codesigntool-for-windows/"
-        USERNAME: ${{ secrets.SSL_COM_USERNAME }}
-        PASSWORD: ${{ secrets.SSL_COM_PASSWORD }}
-        CREDENTIAL_ID: ${{ secrets.SSL_COM_CREDENTIAL_ID }}
-        TOTP_SECRET: ${{ secrets.SSL_COM_OTP }}
-        APP_DIST_PATH: "D:\\a\\rewst_remote_agent\\rewst_remote_agent\\dist"
 
 
     - name: Upload Signed Executable (Windows)
@@ -108,7 +101,7 @@ jobs:
       uses: actions/upload-artifact@v2
       with:
         name: windows-latest-signed-asset
-        path: ./dist/rewst_remote_agent_signed.exe 
+        path: ./dist/rewst_remote_agent.exe 
 
   release:
     needs: build  # This job depends on the 'build' job
@@ -143,7 +136,7 @@ jobs:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
         upload_url: ${{ steps.create_release.outputs.upload_url }} 
-        asset_path: ./windows-latest-signed-asset/rewst_remote_agent_signed.exe
+        asset_path: ./windows-latest-signed-asset/rewst_remote_agent.exe
         asset_name: rewst_remote_agent.win.exe
         asset_content_type: application/octet-stream
 
