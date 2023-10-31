@@ -25,15 +25,17 @@ $codeSignDirectory = Get-ChildItem -Directory -Path . -Name CodeSign*
 Set-Location $codeSignDirectory
 
 # Sign Application
-$signCommand = ".\CodeSignTool.bat sign `
-    -username=$username `
-    -password=$password `
-    -credential_id=$credentialId `
-    -totpSecret=$totpSecret `
-    -input_path=$inputFile `
-    -output_path=$outputFile"
+$signArguments = @(
+    "sign",
+    "-username=$username",
+    "-password=$password",
+    "-credential_id=$credentialId",
+    "-totpSecret=$totpSecret",
+    "-input_path=$inputFile",
+    "-output_path=$outputFile"
+)
 
-Invoke-Expression -Command $signCommand
+Start-Process -FilePath ".\CodeSignTool.bat" -ArgumentList $signArguments -Wait -NoNewWindow
 
 # Check if the signing was successful
 if ($LASTEXITCODE -eq 0) {
@@ -44,4 +46,6 @@ if ($LASTEXITCODE -eq 0) {
 }
 
 # Get App Dist Directory Contents
+Write-Host "App Distribution Directory Contents:"
 Get-ChildItem $appDistPath
+
