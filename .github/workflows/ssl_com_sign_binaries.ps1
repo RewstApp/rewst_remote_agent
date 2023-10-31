@@ -5,11 +5,11 @@ param(
     [string]$totpSecret
 )
 
-$inputFile = "$appDistPath\rewst_remote_agent.exe"
-$outputDirPath = "$appDistPath\signed"
-
 $downloadUrl = 'https://www.ssl.com/download/codesigntool-for-windows/'
 $appDistPath =  'D:\a\rewst_remote_agent\rewst_remote_agent\dist'
+
+$inputFile = "$appDistPath\rewst_remote_agent.exe"
+$outputDirPath = "$appDistPath\signed"
 
 write-host "Signing App as Username: $username"
 
