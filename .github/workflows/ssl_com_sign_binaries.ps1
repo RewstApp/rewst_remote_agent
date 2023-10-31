@@ -9,13 +9,19 @@ $appDistPath = $env.APP_DIST_PATH
 $inputFile = "$appDistPath\rewst_remote_agent.exe"
 $outputFile = "$appDistPath\rewst_remote_agent_signed.exe"
 
+write-host $username
+
 # Download Code Sign Tool
-Write-Host "Downloading SSL.com Code Sign Tool from $downloadUrl"
-Invoke-WebRequest -uri $downloadUrl -OutFile codesigntool.zip
-Expand-Archive -Path codesigntool.zip -DestinationPath .
+try {
+    Invoke-WebRequest -uri $downloadUrl -OutFile codesigntool.zip
+    Expand-Archive -Path codesigntool.zip -DestinationPath .
+} catch {
+    Write-Host "Error: $_"
+    exit 1
+}
 
 $codeSignDirectory = Get-ChildItem -Directory -Path . -Name CodeSign*
-cd $codeSignDirectory
+Set-Location $codeSignDirectory
 
 # Sign Application
 $signCommand = ".\CodeSignTool.bat sign `
