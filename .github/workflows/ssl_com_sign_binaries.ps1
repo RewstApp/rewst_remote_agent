@@ -33,7 +33,7 @@ $signArguments = @(
     "-username=$username",
     "-password=$password",
     "-credential_id=$credentialId",
-    "-totpSecret=$totpSecret",
+    "-totp_secret=$totpSecret",
     "-input_file_path=$inputFile",
     "-output_dir_path=$appDistPath"
 )
