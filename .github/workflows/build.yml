@@ -93,7 +93,7 @@ jobs:
       if: matrix.os == 'windows-latest'
       shell: pwsh
       run: |
-        .\.github\workflows\ssl_com_sign_binaries.ps1 -downloadUrl "${{ secrets.SSL_COM_DOWNLOAD_URL }}" -username "${{ secrets.SSL_COM_USERNAME }}" -password "${{ secrets.SSL_COM_PASSWORD }}" -credentialId "${{ secrets.SSL_COM_CREDENTIAL_ID }}" -totpSecret "${{ secrets.SSL_COM_OTP }}" -appDistPath "D:\a\rewst_remote_agent\rewst_remote_agent\dist"
+        .\.github\workflows\ssl_com_sign_binaries.ps1 -downloadUrl "https://www.ssl.com/download/codesigntool-for-windows/" -username "${{ secrets.SSL_COM_USERNAME }}" -password "${{ secrets.SSL_COM_PASSWORD }}" -credentialId "${{ secrets.SSL_COM_CREDENTIAL_ID }}" -totpSecret "${{ secrets.SSL_COM_OTP }}" -appDistPath "D:\a\rewst_remote_agent\rewst_remote_agent\dist"
       env:
         DOWNLOAD_URL: "https://www.ssl.com/download/codesigntool-for-windows/"
         USERNAME: ${{ secrets.SSL_COM_USERNAME }}
