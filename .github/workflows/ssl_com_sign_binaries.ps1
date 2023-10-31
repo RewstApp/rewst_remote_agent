@@ -2,31 +2,31 @@
 
 $username = $env.USERNAME
 $password = $env.PASSWORD
-$credential_id = $env.CREDENTIAL_ID
-$totp_secret = $env.TOTP_SECRET
-$download_url = $env.DOWNLOAD_URL
-$app_dist_path = $env.APP_DIST_PATH 
+$credentialId = $env.CREDENTIAL_ID
+$totpSecret = $env.TOTP_SECRET
+$downloadUrl = $env.DOWNLOAD_URL
+$appDistPath = $env.APP_DIST_PATH
 
-$input_file = "$app_dist_path\rewst_remote_agent.exe"
-$output_file = "$app_dist_path\rewst_remote_agent_signed.exe"
+$inputFile = "$appDistPath\rewst_remote_agent.exe"
+$outputFile = "$appDistPath\rewst_remote_agent_signed.exe"
 
 # Download Code Sign Tool
-Write-Host "Downloading CodeSignTool from $download_url"
-Invoke-WebRequest -uri $download_url -OutFile codesigntool.zip
+Invoke-WebRequest -uri $downloadUrl -OutFile codesigntool.zip
 Expand-Archive -Path codesigntool.zip -DestinationPath .
 
-$code_sign_folder = Get-ChildItem -Directory -Path . -Name CodeSign*
-cd $code_sign_dir
+$codeSignDirectory = Get-ChildItem -Directory -Path . -Name CodeSign*
+cd $codeSignDirectory
 
 # Sign Application
-$sign_command = "$codeSignToolPath sign `
+$signCommand = "$codeSignToolPath sign `
     -username=$username `
     -password=$password `
-    -totp_secret=$totp_secret `
-    -input_path=$input_file `
-    -output_path=$output_file"
+    -credential_id=$credentialId `
+    -totpSecret=$totpSecret `
+    -input_path=$inputFile `
+    -output_path=$outputFile"
 
-Invoke-Expression -Command $sign_command
+Invoke-Expression -Command $signCommand
 
 # Check if the signing was successful
 if ($LASTEXITCODE -eq 0) {
@@ -36,6 +36,6 @@ if ($LASTEXITCODE -eq 0) {
     exit $LASTEXITCODE
 }
 
-# List Directory contents to see how things look
-Get-ChildItem $app_dist_path
+
+Get-ChildItem $appDistPath
 
