@@ -1,5 +1,4 @@
 # Get Secrets from env vars
-
 $username = $env.USERNAME
 $password = $env.PASSWORD
 $credentialId = $env.CREDENTIAL_ID
@@ -11,6 +10,7 @@ $inputFile = "$appDistPath\rewst_remote_agent.exe"
 $outputFile = "$appDistPath\rewst_remote_agent_signed.exe"
 
 # Download Code Sign Tool
+Write-Host "Downloading SSL.com Code Sign Tool from $downloadUrl"
 Invoke-WebRequest -uri $downloadUrl -OutFile codesigntool.zip
 Expand-Archive -Path codesigntool.zip -DestinationPath .
 
@@ -18,7 +18,7 @@ $codeSignDirectory = Get-ChildItem -Directory -Path . -Name CodeSign*
 cd $codeSignDirectory
 
 # Sign Application
-$signCommand = "$codeSignToolPath sign `
+$signCommand = ".\CodeSignTool.bat sign `
     -username=$username `
     -password=$password `
     -credential_id=$credentialId `
@@ -36,6 +36,6 @@ if ($LASTEXITCODE -eq 0) {
     exit $LASTEXITCODE
 }
 
-
+# Get App Dist Directory Contents
 Get-ChildItem $appDistPath
 
