@@ -12,6 +12,9 @@ $outputFile = "$appDistPath\rewst_remote_agent_signed.exe"
 
 write-host "Signing App as Username: $username"
 
+Write-Host "App Distribution Directory Contents:"
+Get-ChildItem $appDistPath
+
 # Download Code Sign Tool
 try {
     Invoke-WebRequest -uri $downloadUrl -OutFile codesigntool.zip
@@ -31,8 +34,8 @@ $signArguments = @(
     "-password=$password",
     "-credential_id=$credentialId",
     "-totpSecret=$totpSecret",
-    "-input_path=$inputFile",
-    "-output_path=$outputFile"
+    "-input_file_path=$inputFile",
+    "-output_dir_path=$appDistPath"
 )
 
 Start-Process -FilePath ".\CodeSignTool.bat" -ArgumentList $signArguments -Wait -NoNewWindow
