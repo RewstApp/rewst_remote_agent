@@ -90,16 +90,18 @@ jobs:
     
 
     - name: Sign with SSL.com CodeSignTool
-      if: matrix.os == 'ubuntu-latest'
-      uses: sslcom/actions-codesigner@develop
-      with:
-          command: sign
-          username: ${{ secrets.SSL_COM_USERNAME }}
-          password: ${{ secrets.SSL_COM_PASSWORD }}
-          credential_id: ${{ secrets.SSL_COM_CREDENTIAL_ID }}
-          totp_secret: ${{ secrets.SSL_COM_OTP }}
-          file_path: ./a/rewst_remote_agent/rewst_remote_agent/dist/rewst_remote_agent.exe
-          output_path: ./dist
+      if: matrix.os == 'windows-latest'
+      shell: pwsh
+      run: |
+        .\.github\workflows\ssl_com_sign_binaries.ps1
+      env:
+          DOWNLOAD_URL: https://www.ssl.com/download/codesigntool-for-windows/
+          USERNAME: ${{ secrets.SSL_COM_USERNAME }}
+          PASSWORD: ${{ secrets.SSL_COM_PASSWORD }}
+          CREDENTIAL_ID: ${{ secrets.SSL_COM_CREDENTIAL_ID }}
+          TOTP_SECRET: ${{ secrets.SSL_COM_OTP }}
+          APP_DIST_PATH: "D:\\a\\rewst_remote_agent\\rewst_remote_agent\\dist"
+
 
 
     - name: Upload Signed Executable (Windows)
@@ -107,7 +109,7 @@ jobs:
       uses: actions/upload-artifact@v2
       with:
         name: windows-latest-signed-asset
-        path: ./dist/rewst_remote_agent.exe 
+        path: ./dist/rewst_remote_agent_signed.exe 
 
   release:
     needs: build  # This job depends on the 'build' job
@@ -142,7 +144,7 @@ jobs:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
         upload_url: ${{ steps.create_release.outputs.upload_url }} 
-        asset_path: ./windows-latest-signed-asset/rewst_remote_agent.exe
+        asset_path: ./windows-latest-signed-asset/rewst_remote_agent_signed.exe
         asset_name: rewst_remote_agent.win.exe
         asset_content_type: application/octet-stream
 
