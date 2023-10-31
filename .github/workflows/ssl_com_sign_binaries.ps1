@@ -11,6 +11,7 @@ $input_file = "$app_dist_path\rewst_remote_agent.exe"
 $output_file = "$app_dist_path\rewst_remote_agent_signed.exe"
 
 # Download Code Sign Tool
+Write-Host "Downloading CodeSignTool from $download_url"
 Invoke-WebRequest -uri $download_url -OutFile codesigntool.zip
 Expand-Archive -Path codesigntool.zip -DestinationPath .
 
