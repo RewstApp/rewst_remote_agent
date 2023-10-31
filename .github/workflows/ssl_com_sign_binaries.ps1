@@ -1,10 +1,11 @@
-# Get Secrets from env vars
-$username = $env.USERNAME
-$password = $env.PASSWORD
-$credentialId = $env.CREDENTIAL_ID
-$totpSecret = $env.TOTP_SECRET
-$downloadUrl = $env.DOWNLOAD_URL
-$appDistPath = $env.APP_DIST_PATH
+param(
+    [string]$downloadUrl,
+    [string]$username,
+    [string]$password,
+    [string]$credentialId,
+    [string]$totpSecret,
+    [string]$appDistPath
+)
 
 $inputFile = "$appDistPath\rewst_remote_agent.exe"
 $outputFile = "$appDistPath\rewst_remote_agent_signed.exe"
@@ -44,4 +45,3 @@ if ($LASTEXITCODE -eq 0) {
 
 # Get App Dist Directory Contents
 Get-ChildItem $appDistPath
-
