@@ -9,7 +9,7 @@ $appDistPath = $env.APP_DIST_PATH
 $inputFile = "$appDistPath\rewst_remote_agent.exe"
 $outputFile = "$appDistPath\rewst_remote_agent_signed.exe"
 
-write-host "username: $username"
+write-host "Signing App as Username: $username"
 
 # Download Code Sign Tool
 try {
