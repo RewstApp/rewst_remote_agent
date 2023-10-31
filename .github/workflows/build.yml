@@ -101,7 +101,7 @@ jobs:
       uses: actions/upload-artifact@v2
       with:
         name: windows-latest-signed-asset
-        path: ./dist/rewst_remote_agent.exe 
+        path: ./dist/signed/rewst_remote_agent.exe 
 
   release:
     needs: build  # This job depends on the 'build' job

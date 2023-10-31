@@ -6,11 +6,14 @@ param(
 )
 
 $inputFile = "$appDistPath\rewst_remote_agent.exe"
+$outputDirPath = "$appDistPath\signed"
 
 $downloadUrl = 'https://www.ssl.com/download/codesigntool-for-windows/'
 $appDistPath =  'D:\a\rewst_remote_agent\rewst_remote_agent\dist'
 
 write-host "Signing App as Username: $username"
+
+New-Item -Type Directory $outputDirPath
 
 Write-Host "App Distribution Directory Contents:"
 Get-ChildItem $appDistPath
@@ -35,7 +38,7 @@ $signArguments = @(
     "-credential_id=$credentialId",
     "-totp_secret=$totpSecret",
     "-input_file_path=$inputFile",
-    "-output_dir_path=$appDistPath"
+    "-output_dir_path=$outputDirPath"
 
 Start-Process -FilePath ".\CodeSignTool.bat" -ArgumentList $signArguments -Wait -NoNewWindow
 
@@ -49,5 +52,5 @@ if ($LASTEXITCODE -eq 0) {
 
 # Get App Dist Directory Contents
 Write-Host "App Distribution Directory Contents:"
-Get-ChildItem $appDistPath
+Get-ChildItem -Recursive $appDistPath
 
