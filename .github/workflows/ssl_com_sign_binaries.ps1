@@ -4,7 +4,7 @@ $username = $env.USERNAME
 $password = $env.PASSWORD
 $credential_id = $env.CREDENTIAL_ID
 $totp_secret = $env.TOTP_SECRET
-$download_url = $env.DOWNLOAD.URL
+$download_url = $env.DOWNLOAD_URL
 $app_dist_path = $env.APP_DIST_PATH 
 
 $input_file = "$app_dist_path\rewst_remote_agent.exe"
