@@ -39,7 +39,7 @@ $signArguments = @(
     "-totp_secret=$totpSecret",
     "-input_file_path=$inputFile",
     "-output_dir_path=$outputDirPath"
-
+)
 Start-Process -FilePath ".\CodeSignTool.bat" -ArgumentList $signArguments -Wait -NoNewWindow
 
 # Check if the signing was successful
