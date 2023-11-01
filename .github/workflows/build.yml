@@ -50,32 +50,33 @@ jobs:
       shell: pwsh
       run: |
         $version = "${{ needs.bump_version.outputs.new_tag }}" -replace '\.', ','
-        @"
-        VSVersionInfo(
-          ffi=FixedFileInfo(
-          filevers=($version,0),
-          prodvers=($version,0),
-          mask=0x3f,
-          flags=0x0,
-          OS=0x4,
-          fileType=0x1,
-          subtype=0x0,
-          date=(0, 0)
-          ),
-          kids=[
-            StringFileInfo(
-              [
-                StringTable(
-                  u'040904b0',
-                  [StringStruct(u'FileVersion', '$version.0'),
-                  StringStruct(u'ProductVersion', '$version.0')]
-                )
-              ]
+        $versionInfo = @"
+          VSVersionInfo(
+            ffi=FixedFileInfo(
+              filevers=($version,0),
+              prodvers=($version,0),
+              mask=0x3f,
+              flags=0x0,
+              OS=0x4,
+              fileType=0x1,
+              subtype=0x0,
+              date=(0, 0)
             ),
-            VarFileInfo([VarStruct(u'Translation', [0x409, 1200])])
-          ]
-        )
-        "@ | Out-File -FilePath version.txt -Encoding ascii
+            kids=[
+              StringFileInfo(
+                [
+                  StringTable(
+                    u'040904b0',
+                    [StringStruct(u'FileVersion', u'${{ needs.bump_version.outputs.new_tag }}'),
+                    StringStruct(u'ProductVersion', u'${{ needs.bump_version.outputs.new_tag }}')]
+                  )
+                ]
+              ),
+              VarFileInfo([VarStruct(u'Translation', [0x409, 1200])])
+            ]
+          )
+          "@ 
+                Set-Content -Path version.txt -Value $versionInfo
 
     - name: Run build script (Windows)
       if: matrix.os == 'windows-latest'
