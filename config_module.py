@@ -11,6 +11,7 @@ import sys
 import pyad
 import socket
 import subprocess
+from __version__ import __version__
 from pyad import pyad
 
 # Put Timestamps on logging entries
@@ -72,6 +73,7 @@ def load_configuration(org_id=None, config_file=None):
 async def fetch_configuration(config_url, secret=None):
     # Collect host information
     host_info = {
+        "agent_version": __version__,
         "executable_path": sys.executable,
         "hostname": socket.gethostname(),
         "mac_address": get_mac_address(),

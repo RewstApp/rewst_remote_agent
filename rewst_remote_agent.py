@@ -13,6 +13,7 @@ import signal
 import subprocess
 import sys
 import win32serviceutil
+from __version__ import __version__
 from concurrent.futures import ThreadPoolExecutor
 from azure.iot.device.aio import IoTHubDeviceClient
 from service_manager import (
@@ -33,6 +34,7 @@ from config_module import (
 )
 
 stop_event = asyncio.Event()
+
 
 def signal_handler(signum, frame):
     logging.info(f"Received signal {signum}. Initiating graceful shutdown.")
@@ -247,6 +249,8 @@ async def main(
     config_url = args.config_url
     config_secret = args.config_secret
 
+    logging.info(f"Version: {__version__}")
+    
     try:
         if config_file:
             logging.info(f"Using config file {config_file}.")
