@@ -144,14 +144,14 @@ def is_domain_controller():
         domain = pyad.ADBase.AD_BASE().get_default_domain()
         if domain.is_domain():
             if domain.is_rodc():
-                logging.info("The machine is a Read Only Domain Controller (RODC).")
+                logging.info(f"The machine is a Read Only Domain Controller (RODC) for {domain}. NOT setting DC flag.")
                 return False
             logging.info(f"Active Directory Domain: {domain}")
             return True
         else:
             return False
     except Exception as e:
-        logging.info(f"Not a domain controller or cannot connect to AD: {e}")
+        logging.info(f"Not a domain controller or cannot connect to AD: {str(e)}")
         return False
 
 
@@ -159,9 +159,6 @@ def get_ad_domain_name():
     try:
         domain = pyad.adaddomain.AD_Domain.from_hostname()
         return domain.dns_domain_name
-    except pyad.pyadexceptions.ADException as e:
-        logging.error(f"Failed to retrieve domain name: {str(e)}")
-        return None
     except Exception as e:
         logging.error(f"An unexpected error occurred: {str(e)}")
         return None
@@ -178,6 +175,7 @@ def get_entra_domain():
                         domain_name = line.split(':')[1].strip()
                         return domain_name
     except Exception as e:
+        logging.warning(f"Unexpected issue querying for Entra Domain: {str(e)}")
         pass  # Handle exception if necessary
     return None
 
