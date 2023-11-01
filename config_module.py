@@ -150,8 +150,8 @@ def is_domain_controller():
             return True
         else:
             return False
-    except pyad.pyadexceptions.ADException:
-        logging.info("Not a domain controller or cannot connect to AD.")
+    except Exception as e:
+        logging.info(f"Not a domain controller or cannot connect to AD: {e}")
         return False
 
 
