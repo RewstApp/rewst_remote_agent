@@ -32,6 +32,7 @@ from config_module import (
     load_configuration,
     save_configuration
 )
+os_type = platform.system().lower()
 
 if os_type == 'Windows':
     import pywin32
@@ -70,7 +71,7 @@ signal.signal(signal.SIGINT, signal_handler)
 
 # Set the status update interval and get the operating system type
 status_update_checkin_time = 600
-os_type = platform.system().lower()
+
 executor = ThreadPoolExecutor()
 
 # Put Timestamps on logging entries
@@ -80,7 +81,7 @@ logging.basicConfig(
     datefmt='%Y-%m-%d %H:%M:%S',
 )
 logging.info(f"Running on {os_type}")
-
+# If Windows, log to event logs
 if os_type == 'Windows':
     nt_event_log_handler = logging.handlers.NTEventLogHandler('RewstService')
     logging.getLogger().addHandler(nt_event_log_handler)
