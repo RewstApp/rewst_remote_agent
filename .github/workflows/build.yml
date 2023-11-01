@@ -8,6 +8,7 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       new_tag: ${{ steps.tag_version.outputs.new_tag }}
+      new_version: ${{ steps.tag_version.outputs.new_version }}
     steps:
     - name: Bump version and push tag
       id: tag_version
@@ -30,7 +31,7 @@ jobs:
 
     - name: Bump version in File
       if: 
-      run: echo "__version__ = '${{ needs.bump_version.outputs.new_tag }}'" > __version__.py
+      run: echo "__version__ = '${{ needs.bump_version.outputs.new_version }}'" > __version__.py
   
     - name: Set up Python ${{ matrix.python-version }}
       uses: actions/setup-python@v2
@@ -45,7 +46,7 @@ jobs:
     - name: Write version file (Windows)
       if: matrix.os == 'windows-latest'
       shell: pwsh
-      run: .\.github\workflows\Write-VersionFile.ps1 -version "${{ needs.bump_version.outputs.new_tag }}"
+      run: .\.github\workflows\Write-VersionFile.ps1 -version "${{ needs.bump_version.outputs.new_version }}"
     
     - name: Install PyInstaller
       run: pip install pyinstaller
