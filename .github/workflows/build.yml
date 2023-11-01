@@ -29,6 +29,7 @@ jobs:
     - uses: actions/checkout@v2
 
     - name: Bump version in File
+      if: 
       run: echo "__version__ = '${{ needs.bump_version.outputs.new_tag }}'" > __version__.py
   
     - name: Set up Python ${{ matrix.python-version }}
@@ -43,6 +44,38 @@ jobs:
 
     - name: Install PyInstaller
       run: pip install pyinstaller
+
+    - name: Write version file (Windows)
+      if: matrix.os == 'windows-latest'
+      shell: pwsh
+      run: |
+        $version = "${{ needs.bump_version.outputs.new_tag }}" -replace '\.', ','
+        @"
+        VSVersionInfo(
+          ffi=FixedFileInfo(
+          filevers=($version,0),
+          prodvers=($version,0),
+          mask=0x3f,
+          flags=0x0,
+          OS=0x4,
+          fileType=0x1,
+          subtype=0x0,
+          date=(0, 0)
+          ),
+          kids=[
+            StringFileInfo(
+              [
+                StringTable(
+                  u'040904b0',
+                  [StringStruct(u'FileVersion', '$version.0'),
+                  StringStruct(u'ProductVersion', '$version.0')]
+                )
+              ]
+            ),
+            VarFileInfo([VarStruct(u'Translation', [0x409, 1200])])
+          ]
+        )
+        "@ | Out-File -FilePath version.txt -Encoding ascii
 
     - name: Run build script (Windows)
       if: matrix.os == 'windows-latest'
