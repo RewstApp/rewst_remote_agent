@@ -45,7 +45,7 @@ jobs:
     - name: Write version file (Windows)
       if: matrix.os == 'windows-latest'
       shell: pwsh
-      run: ./Write-VersionFile.ps1 -version "${{ needs.bump_version.outputs.new_tag }}"
+      run: .\.github\workflows\Write-VersionFile.ps1 -version "${{ needs.bump_version.outputs.new_tag }}"
     
     - name: Install PyInstaller
       run: pip install pyinstaller
