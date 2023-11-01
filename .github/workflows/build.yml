@@ -74,8 +74,7 @@ jobs:
               ),
               VarFileInfo([VarStruct(u'Translation', [0x409, 1200])])
             ]
-          )
-          "@ 
+          )"@ 
                 Set-Content -Path version.txt -Value $versionInfo
 
     - name: Run build script (Windows)
