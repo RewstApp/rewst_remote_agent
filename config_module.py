@@ -8,11 +8,9 @@ import uuid
 import psutil
 import os
 import sys
-import pyad
 import socket
 import subprocess
 from __version__ import __version__
-from pyad import pyad
 
 # Put Timestamps on logging entries
 logging.basicConfig(
@@ -139,26 +137,38 @@ def get_mac_address():
 
 
 def is_domain_controller():
+    if platform.system().lower() != 'windows':
+        return False
+    domain_name = get_ad_domain_name()
+    if domain_name is None:
+        logging.warning("Could not determine domain name.")
+        return False
     try:
-        pyad.set_defaults(ldap_server="auto")
-        domain = pyad.ADBase.AD_BASE().get_default_domain()
-        if domain.is_domain():
-            if domain.is_rodc():
-                logging.info(f"The machine is a Read Only Domain Controller (RODC) for {domain}. NOT setting DC flag.")
-                return False
-            logging.info(f"Active Directory Domain: {domain}")
-            return True
-        else:
-            return False
+        result = subprocess.run([f'nltest', f'/dclist:{domain_name}'], text=True, capture_output=True, check=True)
+        domain_controllers = result.stdout.split('\n')
+        local_machine = socket.gethostname()
+        return any(local_machine in dc for dc in domain_controllers)
+    except subprocess.CalledProcessError as e:
+        logging.error(f"Command failed with error: {str(e)}")
+        return False
     except Exception as e:
-        logging.info(f"Not a domain controller or cannot connect to AD: {str(e)}")
+        logging.error(f"An unexpected error occurred: {str(e)}")
         return False
 
 
 def get_ad_domain_name():
+    if platform.system().lower() != 'windows':
+        return None
     try:
-        domain = pyad.adaddomain.AD_Domain.from_hostname()
-        return domain.dns_domain_name
+        result = subprocess.run(['dsregcmd', '/status'], text=True, capture_output=True, check=True)
+        for line in result.stdout.split('\n'):
+            if 'Domain Name' in line:
+                return line.split(':')[1].strip()
+        logging.warning("Domain Name not found in dsregcmd output.")
+        return None
+    except subprocess.CalledProcessError as e:
+        logging.error(f"Command failed with error: {str(e)}")
+        return None
     except Exception as e:
         logging.error(f"An unexpected error occurred: {str(e)}")
         return None
@@ -169,7 +179,7 @@ def get_entra_domain():
         result = subprocess.run(['dsregcmd', '/status'], text=True, capture_output=True)
         output = result.stdout
         for line in output.splitlines():
-            if 'AzureAdJoined' in line and 'Yes' in line:
+            if 'AzureAdJoined' in line and 'YES' in line:
                 for line in output.splitlines():
                     if 'DomainName' in line:
                         domain_name = line.split(':')[1].strip()
