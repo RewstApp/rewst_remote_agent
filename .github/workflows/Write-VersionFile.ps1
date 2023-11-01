@@ -2,7 +2,7 @@ param(
     [string]$version
 )
 
-$formatted_version = "${{ needs.bump_version.outputs.new_tag }}" -replace '\.', ','
+$formatted_version = "$version" -replace '\.', ','
 
 $versionInfo = @"
 VSVersionInfo(
