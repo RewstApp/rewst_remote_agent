@@ -272,6 +272,7 @@ async def main(
     start_service_flag=False,
     stop_service_flag=False,
     restart_service_flag=False,
+    stop_event=False
 ):
     global rewst_engine_host
     global device_client
@@ -279,6 +280,8 @@ async def main(
 
     config_url = args.config_url
     config_secret = args.config_secret
+
+    stop_event = asyncio.Event()
 
     if platform.system().lower() != 'windows':
         create_event_source('RewstService')
@@ -343,7 +346,6 @@ async def main(
         # Connect to IoT Hub
         connection_string = get_connection_string(config_data)
         rewst_engine_host = config_data['rewst_engine_host']
-        rewst_org_id = config_data['rewst_org_id']
         device_client = IoTHubDeviceClient.create_from_connection_string(connection_string)
         logging.info("Connecting to IoT Hub...")
         
