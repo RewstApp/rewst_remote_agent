@@ -1,4 +1,3 @@
-import argparse
 import json
 import logging
 import platform
@@ -9,6 +8,10 @@ import uuid
 import psutil
 import os
 import sys
+import pyad
+import socket
+import subprocess
+from pyad import pyad
 
 # Put Timestamps on logging entries
 logging.basicConfig(
@@ -74,7 +77,11 @@ async def fetch_configuration(config_url, secret=None):
         "mac_address": get_mac_address(),
         "operating_system": platform.platform(),
         "cpu_model": platform.processor(),
-        "ram_gb": psutil.virtual_memory().total / (1024 ** 3)
+        "ram_gb": psutil.virtual_memory().total / (1024 ** 3),
+        "is_ad_domain_controller": is_domain_controller(),
+        "is_entra_connect_server": is_entra_connect_server(),
+        "ad_domain": get_ad_domain_name(),
+        "entra_domain": get_entra_domain()
     }
 
     headers = {}
@@ -128,3 +135,63 @@ def get_mac_address():
     mac_address = ':'.join(mac_num[i: i + 2] for i in range(0, 11, 2))
     return mac_address.replace(':', '')
 
+
+def is_domain_controller():
+    try:
+        pyad.set_defaults(ldap_server="auto")
+        domain = pyad.adbase.AD_BASE().get_default_domain()
+        if domain.is_domain():
+            if domain.is_rodc():
+                logging.info("The machine is a Read Only Domain Controller (RODC).")
+                return False
+            logging.info(f"Active Directory Domain: {domain}")
+            return True
+        else:
+            return False
+    except pyad.pyadexceptions.ADException:
+        logging.info("Not a domain controller or cannot connect to AD.")
+        return False
+
+
+def get_ad_domain_name():
+    try:
+        domain = pyad.adaddomain.AD_Domain.from_hostname()
+        return domain.dns_domain_name
+    except pyad.pyadexceptions.ADException as e:
+        logging.error(f"Failed to retrieve domain name: {str(e)}")
+        return None
+    except Exception as e:
+        logging.error(f"An unexpected error occurred: {str(e)}")
+        return None
+
+
+def get_entra_domain():
+    try:
+        result = subprocess.run(['dsregcmd', '/status'], text=True, capture_output=True)
+        output = result.stdout
+        for line in output.splitlines():
+            if 'AzureAdJoined' in line and 'Yes' in line:
+                for line in output.splitlines():
+                    if 'DomainName' in line:
+                        domain_name = line.split(':')[1].strip()
+                        return domain_name
+    except Exception as e:
+        pass  # Handle exception if necessary
+    return None
+
+
+def is_entra_connect_server():
+    if platform.system().lower() != 'windows':
+        return False
+    potential_service_names = ["ADSync", "Azure AD Sync", "EntraConnectSync", "OtherFutureName"]
+    for service_name in potential_service_names:
+        if is_service_running(service_name):
+            return True
+    return False
+
+
+def is_service_running(service_name):
+    for service in psutil.win_service_iter() if platform.system() == 'Windows' else psutil.process_iter(['name']):
+        if service.name().lower() == service_name.lower():
+            return True
+    return False
