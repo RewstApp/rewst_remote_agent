@@ -250,7 +250,6 @@ async def main(
     config_secret = args.config_secret
 
     logging.info(f"Version: {__version__}")
-    
     try:
         if config_file:
             logging.info(f"Using config file {config_file}.")
@@ -266,7 +265,7 @@ async def main(
                 logging.info(f"Found Org ID {org_id}")
                 config_data = load_configuration(org_id, None)
             else:
-                logging.warn(f"Did not find guid in file {executable_path}")
+                logging.warning(f"Did not find guid in file {executable_path}")
                 config_data = None
 
         # If config_data is still None, fetch the configuration

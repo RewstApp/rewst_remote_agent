@@ -141,7 +141,7 @@ def get_mac_address():
 def is_domain_controller():
     try:
         pyad.set_defaults(ldap_server="auto")
-        domain = pyad.adbase.AD_BASE().get_default_domain()
+        domain = pyad.ADBase.AD_BASE().get_default_domain()
         if domain.is_domain():
             if domain.is_rodc():
                 logging.info("The machine is a Read Only Domain Controller (RODC).")
