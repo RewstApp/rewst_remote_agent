@@ -13,8 +13,6 @@ import signal
 import subprocess
 import sys
 import win32serviceutil
-import pywin32
-from pywin32 import win32api
 from __version__ import __version__
 from concurrent.futures import ThreadPoolExecutor
 from azure.iot.device.aio import IoTHubDeviceClient
@@ -34,6 +32,10 @@ from config_module import (
     load_configuration,
     save_configuration
 )
+
+if os_type == 'Windows':
+    import pywin32
+    from pywin32 import win32api,win32con
 
 stop_event = asyncio.Event()
 
