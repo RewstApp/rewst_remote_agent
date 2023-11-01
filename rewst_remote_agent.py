@@ -38,8 +38,6 @@ if os_type == 'Windows':
     import pywin32
     from pywin32 import win32api,win32con
 
-stop_event = asyncio.Event()
-
 
 def create_event_source(app_name):
     registry_key = f"SYSTEM\\CurrentControlSet\\Services\\EventLog\\Application\\{app_name}"
@@ -283,86 +281,89 @@ async def main(
 
     stop_event = asyncio.Event()
 
-    if platform.system().lower() != 'windows':
-        create_event_source('RewstService')
-    logging.info(f"Version: {__version__}")
-    try:
-        if config_file:
-            logging.info(f"Using config file {config_file}.")
-            config_data = load_configuration(config_file=config_file)
-        else:
-            # Get Org ID for Config
-            executable_path = sys.argv[0]  # Gets the file name of the current script
-            pattern = re.compile(r'rewst_remote_agent_(.+?)\.')
-            match = pattern.search(executable_path)
-            if match:
-                logging.info("Found GUID")
-                org_id = match.group(1)
-                logging.info(f"Found Org ID {org_id}")
-                config_data = load_configuration(org_id, None)
+    while not stop_event.is_set():
+        if platform.system().lower() != 'windows':
+            create_event_source('RewstService')
+        logging.info(f"Version: {__version__}")
+        try:
+            if config_file:
+                logging.info(f"Using config file {config_file}.")
+                config_data = load_configuration(config_file=config_file)
             else:
-                logging.warning(f"Did not find guid in file {executable_path}")
-                config_data = None
+                # Get Org ID for Config
+                executable_path = sys.argv[0]  # Gets the file name of the current script
+                pattern = re.compile(r'rewst_remote_agent_(.+?)\.')
+                match = pattern.search(executable_path)
+                if match:
+                    logging.info("Found GUID")
+                    org_id = match.group(1)
+                    logging.info(f"Found Org ID {org_id}")
+                    config_data = load_configuration(org_id, None)
+                else:
+                    logging.warning(f"Did not find guid in file {executable_path}")
+                    config_data = None
 
-        # If config_data is still None, fetch the configuration
-        if config_data is None and config_url:
-            logging.info("Configuration file not found. Fetching configuration...")
-            config_data = await fetch_configuration(config_url, config_secret)
-            save_configuration(config_data)
-            org_id = config_data['rewst_org_id']  # Update org_id from config_data
-            logging.info(f"Configuration saved to {get_config_file_path(org_id)}")
-            install_binaries(org_id)
-        elif config_data is None:
-            logging.info("No configuration found and no config URL provided.")
-            sys.exit(1)
+            # If config_data is still None, fetch the configuration
+            if config_data is None and config_url:
+                logging.info("Configuration file not found. Fetching configuration...")
+                config_data = await fetch_configuration(config_url, config_secret)
+                save_configuration(config_data)
+                org_id = config_data['rewst_org_id']  # Update org_id from config_data
+                logging.info(f"Configuration saved to {get_config_file_path(org_id)}")
+                install_binaries(org_id)
+            elif config_data is None:
+                logging.info("No configuration found and no config URL provided.")
+                sys.exit(1)
 
-        # Retrieve org_id from the configuration if it wasn't already found
-        if not org_id:
-            org_id = config_data['rewst_org_id']
+            # Retrieve org_id from the configuration if it wasn't already found
+            if not org_id:
+                org_id = config_data['rewst_org_id']
 
-        # Service management
-        if install_service_flag and not config_url:
-            install_service(org_id)
-            start_service(org_id)  # Start the service after installation
-        elif uninstall_service_flag:
-            uninstall_service(org_id)
-        elif start_service_flag:
-            start_service(org_id)
-        elif stop_service_flag:
-            stop_service(org_id)
-        elif restart_service_flag:
-            restart_service(org_id)
+            # Service management
+            if install_service_flag and not config_url:
+                install_service(org_id)
+                start_service(org_id)  # Start the service after installation
+            elif uninstall_service_flag:
+                uninstall_service(org_id)
+            elif start_service_flag:
+                start_service(org_id)
+            elif stop_service_flag:
+                stop_service(org_id)
+            elif restart_service_flag:
+                restart_service(org_id)
 
-        # Exit if any of the service management flags are set
-        if any([
-            install_service_flag,
-            uninstall_service_flag,
-            start_service_flag,
-            stop_service_flag,
-            restart_service_flag
-        ]):
-            sys.exit(0)
+            # Exit if any of the service management flags are set
+            if any([
+                install_service_flag,
+                uninstall_service_flag,
+                start_service_flag,
+                stop_service_flag,
+                restart_service_flag
+            ]):
+                sys.exit(0)
 
-        # Connect to IoT Hub
-        connection_string = get_connection_string(config_data)
-        rewst_engine_host = config_data['rewst_engine_host']
-        device_client = IoTHubDeviceClient.create_from_connection_string(connection_string)
-        logging.info("Connecting to IoT Hub...")
+            # Connect to IoT Hub
+            connection_string = get_connection_string(config_data)
+            rewst_engine_host = config_data['rewst_engine_host']
+            device_client = IoTHubDeviceClient.create_from_connection_string(connection_string)
+            logging.info("Connecting to IoT Hub...")
+            
+            # Await client connection
+            await device_client.connect()
+            logging.info("Connected!")
+
+            # Await incoming messages
+            await setup_message_handler(device_client)
+
+
+            stop_event = asyncio.Event()
+            await stop_event.wait()
+
+        except KeyboardInterrupt:
+            logging.info("Received keyboard interrupt. Shutting down...")
+            await device_client.disconnect()
         
-        # Await client connection
-        await device_client.connect()
-        logging.info("Connected!")
-
-        # Await incoming messages
-        await setup_message_handler(device_client)
-
-
-        stop_event = asyncio.Event()
-        await stop_event.wait()
-
-    except KeyboardInterrupt:
-        logging.info("Received keyboard interrupt. Shutting down...")
-        await device_client.disconnect()
+        await asyncio.sleep(1)
 
 
 

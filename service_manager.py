@@ -26,7 +26,7 @@ class RewstService(win32serviceutil.ServiceFramework):
     _svc_name_ = None  # Placeholder, will be set in __init__
     _svc_display_name_ = None  # Placeholder, will be set in __init__
 
-    global stop_event
+    # Defining stop_event as a class variable
     stop_event = asyncio.Event()
 
     def __init__(self, args):
@@ -35,7 +35,7 @@ class RewstService(win32serviceutil.ServiceFramework):
         self.org_id = config_data.get('rewst_org_id')
         self.set_service_name(self.org_id)
         self.hWaitStop = win32event.CreateEvent(None, 0, 0, None)
-        
+
     @classmethod
     def set_service_name(cls, org_id):
         cls._svc_name_ = get_service_name(org_id)
@@ -44,19 +44,19 @@ class RewstService(win32serviceutil.ServiceFramework):
     def SvcDoRun(self):
         try:
             self.ReportServiceStatus(win32service.SERVICE_RUNNING)  # Report service as running
-            asyncio.run(main(org_id=self.org_id))  # Execute main function
+            asyncio.run(main(org_id=self.org_id, stop_event=RewstService.stop_event))  # pass stop_event to main
         except Exception as e:
             logging.error(f"Exception in SvcDoRun: {e}")
             self.ReportServiceStatus(win32service.SERVICE_STOPPED)  # Report service as stopped if there's an error
 
-
     def SvcStop(self):
         try:
             self.ReportServiceStatus(win32service.SERVICE_STOP_PENDING)  # Report service as stopping
-            stop_event.set()  # Signal the service to stop
+            RewstService.stop_event.set()  # Set stop_event to signal the service to stop
             self.ReportServiceStatus(win32service.SERVICE_STOPPED)  # Report service as stopped
         except Exception as e:
             logging.error(f"Exception in SvcStop: {e}")
+
 
 
 def get_service_name(org_id):
