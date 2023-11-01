@@ -13,7 +13,8 @@ import signal
 import subprocess
 import sys
 import win32serviceutil
-import win32api
+import pywin32
+from pywin32 import win32api
 from __version__ import __version__
 from concurrent.futures import ThreadPoolExecutor
 from azure.iot.device.aio import IoTHubDeviceClient
