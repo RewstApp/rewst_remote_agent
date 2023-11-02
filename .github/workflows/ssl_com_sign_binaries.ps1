@@ -2,14 +2,17 @@ param(
     [string]$username,
     [string]$password,
     [string]$credentialId,
-    [string]$totpSecret,
-    [string]$filebase
+    [string]$totpSecret
 )
 
 $downloadUrl = 'https://www.ssl.com/download/codesigntool-for-windows/'
 $appDistPath =  'D:\a\rewst_remote_agent\rewst_remote_agent\dist'
 
-$inputFile = "$appDistPath\$filebase\$filebase.exe"
+$inputFiles = @(
+    "$appDistPath\rewst_remote_agent\rewst_remote_agent.exe",
+    "$appDistPath\rewst_agent_config\rewst_agent_config.exe",
+    "$appDistPath\rewst_service_manager\rrewst_service_manager.exe"
+)
 $outputDirPath = "$appDistPath\signed"
 
 write-host "Signing App as Username: $username"
@@ -32,17 +35,19 @@ $codeSignDirectory = Get-ChildItem -Directory -Path . -Name CodeSign*
 Set-Location $codeSignDirectory
 
 # Sign Application
-$signArguments = @(
-    "sign",
-    "-username=$username",
-    "-password=$password",
-    "-credential_id=$credentialId",
-    "-totp_secret=$totpSecret",
-    "-input_file_path=$inputFile",
-    "-output_dir_path=$outputDirPath"
-)
-Start-Process -FilePath ".\CodeSignTool.bat" -ArgumentList $signArguments -Wait -NoNewWindow
-
+foreach ($inputFile in $inputFiles) {
+    "Signing $inputFile"
+    $signArguments = @(
+        "sign",
+        "-username=$username",
+        "-password=$password",
+        "-credential_id=$credentialId",
+        "-totp_secret=$totpSecret",
+        "-input_file_path=$inputFile",
+        "-output_dir_path=$outputDirPath"
+    )
+    Start-Process -FilePath ".\CodeSignTool.bat" -ArgumentList $signArguments -Wait -NoNewWindow
+}
 # Check if the signing was successful
 if ($LASTEXITCODE -eq 0) {
     Write-Host "Signing succeeded."
