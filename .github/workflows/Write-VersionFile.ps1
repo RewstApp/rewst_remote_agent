@@ -2,7 +2,7 @@ param(
     [string]$version
 )
 
-$formatted_version = "$version" -replace '\.', ','
+$formatted_version = "$version" -replace '\.', ',' -replace '-service-refactor', ''
 
 $versionInfo = @"
 VSVersionInfo(
