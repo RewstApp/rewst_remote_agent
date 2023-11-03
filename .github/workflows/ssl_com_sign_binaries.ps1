@@ -11,7 +11,7 @@ $appDistPath =  'D:\a\rewst_remote_agent\rewst_remote_agent\dist'
 $inputFiles = @(
     "$appDistPath\rewst_remote_agent\rewst_remote_agent.exe",
     "$appDistPath\rewst_agent_config\rewst_agent_config.exe",
-    "$appDistPath\rewst_service_manager\rrewst_service_manager.exe"
+    "$appDistPath\rewst_service_manager\rewst_service_manager.exe"
 )
 $outputDirPath = "$appDistPath\signed"
 
@@ -36,7 +36,7 @@ Set-Location $codeSignDirectory
 
 # Sign Application
 foreach ($inputFile in $inputFiles) {
-    "Signing $inputFile"
+    Write-Host "Signing $inputFile"
     $signArguments = @(
         "sign",
         "-username=$username",
@@ -57,6 +57,9 @@ if ($LASTEXITCODE -eq 0) {
 }
 
 # Get App Dist Directory Contents
-Write-Host "App Distribution Directory Contents:"
-Get-ChildItem -Recursive $appDistPath
+Write-Host "appDistPath ($appDistPath) Contents:"
+Get-ChildItem $appDistPath
+
+Write-Host "Signed Folder ($outputDirPath) Contents:"
+Get-ChildItem $outputDirPath
 
