@@ -67,7 +67,10 @@ jobs:
       uses: actions/upload-artifact@v2
       with:
         name: linux-latest-asset
-        path: ./dist/rewst_remote_agent
+        path: |
+          ./dist/rewst_remote_agent
+          ./dist/rewst_service_manager
+          ./dist/rewst_agent_config
 
     - name: Run build script (MacOS)
       if: matrix.os == 'macos-latest'
@@ -80,7 +83,10 @@ jobs:
       uses: actions/upload-artifact@v2
       with:
         name: macos-latest-asset
-        path: ./dist/rewst_remote_agent
+        path: |
+          ./dist/rewst_remote_agent
+          ./dist/rewst_service_manager
+          ./dist/rewst_agent_config
 
     - name: See where we are in Linux
       if: matrix.os == 'ubuntu-latest'
@@ -99,7 +105,11 @@ jobs:
       uses: actions/upload-artifact@v2
       with:
         name: windows-latest-signed-asset
-        path: ./dist/signed/rewst_remote_agent.exe 
+        path: |
+          ./dist/signed/rewst_remote_agent.exe
+          ./dist/signed/rewst_service_manager.exe
+          ./dist/signed/rewst_agent_config.exe
+
 
 
   release:
@@ -124,17 +134,39 @@ jobs:
     - name: Download all assets
       uses: actions/download-artifact@v2
 
-    - name: Upload Release Assets - Windows
+    # Windows
+    - name: Upload Release Assets - Windows (rewst_remote_agent)
       uses: actions/upload-release-asset@v1
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
         upload_url: ${{ steps.create_release.outputs.upload_url }} 
-        asset_path: ./rewst_remote_agent.exe
+        asset_path: ./windows-latest-signed-asset/rewst_remote_agent.exe
         asset_name: rewst_remote_agent.win.exe
         asset_content_type: application/octet-stream
 
-    - name: Upload Release Assets - Linux
+    - name: Upload Release Assets - Windows (rewst_service_manager)
+      uses: actions/upload-release-asset@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        upload_url: ${{ steps.create_release.outputs.upload_url }} 
+        asset_path: ./windows-latest-signed-asset/rewst_service_manager.exe
+        asset_name: rewst_service_manager.win.exe
+        asset_content_type: application/octet-stream
+
+    - name: Upload Release Assets - Windows (rewst_agent_config)
+      uses: actions/upload-release-asset@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        upload_url: ${{ steps.create_release.outputs.upload_url }} 
+        asset_path: ./windows-latest-signed-asset/rewst_agent_config.exe
+        asset_name: rewst_agent_config.win.exe
+        asset_content_type: application/octet-stream
+
+    # Linux
+    - name: Upload Release Assets - Linux (rewst_remote_agent)
       uses: actions/upload-release-asset@v1
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -143,8 +175,29 @@ jobs:
         asset_path: ./linux-latest-asset/rewst_remote_agent
         asset_name: rewst_remote_agent.linux.bin
         asset_content_type: application/octet-stream
-    
-    - name: Upload Release Assets - MacOS
+  
+    - name: Upload Release Assets - Linux (rewst_service_manager)
+      uses: actions/upload-release-asset@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        upload_url: ${{ steps.create_release.outputs.upload_url }}
+        asset_path: ./linux-latest-asset/rewst_service_manager
+        asset_name: rewst_service_manager.linux.bin
+        asset_content_type: application/octet-stream
+
+    - name: Upload Release Assets - Linux (rewst_agent_config)
+      uses: actions/upload-release-asset@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        upload_url: ${{ steps.create_release.outputs.upload_url }}
+        asset_path: ./linux-latest-asset/rewst_agent_config
+        asset_name: rewst_agent_config.linux.bin
+        asset_content_type: application/octet-stream
+  
+    # MacOS
+    - name: Upload Release Assets - MacOS (rewst_remote_agent)
       uses: actions/upload-release-asset@v1
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -152,4 +205,24 @@ jobs:
         upload_url: ${{ steps.create_release.outputs.upload_url }} 
         asset_path: ./macos-latest-asset/rewst_remote_agent
         asset_name: rewst_remote_agent.macos.bin
+        asset_content_type: application/octet-stream
+    
+    - name: Upload Release Assets - MacOS (rewst_service_manager)
+      uses: actions/upload-release-asset@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        upload_url: ${{ steps.create_release.outputs.upload_url }}
+        asset_path: ./macos-latest-asset/rewst_service_manager
+        asset_name: rewst_service_manager.macos.bin
+        asset_content_type: application/octet-stream
+  
+    - name: Upload Release Assets - MacOS (rewst_agent_config)
+      uses: actions/upload-release-asset@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        upload_url: ${{ steps.create_release.outputs.upload_url }}
+        asset_path: ./macos-latest-asset/rewst_agent_config
+        asset_name: rewst_agent_config.macos.bin
         asset_content_type: application/octet-stream
