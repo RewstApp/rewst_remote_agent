@@ -18,7 +18,6 @@ def is_domain_controller():
     else:
         domain_name = get_ad_domain_name()
         if domain_name is None:
-            logging.warning("Could not determine domain name.")
             return False
         try:
             result = subprocess.run([f'nltest', f'/dclist:{domain_name}'], text=True, capture_output=True, check=True)
@@ -42,7 +41,7 @@ def get_ad_domain_name():
             for line in result.stdout.split('\n'):
                 if 'Domain Name' in line:
                     return line.split(':')[1].strip()
-            logging.warning("Domain Name not found in dsregcmd output.")
+            logging.warning("Domain Name not found in dsregcmd output. This is expected if the computer is not domain-joined.")
             return None
         except subprocess.CalledProcessError as e:
             logging.error(f"Command failed with error: {str(e)}")

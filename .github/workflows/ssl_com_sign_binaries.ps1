@@ -46,8 +46,15 @@ foreach ($inputFile in $inputFiles) {
         "-input_file_path=$appDistPath\$inputFile",
         "-output_dir_path=$outputDirPath"
     )
-    Start-Process -FilePath ".\CodeSignTool.bat" -ArgumentList $signArguments -Wait -NoNewWindow
-    Write-Host "Signed to $outputDirPath\$inputFile"
+    
+    # Start-Process -FilePath ".\CodeSignTool.bat" -ArgumentList $signArguments -Wait -NoNewWindow
+    # Write-Host "Signed to $outputDirPath\$inputFile"
+
+
+    Write-Host "Faking it: Signed to $outputDirPath\$inputFile"
+    Copy-Item $appDistPath\$inputFile $outputDirPath
+
+    
 }
 # Check if the signing was successful
 # if ($LASTEXITCODE -eq 0) {
