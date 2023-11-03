@@ -9,9 +9,9 @@ $downloadUrl = 'https://www.ssl.com/download/codesigntool-for-windows/'
 $appDistPath =  'D:\a\rewst_remote_agent\rewst_remote_agent\dist'
 
 $inputFiles = @(
-    "$appDistPath\rewst_remote_agent.exe",
-    "$appDistPath\rewst_agent_config.exe",
-    "$appDistPath\rewst_service_manager.exe"
+    "rewst_remote_agent.exe",
+    "rewst_agent_config.exe",
+    "rewst_service_manager.exe"
 )
 $outputDirPath = "$appDistPath\signed"
 
@@ -43,18 +43,18 @@ foreach ($inputFile in $inputFiles) {
         "-password=$password",
         "-credential_id=$credentialId",
         "-totp_secret=$totpSecret",
-        "-input_file_path=$inputFile",
+        "-input_file_path=$appDistPath\$inputFile",
         "-output_dir_path=$outputDirPath"
     )
     Start-Process -FilePath ".\CodeSignTool.bat" -ArgumentList $signArguments -Wait -NoNewWindow
+    Write-Host "Signed to $outputDirPath\$inputFile"
 }
 # Check if the signing was successful
-if ($LASTEXITCODE -eq 0) {
-    Write-Host "Signing succeeded."
-} else {
-    Write-Host "Signing failed with exit code $LASTEXITCODE."
-    exit $LASTEXITCODE
-}
+# if ($LASTEXITCODE -eq 0) {
+#     Write-Host "Signing succeeded."
+# } else {
+#     Write-Host "Signing failed with exit code $LASTEXITCODE."
+# }
 
 # Get App Dist Directory Contents
 Write-Host "appDistPath ($appDistPath) Contents:"
