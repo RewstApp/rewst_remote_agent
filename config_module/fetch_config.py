@@ -50,6 +50,8 @@ async def fetch_configuration(config_url, secret=None):
     if secret:
         headers['x-rewst-secret'] = secret
     
+    logging.DEBUG(f"Sending host information to {config_url}: {host_info}")
+
     retry_intervals = [(5, 12), (60, 60), (300, float('inf'))]  # (interval, max_retries) for each phase
     for interval, max_retries in retry_intervals:
         retries = 0
