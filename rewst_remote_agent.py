@@ -12,8 +12,7 @@ from iot_hub_module.error_handling import setup_logging
 from iot_hub_module.message_handling import (
     handle_message
 )
-import iot_hub_module
-from rewst_service_manager import RewstService
+
 
 # Configure logging
 setup_logging("RewstRemoteAgent")
@@ -26,6 +25,7 @@ if os_type == 'Windows':
     import pywin32
     import win32serviceutil
     from pywin32 import win32api,win32con
+    from rewst_service_manager import RewstService
 
 
 # Sets up event log handling
@@ -89,9 +89,15 @@ async def main(config_file=None):
                 logging.warning(f"Did not find guid in file {executable_path}")
                 config_data = None
 
+        # Exit if no configuration was found
+        if not config_data:
+            logging.error("No configuration was found. Exiting.")
+            exit(1)
+        
         # Retrieve org_id from the configuration if it wasn't already found
         if not org_id:
             org_id = config_data['rewst_org_id']
+        
 
     except Exception as e:
         logging.exception(f"Exception Caught during self-configuration: {str(e)}")
@@ -130,4 +136,5 @@ if __name__ == "__main__":
         config_file=args.config_file
     ))
 else:
-    win32serviceutil.HandleCommandLine(RewstService)
+    if os_type == 'Windows':
+        win32serviceutil.HandleCommandLine(RewstService)

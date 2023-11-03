@@ -3,13 +3,14 @@ import asyncio
 import logging
 import os
 import subprocess
-from config_module import fetch_config, config_io
+import sys
 from config_module.config_io import (
     get_service_manager_path,
     get_agent_executable_path,
     save_configuration,
     load_configuration
 )
+from config_module.fetch_config import fetch_configuration
 from iot_hub_module import authentication, connection_management, message_handling
 
 
@@ -117,15 +118,21 @@ async def check_service_status(org_id):
 async def end_program(exit_level=1,service_status=None):
 
     logging.info(f"Agent configuration has completed. ")
-
     exit(exit_level)
 
 
 async def main(config_url, config_secret):
     try:
+
+        # Check that arguments are provided
+        if not config_url or not config_secret:
+            print("Error: Missing required parameters.")
+            print("Please make sure '--config_url' and '--config_secret' are provided.")
+            sys.exit(1)  # Exit with a non-zero status to indicate an error
+        
         # Fetch Configuration
         logging.info("Fetching configuration from Rewst...")
-        config_data = await fetch_config(config_url, config_secret)
+        config_data = await fetch_configuration(config_url, config_secret)
         if not config_data:
             logging.error("Failed to fetch configuration.")
             return
@@ -134,7 +141,7 @@ async def main(config_url, config_secret):
         logging.info("Saving configuration to file...")
         save_configuration(config_data)
 
-        # Load Configuration
+        # Load Configurationg
         logging.info("Loading configuration from file...")
         config = load_configuration()
 

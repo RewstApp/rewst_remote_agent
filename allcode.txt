@@ -1,0 +1,1204 @@
+ 
+-------- 
+ 
+ 
+./__version__.py :
+"0.0.1" 
+ 
+./rewst_agent_config.py :
+import argparse
+import asyncio
+import logging
+import os
+import subprocess
+from config_module import fetch_config, config_io
+from config_module.config_io import (
+    get_service_manager_path,
+    get_agent_executable_path,
+    save_configuration,
+    load_configuration
+)
+from iot_hub_module import authentication, connection_management, message_handling
+
+
+# Configure logging
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s %(levelname)s: %(message)s',
+    datefmt='%Y-%m-%d %H:%M:%S',
+)
+
+
+async def wait_for_files(org_id, timeout=3600) -> bool:
+    """
+    Waits for the service manager and service agent executables to be written to the filesystem.
+
+    :param org_id: The organization ID used to construct the file paths.
+    :param timeout: The maximum time to wait, in seconds. Default is 3600 seconds (60 minutes).
+    :return: True if both files were written, False if the timeout was reached.
+    """
+    # Determine the file paths using functions from config_io.py
+    service_manager_path = get_service_manager_path(org_id)
+    agent_executable_path = get_agent_executable_path(org_id)
+    file_paths = [service_manager_path, agent_executable_path]
+
+    start_time = asyncio.get_running_loop().time()
+    while True:
+        # Check if all files exist
+        all_files_exist = all(os.path.exists(file_path) for file_path in file_paths)
+        if all_files_exist:
+            logging.info("All files have been written.")
+            return True
+
+        # Check if the timeout has been reached
+        elapsed_time = asyncio.get_running_loop().time() - start_time
+        if elapsed_time > timeout:
+            logging.warning("Timeout reached while waiting for files.")
+            return False
+
+        # Wait before checking again
+        await asyncio.sleep(5)  # sleep for 5 seconds before checking again
+
+
+async def install_and_start_service(org_id):
+    """
+    Installs and starts the service using the rewst_service_manager executable.
+    
+    :param org_id: The organization ID used to determine the executable path.
+    :return: True if the service was successfully installed and started, False otherwise.
+    """
+    # Obtain the explicit path to the rewst_service_manager executable
+    service_manager_path = config_io.get_service_manager_path(org_id)
+
+    # Command to install the service
+    install_command = [service_manager_path, '--org-id', org_id, '--install']
+    try:
+        process = await asyncio.create_subprocess_exec(
+            *install_command,
+            stdout=asyncio.subprocess.PIPE,
+            stderr=asyncio.subprocess.PIPE
+        )
+        stdout, stderr = await process.communicate()
+        if process.returncode == 0:
+            logging.info("Service installed successfully.")
+        else:
+            logging.error(f"Failed to install the service: {stderr.decode().strip()}")
+            return False
+    except Exception as e:
+        logging.error(f"Failed to install the service: {e}")
+        return False
+    
+    # Command to start the service
+    start_command = [service_manager_path, '--org-id', org_id, '--start']
+    try:
+        subprocess.run(start_command, check=True, text=True)
+        logging.info("Service started successfully.")
+    except subprocess.CalledProcessError as e:
+        logging.error(f"Failed to start the service: {e}")
+        return False
+    
+    return True
+
+
+async def check_service_status(org_id):
+    """
+    Checks the status of the service using the rewst_service_manager executable.
+    
+    :param org_id: The organization ID used to determine the executable path.
+    :return: True if the service is running, False otherwise.
+    """
+    # Obtain the explicit path to the rewst_service_manager executable
+    service_manager_path = config_io.get_service_manager_path(org_id)
+
+    # Command to check the service status
+    status_command = [service_manager_path, '--org-id', org_id, '--status']
+    try:
+        result = subprocess.run(status_command, check=True, text=True, capture_output=True)
+        output = result.stdout.strip()
+        logging.info(f"Service status: {output}")
+        return "running" in output.lower()
+    except subprocess.CalledProcessError as e:
+        logging.error(f"Failed to check the service status: {e}")
+        return False
+
+
+async def end_program(exit_level=1,service_status=None):
+
+    logging.info(f"Agent configuration has completed. ")
+    exit(exit_level)
+
+
+async def main(config_url, config_secret):
+    try:
+        # Fetch Configuration
+        logging.info("Fetching configuration from Rewst...")
+        config_data = await fetch_config(config_url, config_secret)
+        if not config_data:
+            logging.error("Failed to fetch configuration.")
+            return
+
+        # Save Configuration to JSON file
+        logging.info("Saving configuration to file...")
+        save_configuration(config_data)
+
+        # Load Configurationg
+        logging.info("Loading configuration from file...")
+        config = load_configuration()
+
+        org_id = config["rewst_org_id"]
+
+        # Authenticate Device
+        logging.info("Authenticating device with IoT Hub...")
+        device_client = await authentication.authenticate_device(config)
+        if not device_client:
+            logging.error("Failed to authenticate device.")
+            return
+
+        # Set Message Handler
+        logging.info("Setting message handler...")
+        device_client.on_message_received = message_handling.handle_message
+
+        # Await 'command' message and execute commands
+        # This part will be handled by the message handler set above
+
+        # Wait for files to be written
+        await wait_for_files(org_id)
+        
+        # Disconnect from IoT Hub to not conflict with the Service
+        logging.info("Disconnecting from IoT Hub...")
+        await device_client.disconnect()
+        await asyncio.sleep(4)
+        logging.info("Disconnected from IoT Hub.")
+
+        if (await install_and_start_service(org_id)):
+        # Wait for the service to start successfully
+            while not (await check_service_status(org_id)):
+                logging.info("Waiting for the service to start...")
+                await asyncio.sleep(5)  # Sleep for 5 seconds before checking the status again
+
+            logging.info("Service started successfully.")
+            logging.info("Exiting the program with success.")
+            exit_level = 0
+        else:
+            logging.error("Failed to install or start the service.")
+            logging.error("Exiting the program with failure.")
+            exit_level = 1
+        
+        await end_program(exit_level)
+
+    except Exception as e:
+        logging.exception(f"An error occurred: {e}")
+
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description='Rewst Agent Configuration Tool.')
+    parser.add_argument('--config-secret', help='Path to the configuration file.')
+    parser.add_argument('--config-url', help='URL to fetch the configuration from.')
+    args = parser.parse_args()  # Extract arguments from the parser
+    asyncio.run(main(
+            config_secret=args.config_secret,
+            config_url=args.config_url
+    )) 
+ 
+./rewst_remote_agent.py :
+import argparse
+import asyncio
+import logging
+import platform
+import re
+import signal
+import sys
+from config_module.config_io import load_configuration
+from iot_hub_module.authentication import authenticate_device, disconnect_device
+from iot_hub_module.connection_management import ConnectionManager
+from iot_hub_module.error_handling import setup_logging
+from iot_hub_module.message_handling import (
+    handle_message
+)
+import iot_hub_module
+from rewst_service_manager import RewstService
+
+# Configure logging
+setup_logging("RewstRemoteAgent")
+
+os_type = platform.system().lower()
+
+stop_event = asyncio.Event()
+
+if os_type == 'Windows':
+    import pywin32
+    import win32serviceutil
+    from pywin32 import win32api,win32con
+
+
+# Sets up event log handling
+async def create_event_source(app_name):
+    registry_key = f"SYSTEM\\CurrentControlSet\\Services\\EventLog\\Application\\{app_name}"
+    key_flags = win32con.KEY_SET_VALUE | win32con.KEY_CREATE_SUB_KEY
+    try:
+        # Try to open the registry key
+        reg_key = win32api.RegOpenKey(win32con.HKEY_LOCAL_MACHINE, registry_key, 0, key_flags)
+    except Exception as e:
+        logging.error(f"Failed to open or create registry key: {e}")
+        return
+
+    try:
+        # Set the EventMessageFile registry value
+        event_message_file = win32api.GetModuleHandle(None)
+        win32api.RegSetValueEx(reg_key, "EventMessageFile", 0, win32con.REG_SZ, event_message_file)
+        win32api.RegSetValueEx(reg_key, "TypesSupported", 0, win32con.REG_DWORD, win32con.EVENTLOG_ERROR_TYPE | win32con.EVENTLOG_WARNING_TYPE | win32con.EVENTLOG_INFORMATION_TYPE)
+    except Exception as e:
+        logging.error(f"Failed to set registry values: {e}")
+    finally:
+        win32api.RegCloseKey(reg_key)
+
+
+def signal_handler(signum, frame):
+    logging.info(f"Received signal {signum}. Initiating graceful shutdown.")
+    stop_event.set()
+
+
+# Main function
+async def main(config_file=None):
+    logging.info(f"Running on {os_type}")
+
+    app_name = "RewstRemoteAgent"
+    if os_type == "Windows":
+        await create_event_source(app_name)
+
+
+    # If Windows, log to event logs
+    if os_type == 'Windows':
+        nt_event_log_handler = logging.handlers.NTEventLogHandler('RewstService')
+        logging.getLogger().addHandler(nt_event_log_handler)
+
+    try:
+        logging.info("Loading Configuration")
+        if config_file:
+            logging.info(f"Using config file {config_file}.")
+            config_data = load_configuration(config_file=config_file)
+        
+        else:
+            # Get Org ID for Config
+            executable_path = sys.argv[0]  # Gets the file name of the current script
+            pattern = re.compile(r'rewst_remote_agent_(.+?)\.')
+            match = pattern.search(executable_path)
+            if match:
+                logging.info("Found GUID")
+                org_id = match.group(1)
+                logging.info(f"Found Org ID {org_id}")
+                config_data = config_io.load_configuration(org_id, None)
+            else:
+                logging.warning(f"Did not find guid in file {executable_path}")
+                config_data = None
+
+        # Retrieve org_id from the configuration if it wasn't already found
+        if not org_id:
+            org_id = config_data['rewst_org_id']
+
+    except Exception as e:
+        logging.exception(f"Exception Caught during self-configuration: {str(e)}")
+
+    try:
+        # Authenticate Device
+        logging.info("Authenticating device with IoT Hub...")
+        device_client = await authenticate_device(config_data)
+        if not device_client:
+            logging.error("Failed to authenticate device.")
+            return
+
+        # Set Message Handler
+        logging.info("Setting message handler...")
+        device_client.on_message_received = handle_message
+    
+    except Exception as e:
+        logging.exception(f"Exception Caught during IoT Hub Communications: {str(e)}")
+
+    try:
+        while not stop_event.is_set():
+            await asyncio.sleep(1)
+        disconnect_device()
+    except Exception as e:
+        logging.exception(f"Exception caught: {str(e)}")
+
+
+# Entry point
+if __name__ == "__main__":
+    signal.signal(signal.SIGTERM, signal_handler)
+    signal.signal(signal.SIGINT, signal_handler)
+    parser = argparse.ArgumentParser(description='Run the IoT Hub device client.')
+    parser.add_argument('--config-file', help='Path to the configuration file.')
+    args = parser.parse_args()
+    asyncio.run(main(
+        config_file=args.config_file
+    ))
+else:
+    win32serviceutil.HandleCommandLine(RewstService) 
+ 
+./rewst_service_manager.py :
+import argparse
+import asyncio
+import logging
+import os
+import platform
+import subprocess
+from config_module import (
+    config_io
+)
+
+os_type = platform.system()
+
+# Configure logging
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s %(levelname)s: %(message)s',
+    datefmt='%Y-%m-%d %H:%M:%S',
+)
+
+if os_type == "Windows":
+    import win32service
+    import win32serviceutil
+    import win32event
+    import pywintypes
+
+class RewstService(win32serviceutil.ServiceFramework):
+    _svc_name_ = None  # Placeholder, will be set in __init__
+    _svc_display_name_ = None  # Placeholder, will be set in __init__
+
+    # Defining stop_event as a class variable
+    stop_event = asyncio.Event()
+
+    def __init__(self, args):
+        super().__init__(args)
+        config_data = config_io.load_configuration()  # Load the configuration
+        self.org_id = config_data.get('rewst_org_id')
+        self.set_service_name(self.org_id)
+        self.hWaitStop = win32event.CreateEvent(None, 0, 0, None)
+
+    @classmethod
+    def set_service_name(cls, org_id):
+        cls._svc_name_ = get_service_name(org_id)
+        cls._svc_display_name_ = f"Rewst Remote Service {org_id}"
+
+    def SvcDoRun(self):
+        try:
+            self.ReportServiceStatus(win32service.SERVICE_RUNNING)  # Report service as running
+            asyncio.run(main(org_id=self.org_id, stop_event=RewstService.stop_event))  # pass stop_event to main
+        except Exception as e:
+            logging.error(f"Exception in SvcDoRun: {e}")
+            self.ReportServiceStatus(win32service.SERVICE_STOPPED)  # Report service as stopped if there's an error
+
+    def SvcStop(self):
+        try:
+            self.ReportServiceStatus(win32service.SERVICE_STOP_PENDING)  # Report service as stopping
+            RewstService.stop_event.set()  # Set stop_event to signal the service to stop
+            self.ReportServiceStatus(win32service.SERVICE_STOPPED)  # Report service as stopped
+        except Exception as e:
+            logging.error(f"Exception in SvcStop: {e}")
+
+def get_service_name(org_id):
+    return f"Rewst_Remote_Agent_{org_id}"
+
+
+def is_service_installed(org_id=None):
+    service_name = get_service_name(org_id)
+    if os_type == "Windows":
+        import win32serviceutil
+        try:
+            win32serviceutil.QueryServiceStatus(service_name)
+            return True  # Service is installed
+        except Exception as e:
+            return False  # Service is not installed
+    elif os_type == "Linux":
+        service_path = f"/etc/systemd/system/{service_name}.service"
+        return os.path.exists(service_path)
+    elif os_type == "Darwin":
+        plist_path = f"{os.path.expanduser('~/Library/LaunchAgents')}/{service_name}.plist"
+        return os.path.exists(plist_path)
+
+
+def install_service(org_id, config_file=None):
+    executable_path = config_io.get_executable_path(org_id)
+    service_name = get_service_name(org_id)
+    display_name = f"Rewst Remote Agent {org_id}"
+    if is_service_installed(org_id):
+        logging.info(f"Service is already installed.")
+        return
+    
+    config_file_path = get_config_file_path(org_id, config_file)
+
+    # Install the service
+    if os_type == "Windows":
+        logging.info(f"Installing Windows Service: {service_name}")
+        win32serviceutil.InstallService(
+            f"{RewstService.__module__}.{RewstService.__name__}",
+            service_name,
+            displayName=display_name,
+            startType=win32service.SERVICE_AUTO_START,
+            exeName=executable_path
+        )
+
+    elif os_type == "Linux":
+        systemd_service_content = f"""
+        [Unit]
+        Description={service_name}
+
+        [Service]
+        ExecStart={executable_path} --config-file {config_file_path}
+        Restart=always
+
+        [Install]
+        WantedBy=multi-user.target
+        """
+        with open(f"/etc/systemd/system/{service_name}.service", "w") as f:
+            f.write(systemd_service_content)
+        os.system("systemctl daemon-reload")
+        os.system(f"systemctl enable {service_name}")
+    
+    elif os_type == "Darwin":
+        launchd_plist_content = f"""
+        <?xml version="1.0" encoding="UTF-8"?>
+        <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+        <plist version="1.0">
+        <dict>
+            <key>Label</key>
+            <string>{service_name}</string>
+            <key>ProgramArguments</key>
+            <array>
+                <string>{executable_path}</string>
+                <string>--config-file</string>
+                <string>{config_file_path}</string>
+            </array>
+            <key>RunAtLoad</key>
+            <true/>
+        </dict>
+        </plist>
+        """
+        with open(f"{os.path.expanduser('~/Library/LaunchAgents')}/{service_name}.plist", "w") as f:
+            f.write(launchd_plist_content)
+        os.system(f"launchctl load {service_name}")
+
+def uninstall_service(org_id):
+    service_name = get_service_name(org_id)
+    logging.info(f"Uninstalling service {service_name}.")
+
+    try:
+        stop_service(org_id)
+    except Exception as e:
+        logging.warning(f"Unable to stop service: {e}")
+         
+    if os_type == "Windows":
+        import win32serviceutil
+        try:
+            win32serviceutil.RemoveService(service_name)
+        except Exception as e:
+            logging.warning(f"Exception removing service: {e}")
+    
+    elif os_type == "Linux":
+        os.system(f"systemctl disable {service_name}")
+        os.system(f"rm /etc/systemd/system/{service_name}.service")
+        os.system("systemctl daemon-reload")
+    
+    elif os_type == "Darwin":
+        plist_path = f"{os.path.expanduser('~/Library/LaunchAgents')}/{service_name}.plist"
+        os.system(f"launchctl unload {plist_path}")
+        os.system(f"rm {plist_path}")
+
+
+def check_service_status(org_id):
+    service_name = get_service_name(org_id)
+    
+    if os_type == "Windows":
+        import win32serviceutil
+        try:
+            status = win32serviceutil.QueryServiceStatus(service_name)
+            print(f'Service status: {status[1]}')  # Printing the status to stdout
+        except Exception as e:
+            print(f'Error: {e}')
+    
+    elif os_type == "Linux":
+        try:
+            result = subprocess.run(['systemctl', 'is-active', service_name], 
+                                    text=True, capture_output=True, check=True)
+            print(f'Service status: {result.stdout.strip()}')
+        except subprocess.CalledProcessError as e:
+            print(f'Error: {e.stdout.strip()}')
+        except Exception as e:
+            print(f'Error: {e}')
+    
+    elif os_type == "Darwin":
+        try:
+            result = subprocess.run(['launchctl', 'list', service_name], 
+                                    text=True, capture_output=True, check=True)
+            if f"{service_name}" in result.stdout:
+                print(f'Service status: Running')
+            else:
+                print(f'Service status: Not Running')
+        except subprocess.CalledProcessError as e:
+            print(f'Error: {e.stdout.strip()}')
+        except Exception as e:
+            print(f'Error: {e}')
+
+    else:
+        print(f'Unsupported OS type: {os_type}')
+
+
+def start_service(org_id):
+    service_name = get_service_name(org_id)
+    logging.info(f"Starting Service {service_name}")
+    if os_type == "Windows":
+        os.system(f"net start {service_name}")
+    elif os_type == "Linux":
+        os.system(f"systemctl start {service_name}")
+    elif os_type == "Darwin":
+        os.system(f"launchctl start {service_name}")
+
+def stop_service(org_id):
+    service_name = get_service_name(org_id)
+    if os_type == "Windows":
+        if win32serviceutil.QueryServiceStatus(service_name):
+            try:
+                win32serviceutil.StopService(service_name)
+            except pywintypes.error as e:
+                logging.error(f"Failed to stop service: {e.strerror}") 
+    elif os_type == "Linux":
+        os.system(f"systemctl stop {service_name}")
+    elif os_type == "Darwin":
+        os.system(f"launchctl stop {service_name}")
+
+def restart_service(org_id):
+    stop_service(org_id)
+    start_service(org_id)
+
+
+def main():
+    parser = argparse.ArgumentParser(description='Rewst Service Manager.')
+    parser.add_argument('--org-id', required=True, help='Organization ID')
+    parser.add_argument('--config-file', help='Path to the configuration file')
+    parser.add_argument('--install', action='store_true', help='Install the service')
+    parser.add_argument('--uninstall', action='store_true', help='Uninstall the service')
+    parser.add_argument('--status', action='store_true', help='Check the service status')
+    parser.add_argument('--start', action='store_true', help='Start the service')
+    parser.add_argument('--stop', action='store_true', help='Stop the service')
+    parser.add_argument('--restart', action='store_true', help='Restart the service')
+
+    args = parser.parse_args()
+
+    # Load configuration if config file path is provided
+    if args.config_file:
+        config_io.load_from_file(args.config_file)
+
+    # Set the service name based on the organization ID
+    RewstService.set_service_name(args.org_id)
+
+    # Perform the requested service action
+    if args.install:
+        install_service(args.org_id, args.config_file)
+    elif args.uninstall:
+        uninstall_service(args.org_id)
+    elif args.start:
+        start_service(args.org_id)
+    elif args.stop:
+        stop_service(args.org_id)
+    elif args.restart:
+        restart_service(args.org_id)
+    else:
+        print("No action specified. Use --install, --uninstall, --start, --stop, or --restart.")
+
+if __name__ == "__main__":
+    main()
+ 
+ 
+./updater.py :
+import sys 
+ 
+-------- 
+ 
+ 
+config_module/__init__.py :
+ 
+ 
+config_module/config_io.py :
+import json
+import logging
+import os
+import platform
+
+
+# Put Timestamps on logging entries
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s %(levelname)s: %(message)s',
+    datefmt='%Y-%m-%d %H:%M:%S',
+)
+
+def get_executable_folder(org_id):
+    os_type = platform.system().lower()
+    if os_type == "Windows":
+        program_files_dir = os.environ.get('ProgramFiles')  # This will get the path to Program Files directory
+        executable_path = os.path.join(program_files_dir, f"RewstRemoteAgent\\{org_id}")
+    elif os_type == "Linux":
+        executable_path = f"/usr/local/bin"
+    elif os_type == "Darwin":
+        executable_path = os.path.expanduser(f"~/Library/Application Support/RewstRemoteAgent")
+    return executable_path
+
+def get_service_manager_path(org_id):
+    os_type = platform.system().lower()
+    if os_type == "Windows":
+        executable_name = f"rewst_service_manager.win.exe"
+    elif os_type == "Linux":
+        executable_name = f"rewst_service_manager.linux.bin"
+    elif os_type == "Darwin":
+        executable_name = f"rewst_service_manager.macos.bin"
+    executable_path = f"{get_executable_folder()}{executable_name}"
+    return executable_path
+
+def get_agent_executable_path(org_id):
+    os_type = platform.system().lower()
+    if os_type == "Windows":
+        executable_name = f"rewst_remote_agent_{org_id}.win.exe"
+    elif os_type == "Linux":
+        executable_name = f"rewst_remote_agent_{org_id}.linux.bin"
+    elif os_type == "Darwin":
+        executable_name = f"rewst_remote_agent_{org_id}.macos.bin"
+    executable_path = f"{get_executable_folder()}{executable_name}"
+    return executable_path
+
+def get_config_file_path(org_id=None, config_file=None):
+    if config_file:
+        return config_file
+    os_type = platform.system()
+    if os_type == "Windows":
+        config_dir = os.path.join(os.environ.get('PROGRAMDATA'), 'RewstRemoteAgent', org_id if org_id else '',"\\")
+    elif os_type == "Linux":
+        config_dir = f"/etc/rewst_remote_agent/{org_id}/"
+    elif os_type == "Darwin":
+        config_dir = os.path.expanduser(f"~/Library/Application Support/RewstRemoteAgent/{org_id}/")
+    
+    if not os.path.exists(config_dir):
+        try:
+            if not os.path.exists(config_dir):
+                os.makedirs(config_dir)
+        except Exception as e:
+            logging.error(f"Failed to create directory {config_dir}: {str(e)}")
+            raise 
+    
+    config_file_path = os.path.join(config_dir, "config.json")
+    logging.info(f"Config File Path: {config_file_path}")
+    return config_file_path
+
+def save_configuration(config_data, config_file=None):
+    org_id = config_data["rewst_org_id"]
+    config_file_path = get_config_file_path(org_id, config_file)
+    with open(config_file_path, 'w') as f:
+        json.dump(config_data, f, indent=4)
+
+def load_configuration(org_id=None, config_file=None):
+    config_file_path = get_config_file_path(org_id, config_file)
+    try:
+        with open(config_file_path) as f:
+            return json.load(f)
+    except FileNotFoundError:
+        return None
+ 
+ 
+config_module/fetch_config.py :
+import asyncio
+import httpx
+import logging
+import socket
+import platform
+import sys
+import psutil
+import config_module
+import __version__
+
+# Put Timestamps on logging entries
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s %(levelname)s: %(message)s',
+    datefmt='%Y-%m-%d %H:%M:%S',
+)
+
+REQUIRED_KEYS = [
+    'azure_iot_hub_host',
+    'device_id',
+    'shared_access_key',
+    'rewst_engine_host',
+    'rewst_org_id'
+]
+
+async def fetch_configuration(config_url, secret=None):
+    # Collect host information
+    host_info = {
+        "agent_version": __version__,
+        "executable_path": sys.executable,
+        "hostname": socket.gethostname(),
+        "mac_address": config_module.get_mac_address(),
+        "operating_system": platform.platform(),
+        "cpu_model": platform.processor(),
+        "ram_gb": psutil.virtual_memory().total / (1024 ** 3),
+        "is_ad_domain_controller": is_domain_controller(),
+        "is_entra_connect_server": is_entra_connect_server(),
+        "ad_domain": get_ad_domain_name(),
+        "entra_domain": get_entra_domain()
+    }
+
+    headers = {}
+    if secret:
+        headers['x-rewst-secret'] = secret
+    
+    retry_intervals = [(5, 12), (60, 60), (300, float('inf'))]  # (interval, max_retries) for each phase
+    for interval, max_retries in retry_intervals:
+        retries = 0
+        while retries < max_retries:
+            retries += 1
+            async with httpx.AsyncClient(timeout=None) as client:  # Set timeout to None to wait indefinitely
+                try:
+                    response = await client.post(
+                        config_url,
+                        json=host_info,
+                        headers=headers,
+                        follow_redirects=True
+                    )
+                except httpx.TimeoutException:
+                    logging.warning(f"Attempt {retries}: Request timed out. Retrying...")
+                    continue  # Skip the rest of the loop and retry
+
+                except httpx.RequestError as e:
+                    logging.warning(f"Attempt {retries}: Network error: {e}. Retrying...")
+                    continue
+
+                if response.status_code == 303:
+                    logging.info("Waiting while Rewst processes Agent Registration...")  # Custom message for 303
+                elif response.status_code == 200:
+                    data = response.json()
+                    config_data = data.get('configuration')
+                    if config_data and all(key in config_data for key in REQUIRED_KEYS):
+                        return config_data
+                    else:
+                        logging.warning(f"Attempt {retries}: Missing required keys in configuration data. Retrying...")
+                elif response.status_code == 400 or response.status_code == 401:
+                    logging.error(f"Attempt {retries}: Not authorized. Check your config secret.")
+                else:
+                    logging.warning(f"Attempt {retries}: Received status code {response.status_code}. Retrying...")
+
+            await asyncio.sleep(interval)
+
+        logging.info(f"Moving to next retry phase: {interval}s interval for {max_retries} retries.")
+    logging.INFO("This process will end when the service is installed.")
+ 
+ 
+config_module/host_info.py :
+import platform
+import socket
+import uuid
+import psutil
+import subprocess
+import logging
+
+def get_mac_address():
+    # Returns the MAC address of the host without colons
+    mac_num = hex(uuid.UUID(int=uuid.getnode()).int)[2:]
+    mac_address = ':'.join(mac_num[i: i + 2] for i in range(0, 11, 2))
+    return mac_address.replace(':', '')
+
+
+def is_domain_controller():
+    if platform.system().lower() != 'windows':
+        return False
+    domain_name = get_ad_domain_name()
+    if domain_name is None:
+        logging.warning("Could not determine domain name.")
+        return False
+    try:
+        result = subprocess.run([f'nltest', f'/dclist:{domain_name}'], text=True, capture_output=True, check=True)
+        domain_controllers = result.stdout.split('\n')
+        local_machine = socket.gethostname()
+        return any(local_machine in dc for dc in domain_controllers)
+    except subprocess.CalledProcessError as e:
+        logging.error(f"Command failed with error: {str(e)}")
+        return False
+    except Exception as e:
+        logging.error(f"An unexpected error occurred: {str(e)}")
+        return False
+
+
+def get_ad_domain_name():
+    if platform.system().lower() != 'windows':
+        return None
+    try:
+        result = subprocess.run(['dsregcmd', '/status'], text=True, capture_output=True, check=True)
+        for line in result.stdout.split('\n'):
+            if 'Domain Name' in line:
+                return line.split(':')[1].strip()
+        logging.warning("Domain Name not found in dsregcmd output.")
+        return None
+    except subprocess.CalledProcessError as e:
+        logging.error(f"Command failed with error: {str(e)}")
+        return None
+    except Exception as e:
+        logging.error(f"An unexpected error occurred: {str(e)}")
+        return None
+
+
+def get_entra_domain():
+    try:
+        result = subprocess.run(['dsregcmd', '/status'], text=True, capture_output=True)
+        output = result.stdout
+        for line in output.splitlines():
+            if 'AzureAdJoined' in line and 'YES' in line:
+                for line in output.splitlines():
+                    if 'DomainName' in line:
+                        domain_name = line.split(':')[1].strip()
+                        return domain_name
+    except Exception as e:
+        logging.warning(f"Unexpected issue querying for Entra Domain: {str(e)}")
+        pass  # Handle exception if necessary
+    return None
+
+
+def is_entra_connect_server():
+    if platform.system().lower() != 'windows':
+        return False
+    potential_service_names = ["ADSync", "Azure AD Sync", "EntraConnectSync", "OtherFutureName"]
+    for service_name in potential_service_names:
+        if is_service_running(service_name):
+            return True
+    return False
+
+
+def is_service_running(service_name):
+    for service in psutil.win_service_iter() if platform.system() == 'Windows' else psutil.process_iter(['name']):
+        if service.name().lower() == service_name.lower():
+            return True
+    return False
+ 
+ 
+-------- 
+ 
+ 
+iot_hub_module/__init__.py :
+ 
+ 
+iot_hub_module/authentication.py :
+import logging
+from azure.iot.device.aio import IoTHubDeviceClient
+
+def get_connection_string(config):
+    """
+    Constructs a connection string from the provided configuration.
+
+    :param config: The configuration dictionary.
+    :return: The connection string.
+    """
+    conn_str = (
+        f"HostName={config['azure_iot_hub_host']};"
+        f"DeviceId={config['device_id']};"
+        f"SharedAccessKey={config['shared_access_key']}"
+    )
+    return conn_str
+
+async def authenticate_device(config):
+    """
+    Authenticates the device with Azure IoT Hub.
+
+    :param config: The configuration dictionary.
+    :return: The authenticated device client.
+    """
+    connection_string = get_connection_string(config)
+    device_client = IoTHubDeviceClient.create_from_connection_string(connection_string)
+
+    logging.info("Connecting to IoT Hub...")
+    await device_client.connect()
+    logging.info("Connected!")
+
+    return device_client
+
+async def disconnect_device(device_client):
+    """
+    Disconnects the device from Azure IoT Hub.
+
+    :param device_client: The authenticated device client.
+    """
+    logging.info("Disconnecting from IoT Hub...")
+    await device_client.disconnect()
+    logging.info("Disconnected!")
+ 
+ 
+iot_hub_module/connection_management.py :
+from azure.iot.device.aio import IoTHubDeviceClient
+
+class ConnectionManager:
+    def __init__(self, connection_string):
+        self.connection_string = connection_string
+        self.client = IoTHubDeviceClient.create_from_connection_string(self.connection_string)
+
+    async def connect(self):
+        await self.client.connect()
+
+    async def disconnect(self):
+        await self.client.disconnect()
+
+    async def send_message(self, message):
+        await self.client.send_message(message)
+
+    async def set_message_handler(self, message_handler):
+        self.client.on_message_received = message_handler
+
+# Usage example:
+# connection_manager = ConnectionManager(connection_string)
+# await connection_manager.connect()
+# await connection_manager.send_message("Hello, IoT Hub!")
+# await connection_manager.set_message_handler(my_message_handler)  # where my_message_handler is a coroutine
+# await connection_manager.disconnect()
+ 
+ 
+iot_hub_module/error_handling.py :
+import logging
+import logging.handlers
+import platform
+import sys
+
+def setup_logging(app_name):
+    logger = logging.getLogger(app_name)
+    logger.setLevel(logging.INFO)  # Set logging level to INFO or DEBUG as needed
+
+    formatter = logging.Formatter('%(asctime)s %(levelname)s: %(message)s', datefmt='%Y-%m-%d %H:%M:%S')
+
+    # Check if the operating system is Windows
+    if platform.system().lower() == 'windows':
+        # For Windows, log to the Windows Event Log
+        nt_event_log_handler = logging.handlers.NTEventLogHandler(app_name)
+        nt_event_log_handler.setLevel(logging.INFO)
+        nt_event_log_handler.setFormatter(formatter)
+        logger.addHandler(nt_event_log_handler)
+    else:
+        # For other OS, log to the console and/or a file
+        console_handler = logging.StreamHandler(sys.stdout)
+        console_handler.setLevel(logging.INFO)
+        console_handler.setFormatter(formatter)
+        logger.addHandler(console_handler)
+
+        # Optionally, log to a file
+        file_handler = logging.FileHandler(f'{app_name}.log')
+        file_handler.setLevel(logging.INFO)
+        file_handler.setFormatter(formatter)
+        logger.addHandler(file_handler)
+
+    return logger
+
+def log_error(logger, error_message):
+    logger.error(error_message)
+
+def log_info(logger, info_message):
+    logger.info(info_message)
+ 
+ 
+iot_hub_module/logging_setup.py :
+import logging
+import logging.handlers
+import platform
+
+# Determine the operating system
+os_type = platform.system().lower()
+
+# Configure logging
+if os_type == 'windows':
+    # Log to Windows Event Log on Windows systems
+    nt_event_log_handler = logging.handlers.NTEventLogHandler('RewstService')
+    logging.basicConfig(
+        level=logging.INFO,
+        handlers=[nt_event_log_handler]
+    )
+else:
+    # Log to console on non-Windows systems
+    logging.basicConfig(
+        level=logging.INFO,
+        format='%(asctime)s %(levelname)s: %(message)s',
+        datefmt='%Y-%m-%d %H:%M:%S',
+    )
+
+class ConnectionError(Exception):
+    """Raised when there's a problem connecting to the IoT Hub."""
+    pass
+
+class ConfigurationError(Exception):
+    """Raised when there's a problem with configuration data."""
+    pass
+
+class ServiceError(Exception):
+    """Raised when there's a problem with the service management."""
+    pass
+
+def handle_exception(e):
+    """Log the exception and take any necessary action."""
+    logging.error(f"An error occurred: {e}")
+    # Additional error handling logic can go here
+
+def create_event_source(app_name):
+    """Create an event source for logging to the Windows Event Log."""
+    if os_type != 'windows':
+        return  # Exit if not on a Windows system
+    
+    import win32api
+    import win32con
+
+    registry_key = f"SYSTEM\\CurrentControlSet\\Services\\EventLog\\Application\\{app_name}"
+    key_flags = win32con.KEY_SET_VALUE | win32con.KEY_CREATE_SUB_KEY
+    try:
+        # Try to open the registry key
+        reg_key = win32api.RegOpenKey(win32con.HKEY_LOCAL_MACHINE, registry_key, 0, key_flags)
+    except Exception as e:
+        logging.error(f"Failed to open or create registry key: {e}")
+        return
+
+    try:
+        # Set the EventMessageFile registry value
+        event_message_file = win32api.GetModuleHandle(None)
+        win32api.RegSetValueEx(reg_key, "EventMessageFile", 0, win32con.REG_SZ, event_message_file)
+        win32api.RegSetValueEx(reg_key, "TypesSupported", 0, win32con.REG_DWORD, win32con.EVENTLOG_ERROR_TYPE | win32con.EVENTLOG_WARNING_TYPE | win32con.EVENTLOG_INFORMATION_TYPE)
+    except Exception as e:
+        logging.error(f"Failed to set registry values: {e}")
+    finally:
+        win32api.RegCloseKey(reg_key)
+
+# Create an event source for logging to the Windows Event Log
+if os_type == 'windows':
+    create_event_source('RewstService')
+ 
+ 
+iot_hub_module/message_handling.py :
+import json
+import logging
+import httpx
+import base64
+import subprocess
+import platform
+from config_module import load_configuration
+
+
+from error_handling import log_error
+
+os_type = platform.system().lower()
+
+async def send_message_to_iot_hub(client, message_data):
+    # Assuming you have a function to send a message to IoT Hub.
+    # Replace with your actual implementation if different.
+    message_json = json.dumps(message_data)
+    await client.send_message(message_json)
+
+def execute_commands(commands, post_url=None, interpreter_override=None):
+    # Determine the interpreter based on the operating system
+    if os_type == 'windows':
+        default_interpreter = 'powershell'
+    elif os_type == 'darwin':
+        default_interpreter = '/bin/zsh'
+    else:
+        default_interpreter = '/bin/bash'
+
+    # Use the default interpreter if an override isn't provided
+    interpreter = interpreter_override or default_interpreter
+    
+    logging.info(f"Using interpreter: {interpreter}")
+
+    # If PowerShell is the interpreter, update the commands to include the post_url variable
+    if "powershell" in interpreter:
+        shell_command = f'{interpreter} -EncodedCommand "{commands}"'
+    else:
+        decoded_commands = base64.b64decode(commands).decode('utf-16-le')
+        preamble = f"post_url = '{post_url}'\n"
+        combined_commands = preamble + decoded_commands
+        re_encoded_commands = base64.b64encode(combined_commands.encode('utf-8'))
+        shell_command = (f"base64 --decode '{re_encoded_commands}' | interpreter")
+
+    # Execute the command
+    try:
+        process = subprocess.Popen(
+            shell_command,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            shell=True,
+            text=True
+        )
+        # Gather output
+        stdout, stderr = process.communicate()
+        exit_code = process.returncode  # Get the exit code
+        logging.info(f"Process Completed with exit code {exit_code}.")
+        logging.info(f"Standard Output: {stdout}")
+        if stderr:
+            logging.error(f"Standard Error: {stderr}")
+
+        message_data = {
+            'output': stdout.strip(),
+            'error': stderr.strip()
+        }
+
+    except subprocess.CalledProcessError as e:
+        logging.error(f"Command '{shell_command}' failed with error code {e.returncode}")
+        logging.error(f"Error output: {e.output}")
+        message_data = {
+            'output': '',
+            'error': f"Command failed with error code {e.returncode}: {e.output}"
+        }
+    except Exception as e:
+        log_error(f"An unexpected error occurred: {e}")
+        message_data = {
+            'output': '',
+            'error': f"An unexpected error occurred: {e}"
+        }
+
+    if post_url:
+        logging.info("Sending Results to Rewst via httpx.")
+        response = httpx.post(post_url, json=message_data)
+        logging.info(f"POST request status: {response.status_code}")
+        if response.status_code != 200:
+            logging.info(f"Error response: {response.text}")
+
+    return message_data
+
+async def handle_message(client, message, config_data):
+    logging.info(f"Received IoT Hub message: {message.data}")
+    try:
+        message_data = json.loads(message.data)
+        get_installation_info = message_data.get("get_installation")
+        commands = message_data.get("commands")
+        post_id = message_data.get("post_id")
+        interpreter_override = message_data.get("interpreter_override")
+
+        if post_id:
+            post_path = post_id.replace(":", "/")
+            rewst_engine_host = config_data["rewst_org_id"]
+            post_url = f"https://{rewst_engine_host}/webhooks/custom/action/{post_path}"
+            logging.info(f"Will POST results to {post_url}")
+
+        if commands:
+            logging.info("Received commands in message")
+            command_output = execute_commands(commands, post_url, interpreter_override)
+            await send_message_to_iot_hub(client, command_output)
+
+        if get_installation_info:
+            logging.info("Received request for installation paths")
+            await get_installation(org_id, post_url)
+
+    except json.JSONDecodeError as e:
+        logging.error(f"Error decoding message data as JSON: {e}")
+    except Exception as e:
+        log_error(f"An unexpected error occurred: {e}")
+
+async def get_installation(org_id, post_url):
+    executable_path = get_executable_path(org_id)
+    config_file_path = get_config_file_path(org_id)
+    
+    paths_data = {
+        "executable_path": executable_path,
+        "config_file_path": config_file_path
+    }
+    
+    async with httpx.AsyncClient() as client:
+        response = await client.post(post_url, json=paths_data)
+        
+    if response.status_code != 200:
+        logging.error(f"Failed to post data: {response.status_code} - {response.text}")
+ 

@@ -4,10 +4,12 @@ import httpx
 import base64
 import subprocess
 import platform
-from config_module import load_configuration
+from config_module.config_io import (
+    get_config_file_path,
+    get_agent_executable_path
+)
+from .error_handling import log_error
 
-
-from error_handling import log_error
 
 os_type = platform.system().lower()
 
@@ -116,7 +118,7 @@ async def handle_message(client, message, config_data):
         log_error(f"An unexpected error occurred: {e}")
 
 async def get_installation(org_id, post_url):
-    executable_path = get_executable_path(org_id)
+    executable_path = get_agent_executable_path(org_id)
     config_file_path = get_config_file_path(org_id)
     
     paths_data = {

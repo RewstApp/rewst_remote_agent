@@ -5,8 +5,15 @@ import socket
 import platform
 import sys
 import psutil
-import config_module
 import __version__
+from .host_info import (
+    get_mac_address,
+    is_domain_controller,
+    is_entra_connect_server,
+    get_ad_domain_name,
+    get_entra_domain
+)
+
 
 # Put Timestamps on logging entries
 logging.basicConfig(
@@ -29,7 +36,7 @@ async def fetch_configuration(config_url, secret=None):
         "agent_version": __version__,
         "executable_path": sys.executable,
         "hostname": socket.gethostname(),
-        "mac_address": config_module.get_mac_address(),
+        "mac_address": get_mac_address(),
         "operating_system": platform.platform(),
         "cpu_model": platform.processor(),
         "ram_gb": psutil.virtual_memory().total / (1024 ** 3),
