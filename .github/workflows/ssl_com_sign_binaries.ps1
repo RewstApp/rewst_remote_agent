@@ -9,9 +9,9 @@ $downloadUrl = 'https://www.ssl.com/download/codesigntool-for-windows/'
 $appDistPath =  'D:\a\rewst_remote_agent\rewst_remote_agent\dist'
 
 $inputFiles = @(
-    "$appDistPath\rewst_remote_agent\rewst_remote_agent.exe",
-    "$appDistPath\rewst_agent_config\rewst_agent_config.exe",
-    "$appDistPath\rewst_service_manager\rewst_service_manager.exe"
+    "$appDistPath\rewst_remote_agent.exe",
+    "$appDistPath\rewst_agent_config.exe",
+    "$appDistPath\rewst_service_manager.exe"
 )
 $outputDirPath = "$appDistPath\signed"
 
