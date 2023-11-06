@@ -12,7 +12,7 @@ logging.basicConfig(
 )
 
 def get_executable_folder(org_id):
-    os_type = platform.system().lower()
+    os_type = platform.system()
     if os_type == "Windows":
         program_files_dir = os.environ.get('ProgramFiles')  # This will get the path to Program Files directory
         executable_path = os.path.join(program_files_dir, f"RewstRemoteAgent\\{org_id}\\")
@@ -23,7 +23,7 @@ def get_executable_folder(org_id):
     return executable_path
 
 def get_service_manager_path(org_id):
-    os_type = platform.system().lower()
+    os_type = platform.system()
     if os_type == "Windows":
         executable_name = f"rewst_service_manager.win.exe"
     elif os_type == "Linux":
@@ -34,7 +34,7 @@ def get_service_manager_path(org_id):
     return executable_path
 
 def get_agent_executable_path(org_id):
-    os_type = platform.system().lower()
+    os_type = platform.system()
     if os_type == "Windows":
         executable_name = f"rewst_remote_agent_{org_id}.win.exe"
     elif os_type == "Linux":
