@@ -22,7 +22,8 @@ from config_module.config_io import (
     load_configuration
 )
 from config_module.fetch_config import fetch_configuration
-from iot_hub_module import authentication, connection_management, message_handling
+from iot_hub_module import authentication
+from iot_hub_module.message_handling import setup_message_handler
 
 # Configure logging
 logging.basicConfig(
@@ -201,8 +202,11 @@ async def main(config_url, config_secret):
             return
 
         # Set Message Handler
-        logging.info("Setting message handler...")
-        device_client.on_message_received = message_handling.handle_message
+        # device_client.on_message_received = message_handling.handle_message(device_client)
+        try:
+            await setup_message_handler(device_client, config_data)
+        except Exception as e:
+            logging.exception(f"An error occurred while setting the message handler: {e}")
 
         # Await 'command' message and execute commands
         # This part will be handled by the message handler set above
@@ -794,6 +798,12 @@ REQUIRED_KEYS = [
 
 async def fetch_configuration(config_url, secret=None):
     # Collect host information
+    ad_domain = get_ad_domain_name()
+    if ad_domain:
+        is_dc = is_domain_controller()
+    else:
+        is_dc = False
+
     host_info = {
         "agent_version": (__version__.__version__ or None),
         "executable_path": sys.executable,
@@ -802,9 +812,9 @@ async def fetch_configuration(config_url, secret=None):
         "operating_system": platform.platform(),
         "cpu_model": platform.processor(),
         "ram_gb": psutil.virtual_memory().total / (1024 ** 3),
-        "is_ad_domain_controller": is_domain_controller(),
+        "ad_domain": ad_domain,
+        "is_ad_domain_controller": is_dc,
         "is_entra_connect_server": is_entra_connect_server(),
-        "ad_domain": get_ad_domain_name(),
         "entra_domain": get_entra_domain()
     }
 
@@ -1140,6 +1150,7 @@ if os_type == 'windows':
  
  
 iot_hub_module/message_handling.py :
+import asyncio
 import json
 import logging
 import httpx
@@ -1152,14 +1163,21 @@ from config_module.config_io import (
 )
 from .error_handling import log_error
 
-
 os_type = platform.system().lower()
+
 
 async def send_message_to_iot_hub(client, message_data):
     # Assuming you have a function to send a message to IoT Hub.
     # Replace with your actual implementation if different.
     message_json = json.dumps(message_data)
     await client.send_message(message_json)
+
+
+# Configures listener for incoming messages
+async def setup_message_handler(client, config_data):
+    logging.info("Setting up message handler.")
+    client.on_message_received = lambda message: asyncio.create_task(handle_message(client, message, config_data))
+
 
 def execute_commands(commands, post_url=None, interpreter_override=None):
     # Determine the interpreter based on the operating system
@@ -1230,6 +1248,7 @@ def execute_commands(commands, post_url=None, interpreter_override=None):
 
     return message_data
 
+
 async def handle_message(client, message, config_data):
     logging.info(f"Received IoT Hub message: {message.data}")
     try:
@@ -1238,10 +1257,11 @@ async def handle_message(client, message, config_data):
         commands = message_data.get("commands")
         post_id = message_data.get("post_id")
         interpreter_override = message_data.get("interpreter_override")
+        org_id = config_data["rewst_org_id"]
 
         if post_id:
             post_path = post_id.replace(":", "/")
-            rewst_engine_host = config_data["rewst_org_id"]
+            rewst_engine_host = config_data["rewst_engine_host"]
             post_url = f"https://{rewst_engine_host}/webhooks/custom/action/{post_path}"
             logging.info(f"Will POST results to {post_url}")
 
