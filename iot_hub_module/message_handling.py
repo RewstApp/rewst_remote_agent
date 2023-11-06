@@ -21,7 +21,7 @@ async def send_message_to_iot_hub(client, message_data):
 
 
 # Configures listener for incoming messages
-def setup_message_handler(client, config_data):
+async def setup_message_handler(client, config_data):
     logging.info("Setting up message handler...")
     client.on_message_received = lambda message: asyncio.create_task(handle_message(client, message, config_data))
 
