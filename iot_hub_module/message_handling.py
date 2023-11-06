@@ -95,7 +95,8 @@ def execute_commands(commands, post_url=None, interpreter_override=None):
 
     return message_data
 
-async def handle_message(message):
+
+def handle_message(message):
     logging.info(f"Received IoT Hub message: {message.data}")
     try:
         message_data = json.loads(message.data)
