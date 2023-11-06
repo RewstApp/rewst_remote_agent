@@ -35,6 +35,8 @@ async def fetch_configuration(config_url, secret=None):
     ad_domain = get_ad_domain_name()
     if ad_domain:
         is_dc = is_domain_controller()
+    else:
+        is_dc = False
 
     host_info = {
         "agent_version": (__version__.__version__ or None),
