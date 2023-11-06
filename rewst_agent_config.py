@@ -194,7 +194,6 @@ async def main(config_url, config_secret):
             return
 
         # Set Message Handler
-        logging.info("Setting message handler...")
         # device_client.on_message_received = message_handling.handle_message(device_client)
         try:
             await setup_message_handler(device_client, config_data)
