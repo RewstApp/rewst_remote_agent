@@ -1,9 +1,11 @@
 import argparse
 import asyncio
+import base64
 import logging
 import os
 import subprocess
 import sys
+from urllib.parse import urlparse
 from config_module.config_io import (
     get_service_manager_path,
     get_agent_executable_path,
@@ -21,6 +23,23 @@ logging.basicConfig(
     datefmt='%Y-%m-%d %H:%M:%S',
 )
 
+def is_valid_url(url):
+    # Check if the URL is parsable
+    try:
+        result = urlparse(url)
+        return all([result.scheme, result.netloc])
+        logging.info("URL is valid.")
+    except ValueError:
+        return False
+
+
+def is_base64(s):
+     # Check if it's a base64 string by trying to decode it
+    try:
+        base64.b64decode(s)
+        return True
+    except base64.binascii.Error:
+        return False
 
 async def wait_for_files(org_id, timeout=3600) -> bool:
     """
@@ -61,7 +80,7 @@ async def install_and_start_service(org_id):
     :return: True if the service was successfully installed and started, False otherwise.
     """
     # Obtain the explicit path to the rewst_service_manager executable
-    service_manager_path = config_io.get_service_manager_path(org_id)
+    service_manager_path = get_service_manager_path(org_id)
 
     # Command to install the service
     install_command = [service_manager_path, '--org-id', org_id, '--install']
@@ -115,19 +134,26 @@ async def check_service_status(org_id):
         return False
 
 
-async def end_program(exit_level=1,service_status=None):
-
-    logging.info(f"Agent configuration has completed. ")
+def end_program(exit_level=1,service_status=None):
+    logging.info(f"Agent configuration is exiting with exit level {exit_level}.")
     exit(exit_level)
 
 
 async def main(config_url, config_secret):
-    try:
+    
+    # Check URL and Secret for valid strings
+    if not is_valid_url(config_url):
+        logging.error("The config URL provided is not valid.")
+        end_program(1)
+    if not is_base64(config_secret):
+        logging.error("The config secret provided is not a valid base64 string.")
+        end_program(1)
 
+    try:
         # Check that arguments are provided
         if not config_url or not config_secret:
             print("Error: Missing required parameters.")
-            print("Please make sure '--config_url' and '--config_secret' are provided.")
+            print("Please make sure '--config-url' and '--config-secret' are provided.")
             sys.exit(1)  # Exit with a non-zero status to indicate an error
         
         # Fetch Configuration
@@ -184,7 +210,7 @@ async def main(config_url, config_secret):
             logging.error("Exiting the program with failure.")
             exit_level = 1
         
-        await end_program(exit_level)
+        end_program(exit_level)
 
     except Exception as e:
         logging.exception(f"An error occurred: {e}")

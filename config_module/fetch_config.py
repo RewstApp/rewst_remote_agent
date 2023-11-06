@@ -87,7 +87,7 @@ async def fetch_configuration(config_url, secret=None):
                 else:
                     logging.warning(f"Attempt {retries}: Received status code {response.status_code}. Retrying...")
 
+            logging.info(f"Attempt {retries}: Waiting {interval}s before retrying...")
             await asyncio.sleep(interval)
-
-        logging.info(f"Moving to next retry phase: {interval}s interval for {max_retries} retries.")
-    logging.INFO("This process will end when the service is installed.")
+    
+    logging.info("This process will end when the service is installed.")
