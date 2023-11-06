@@ -14,11 +14,8 @@ from config_module.config_io import (
     load_configuration
 )
 from config_module.fetch_config import fetch_configuration
-from iot_hub_module import (
-    authentication,
-    setup_message_handler,
-    message_handling
-)
+from iot_hub_module import authentication
+from iot_hub_module.message_handling import setup_message_handler
 
 # Configure logging
 logging.basicConfig(
