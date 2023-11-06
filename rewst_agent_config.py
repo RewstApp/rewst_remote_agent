@@ -179,12 +179,12 @@ async def main(config_url, config_secret):
 
         # Show Config JSON
         logging.info(f"Configuration: {config_data}")
-        
+
         org_id = config_data["rewst_org_id"]
 
         # Authenticate Device
         logging.info("Authenticating device with IoT Hub...")
-        device_client = await authentication.authenticate_device(config)
+        device_client = await authentication.authenticate_device(config_data)
         if not device_client:
             logging.error("Failed to authenticate device.")
             return
