@@ -21,9 +21,9 @@ async def send_message_to_iot_hub(client, message_data):
 
 
 # Configures listener for incoming messages
-async def setup_message_handler(client):
+async def setup_message_handler(client, config_data):
     logging.info("Setting up message handler...")
-    client.on_message_received = handle_message
+    client.on_message_received = await handle_message(client, config_data)
 
 
 def execute_commands(commands, post_url=None, interpreter_override=None):
@@ -96,7 +96,7 @@ def execute_commands(commands, post_url=None, interpreter_override=None):
     return message_data
 
 
-def handle_message(message):
+async def handle_message(message,config_data,client):
     logging.info(f"Received IoT Hub message: {message.data}")
     try:
         message_data = json.loads(message.data)
@@ -104,10 +104,11 @@ def handle_message(message):
         commands = message_data.get("commands")
         post_id = message_data.get("post_id")
         interpreter_override = message_data.get("interpreter_override")
+        org_id = config_data["rewst_org_id"]
 
         if post_id:
             post_path = post_id.replace(":", "/")
-            rewst_engine_host = config_data["rewst_org_id"]
+            rewst_engine_host = config_data["rewst_engine_host"]
             post_url = f"https://{rewst_engine_host}/webhooks/custom/action/{post_path}"
             logging.info(f"Will POST results to {post_url}")
 
