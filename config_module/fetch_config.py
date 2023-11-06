@@ -33,7 +33,7 @@ REQUIRED_KEYS = [
 async def fetch_configuration(config_url, secret=None):
     # Collect host information
     host_info = {
-        "agent_version": (__version__ or None),
+        "agent_version": (__version__.__version__ or None),
         "executable_path": sys.executable,
         "hostname": socket.gethostname(),
         "mac_address": get_mac_address(),
