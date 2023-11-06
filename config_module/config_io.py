@@ -30,7 +30,7 @@ def get_service_manager_path(org_id):
         executable_name = f"rewst_service_manager.linux.bin"
     elif os_type == "Darwin":
         executable_name = f"rewst_service_manager.macos.bin"
-    executable_path = f"{get_executable_folder()}{executable_name}"
+    executable_path = f"{get_executable_folder(org_id)}{executable_name}"
     return executable_path
 
 def get_agent_executable_path(org_id):
