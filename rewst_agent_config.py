@@ -14,7 +14,11 @@ from config_module.config_io import (
     load_configuration
 )
 from config_module.fetch_config import fetch_configuration
-from iot_hub_module import authentication, connection_management, message_handling
+from iot_hub_module import (
+    authentication,
+    setup_message_handler,
+    message_handling
+)
 
 # Configure logging
 logging.basicConfig(
@@ -194,7 +198,7 @@ async def main(config_url, config_secret):
 
         # Set Message Handler
         logging.info("Setting message handler...")
-        #device_client.on_message_received = message_handling.handle_message(device_client)
+        # device_client.on_message_received = message_handling.handle_message(device_client)
         await setup_message_handler(device_client)
 
 
