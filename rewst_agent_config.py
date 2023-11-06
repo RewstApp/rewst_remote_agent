@@ -2,6 +2,7 @@ import argparse
 import asyncio
 import logging
 import os
+import platform
 import re
 import subprocess
 import sys
@@ -15,13 +16,14 @@ from config_module.config_io import (
 from config_module.fetch_config import fetch_configuration
 from iot_hub_module import authentication, connection_management, message_handling
 
-
 # Configure logging
 logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s %(levelname)s: %(message)s',
     datefmt='%Y-%m-%d %H:%M:%S',
 )
+
+logging.info(f"Running on {platform.system()} version {platform.release()}")
 
 def is_valid_url(url):
     # Check if the URL is parsable

@@ -12,34 +12,34 @@ logging.basicConfig(
 )
 
 def get_executable_folder(org_id):
-    os_type = platform.system()
-    if os_type == "Windows":
+    os_type = platform.system().lower()
+    if os_type == "windows":
         program_files_dir = os.environ.get('ProgramFiles')  # This will get the path to Program Files directory
         executable_path = os.path.join(program_files_dir, f"RewstRemoteAgent\\{org_id}\\")
-    elif os_type == "Linux":
+    elif os_type == "linux":
         executable_path = f"/usr/local/bin/"
-    elif os_type == "Darwin":
+    elif os_type == "darwin":
         executable_path = os.path.expanduser(f"~/Library/Application Support/RewstRemoteAgent/{org_id}/")
     return executable_path
 
 def get_service_manager_path(org_id):
-    os_type = platform.system()
-    if os_type == "Windows":
+    os_type = platform.system().lower()
+    if os_type == "windows":
         executable_name = f"rewst_service_manager.win.exe"
-    elif os_type == "Linux":
+    elif os_type == "linux":
         executable_name = f"rewst_service_manager.linux.bin"
-    elif os_type == "Darwin":
+    elif os_type == "darwin":
         executable_name = f"rewst_service_manager.macos.bin"
     executable_path = f"{get_executable_folder(org_id)}{executable_name}"
     return executable_path
 
 def get_agent_executable_path(org_id):
-    os_type = platform.system()
-    if os_type == "Windows":
+    os_type = platform.system().lower()
+    if os_type == "windows":
         executable_name = f"rewst_remote_agent_{org_id}.win.exe"
-    elif os_type == "Linux":
+    elif os_type == "linux":
         executable_name = f"rewst_remote_agent_{org_id}.linux.bin"
-    elif os_type == "Darwin":
+    elif os_type == "darwin":
         executable_name = f"rewst_remote_agent_{org_id}.macos.bin"
     executable_path = f"{get_executable_folder(org_id)}{executable_name}"
     return executable_path
@@ -47,12 +47,12 @@ def get_agent_executable_path(org_id):
 def get_config_file_path(org_id=None, config_file=None):
     if config_file:
         return config_file
-    os_type = platform.system()
-    if os_type == "Windows":
+    os_type = platform.system().lower()
+    if os_type == "windows":
         config_dir = os.path.join(os.environ.get('PROGRAMDATA'), 'RewstRemoteAgent', org_id if org_id else '',"\\")
-    elif os_type == "Linux":
+    elif os_type == "linux":
         config_dir = f"/etc/rewst_remote_agent/{org_id}/"
-    elif os_type == "Darwin":
+    elif os_type == "darwin":
         config_dir = os.path.expanduser(f"~/Library/Application Support/RewstRemoteAgent/{org_id}/")
     
     if not os.path.exists(config_dir):
