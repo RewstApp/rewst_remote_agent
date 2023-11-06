@@ -19,6 +19,11 @@ async def send_message_to_iot_hub(client, message_data):
     message_json = json.dumps(message_data)
     await client.send_message(message_json)
 
+# Configures listener for incoming messages
+async def setup_message_handler(client):
+    logging.info("Setting up message handler...")
+    client.on_message_received = handle_message
+
 def execute_commands(commands, post_url=None, interpreter_override=None):
     # Determine the interpreter based on the operating system
     if os_type == 'windows':

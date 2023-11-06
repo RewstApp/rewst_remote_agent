@@ -3,23 +3,26 @@
  
  
 ./__version__.py :
-"0.0.1" 
+__version__ = "0.0.1" 
  
 ./rewst_agent_config.py :
 import argparse
 import asyncio
 import logging
 import os
+import platform
+import re
 import subprocess
-from config_module import fetch_config, config_io
+import sys
+from urllib.parse import urlparse
 from config_module.config_io import (
     get_service_manager_path,
     get_agent_executable_path,
     save_configuration,
     load_configuration
 )
+from config_module.fetch_config import fetch_configuration
 from iot_hub_module import authentication, connection_management, message_handling
-
 
 # Configure logging
 logging.basicConfig(
@@ -27,6 +30,31 @@ logging.basicConfig(
     format='%(asctime)s %(levelname)s: %(message)s',
     datefmt='%Y-%m-%d %H:%M:%S',
 )
+
+logging.info(f"Running on {platform.system()} version {platform.release()}")
+
+def is_valid_url(url):
+    # Check if the URL is parsable
+    try:
+        result = urlparse(url)
+        return all([result.scheme, result.netloc])
+        logging.info("URL is valid.")
+    except ValueError:
+        return False
+
+
+def is_base64(sb):
+     # Check if it's a base64 string by trying to decode it
+    try:
+        if isinstance(sb, str):
+            # If there's any whitespace, remove it
+            sb = sb.strip()
+        if bool(re.match('^[A-Za-z0-9+/]+={0,2}$', sb)):
+            return True
+        return False
+    except Exception as e:
+        print(e)
+        return False
 
 
 async def wait_for_files(org_id, timeout=3600) -> bool:
@@ -68,7 +96,7 @@ async def install_and_start_service(org_id):
     :return: True if the service was successfully installed and started, False otherwise.
     """
     # Obtain the explicit path to the rewst_service_manager executable
-    service_manager_path = config_io.get_service_manager_path(org_id)
+    service_manager_path = get_service_manager_path(org_id)
 
     # Command to install the service
     install_command = [service_manager_path, '--org-id', org_id, '--install']
@@ -122,17 +150,31 @@ async def check_service_status(org_id):
         return False
 
 
-async def end_program(exit_level=1,service_status=None):
-
-    logging.info(f"Agent configuration has completed. ")
+def end_program(exit_level=1,service_status=None):
+    logging.info(f"Agent configuration is exiting with exit level {exit_level}.")
     exit(exit_level)
 
 
 async def main(config_url, config_secret):
+    
+    # Check URL and Secret for valid strings
+    if not is_valid_url(config_url):
+        logging.error("The config URL provided is not valid.")
+        end_program(1)
+    if not is_base64(config_secret):
+        logging.error("The config secret provided is not a valid base64 string.")
+        end_program(1)
+
     try:
+        # Check that arguments are provided
+        if not config_url or not config_secret:
+            print("Error: Missing required parameters.")
+            print("Please make sure '--config-url' and '--config-secret' are provided.")
+            sys.exit(1)  # Exit with a non-zero status to indicate an error
+        
         # Fetch Configuration
         logging.info("Fetching configuration from Rewst...")
-        config_data = await fetch_config(config_url, config_secret)
+        config_data = await fetch_configuration(config_url, config_secret)
         if not config_data:
             logging.error("Failed to fetch configuration.")
             return
@@ -143,13 +185,17 @@ async def main(config_url, config_secret):
 
         # Load Configurationg
         logging.info("Loading configuration from file...")
-        config = load_configuration()
+        config_data = load_configuration()
 
-        org_id = config["rewst_org_id"]
+        # Show Config JSON
+        logging.info(f"Configuration: {config_data}")
+
+        org_id = config_data['rewst_org_id']
+        logging.info(f"Organization ID: {org_id}")
 
         # Authenticate Device
         logging.info("Authenticating device with IoT Hub...")
-        device_client = await authentication.authenticate_device(config)
+        device_client = await authentication.authenticate_device(config_data)
         if not device_client:
             logging.error("Failed to authenticate device.")
             return
@@ -184,7 +230,7 @@ async def main(config_url, config_secret):
             logging.error("Exiting the program with failure.")
             exit_level = 1
         
-        await end_program(exit_level)
+        end_program(exit_level)
 
     except Exception as e:
         logging.exception(f"An error occurred: {e}")
@@ -215,8 +261,7 @@ from iot_hub_module.error_handling import setup_logging
 from iot_hub_module.message_handling import (
     handle_message
 )
-import iot_hub_module
-from rewst_service_manager import RewstService
+
 
 # Configure logging
 setup_logging("RewstRemoteAgent")
@@ -229,6 +274,7 @@ if os_type == 'Windows':
     import pywin32
     import win32serviceutil
     from pywin32 import win32api,win32con
+    from rewst_service_manager import RewstService
 
 
 # Sets up event log handling
@@ -292,9 +338,15 @@ async def main(config_file=None):
                 logging.warning(f"Did not find guid in file {executable_path}")
                 config_data = None
 
+        # Exit if no configuration was found
+        if not config_data:
+            logging.error("No configuration was found. Exiting.")
+            exit(1)
+        
         # Retrieve org_id from the configuration if it wasn't already found
         if not org_id:
             org_id = config_data['rewst_org_id']
+        
 
     except Exception as e:
         logging.exception(f"Exception Caught during self-configuration: {str(e)}")
@@ -333,7 +385,8 @@ if __name__ == "__main__":
         config_file=args.config_file
     ))
 else:
-    win32serviceutil.HandleCommandLine(RewstService) 
+    if os_type == 'Windows':
+        win32serviceutil.HandleCommandLine(RewstService) 
  
 ./rewst_service_manager.py :
 import argparse
@@ -361,40 +414,41 @@ if os_type == "Windows":
     import win32event
     import pywintypes
 
-class RewstService(win32serviceutil.ServiceFramework):
-    _svc_name_ = None  # Placeholder, will be set in __init__
-    _svc_display_name_ = None  # Placeholder, will be set in __init__
+if os_type == 'Windows':
+    class RewstService(win32serviceutil.ServiceFramework):
+        _svc_name_ = None  # Placeholder, will be set in __init__
+        _svc_display_name_ = None  # Placeholder, will be set in __init__
 
-    # Defining stop_event as a class variable
-    stop_event = asyncio.Event()
+        # Defining stop_event as a class variable
+        stop_event = asyncio.Event()
 
-    def __init__(self, args):
-        super().__init__(args)
-        config_data = config_io.load_configuration()  # Load the configuration
-        self.org_id = config_data.get('rewst_org_id')
-        self.set_service_name(self.org_id)
-        self.hWaitStop = win32event.CreateEvent(None, 0, 0, None)
+        def __init__(self, args):
+            super().__init__(args)
+            config_data = config_io.load_configuration()  # Load the configuration
+            self.org_id = config_data.get('rewst_org_id')
+            self.set_service_name(self.org_id)
+            self.hWaitStop = win32event.CreateEvent(None, 0, 0, None)
 
-    @classmethod
-    def set_service_name(cls, org_id):
-        cls._svc_name_ = get_service_name(org_id)
-        cls._svc_display_name_ = f"Rewst Remote Service {org_id}"
+        @classmethod
+        def set_service_name(cls, org_id):
+            cls._svc_name_ = get_service_name(org_id)
+            cls._svc_display_name_ = f"Rewst Remote Service {org_id}"
 
-    def SvcDoRun(self):
-        try:
-            self.ReportServiceStatus(win32service.SERVICE_RUNNING)  # Report service as running
-            asyncio.run(main(org_id=self.org_id, stop_event=RewstService.stop_event))  # pass stop_event to main
-        except Exception as e:
-            logging.error(f"Exception in SvcDoRun: {e}")
-            self.ReportServiceStatus(win32service.SERVICE_STOPPED)  # Report service as stopped if there's an error
+        def SvcDoRun(self):
+            try:
+                self.ReportServiceStatus(win32service.SERVICE_RUNNING)  # Report service as running
+                asyncio.run(main(org_id=self.org_id, stop_event=RewstService.stop_event))  # pass stop_event to main
+            except Exception as e:
+                logging.error(f"Exception in SvcDoRun: {e}")
+                self.ReportServiceStatus(win32service.SERVICE_STOPPED)  # Report service as stopped if there's an error
 
-    def SvcStop(self):
-        try:
-            self.ReportServiceStatus(win32service.SERVICE_STOP_PENDING)  # Report service as stopping
-            RewstService.stop_event.set()  # Set stop_event to signal the service to stop
-            self.ReportServiceStatus(win32service.SERVICE_STOPPED)  # Report service as stopped
-        except Exception as e:
-            logging.error(f"Exception in SvcStop: {e}")
+        def SvcStop(self):
+            try:
+                self.ReportServiceStatus(win32service.SERVICE_STOP_PENDING)  # Report service as stopping
+                RewstService.stop_event.set()  # Set stop_event to signal the service to stop
+                self.ReportServiceStatus(win32service.SERVICE_STOPPED)  # Report service as stopped
+            except Exception as e:
+                logging.error(f"Exception in SvcStop: {e}")
 
 def get_service_name(org_id):
     return f"Rewst_Remote_Agent_{org_id}"
@@ -616,7 +670,7 @@ import sys
  
  
 config_module/__init__.py :
- 
+from .config_io import load_configuration 
  
 config_module/config_io.py :
 import json
@@ -634,46 +688,46 @@ logging.basicConfig(
 
 def get_executable_folder(org_id):
     os_type = platform.system().lower()
-    if os_type == "Windows":
+    if os_type == "windows":
         program_files_dir = os.environ.get('ProgramFiles')  # This will get the path to Program Files directory
-        executable_path = os.path.join(program_files_dir, f"RewstRemoteAgent\\{org_id}")
-    elif os_type == "Linux":
-        executable_path = f"/usr/local/bin"
-    elif os_type == "Darwin":
-        executable_path = os.path.expanduser(f"~/Library/Application Support/RewstRemoteAgent")
+        executable_path = os.path.join(program_files_dir, f"RewstRemoteAgent\\{org_id}\\")
+    elif os_type == "linux":
+        executable_path = f"/usr/local/bin/"
+    elif os_type == "darwin":
+        executable_path = os.path.expanduser(f"~/Library/Application Support/RewstRemoteAgent/{org_id}/")
     return executable_path
 
 def get_service_manager_path(org_id):
     os_type = platform.system().lower()
-    if os_type == "Windows":
+    if os_type == "windows":
         executable_name = f"rewst_service_manager.win.exe"
-    elif os_type == "Linux":
+    elif os_type == "linux":
         executable_name = f"rewst_service_manager.linux.bin"
-    elif os_type == "Darwin":
+    elif os_type == "darwin":
         executable_name = f"rewst_service_manager.macos.bin"
-    executable_path = f"{get_executable_folder()}{executable_name}"
+    executable_path = f"{get_executable_folder(org_id)}{executable_name}"
     return executable_path
 
 def get_agent_executable_path(org_id):
     os_type = platform.system().lower()
-    if os_type == "Windows":
+    if os_type == "windows":
         executable_name = f"rewst_remote_agent_{org_id}.win.exe"
-    elif os_type == "Linux":
+    elif os_type == "linux":
         executable_name = f"rewst_remote_agent_{org_id}.linux.bin"
-    elif os_type == "Darwin":
+    elif os_type == "darwin":
         executable_name = f"rewst_remote_agent_{org_id}.macos.bin"
-    executable_path = f"{get_executable_folder()}{executable_name}"
+    executable_path = f"{get_executable_folder(org_id)}{executable_name}"
     return executable_path
 
 def get_config_file_path(org_id=None, config_file=None):
     if config_file:
         return config_file
-    os_type = platform.system()
-    if os_type == "Windows":
+    os_type = platform.system().lower()
+    if os_type == "windows":
         config_dir = os.path.join(os.environ.get('PROGRAMDATA'), 'RewstRemoteAgent', org_id if org_id else '',"\\")
-    elif os_type == "Linux":
+    elif os_type == "linux":
         config_dir = f"/etc/rewst_remote_agent/{org_id}/"
-    elif os_type == "Darwin":
+    elif os_type == "darwin":
         config_dir = os.path.expanduser(f"~/Library/Application Support/RewstRemoteAgent/{org_id}/")
     
     if not os.path.exists(config_dir):
@@ -693,12 +747,14 @@ def save_configuration(config_data, config_file=None):
     config_file_path = get_config_file_path(org_id, config_file)
     with open(config_file_path, 'w') as f:
         json.dump(config_data, f, indent=4)
+        logging.info(f"Configuration saved to {config_file_path}")
 
 def load_configuration(org_id=None, config_file=None):
     config_file_path = get_config_file_path(org_id, config_file)
     try:
         with open(config_file_path) as f:
             return json.load(f)
+            logging.info(f"Configuration loaded from {config_file_path}")
     except FileNotFoundError:
         return None
  
@@ -711,8 +767,15 @@ import socket
 import platform
 import sys
 import psutil
-import config_module
 import __version__
+from .host_info import (
+    get_mac_address,
+    is_domain_controller,
+    is_entra_connect_server,
+    get_ad_domain_name,
+    get_entra_domain
+)
+
 
 # Put Timestamps on logging entries
 logging.basicConfig(
@@ -732,10 +795,10 @@ REQUIRED_KEYS = [
 async def fetch_configuration(config_url, secret=None):
     # Collect host information
     host_info = {
-        "agent_version": __version__,
+        "agent_version": (__version__.__version__ or None),
         "executable_path": sys.executable,
         "hostname": socket.gethostname(),
-        "mac_address": config_module.get_mac_address(),
+        "mac_address": get_mac_address(),
         "operating_system": platform.platform(),
         "cpu_model": platform.processor(),
         "ram_gb": psutil.virtual_memory().total / (1024 ** 3),
@@ -749,6 +812,8 @@ async def fetch_configuration(config_url, secret=None):
     if secret:
         headers['x-rewst-secret'] = secret
     
+    logging.debug(f"Sending host information to {config_url}: {str(host_info)}")
+
     retry_intervals = [(5, 12), (60, 60), (300, float('inf'))]  # (interval, max_retries) for each phase
     for interval, max_retries in retry_intervals:
         retries = 0
@@ -784,10 +849,10 @@ async def fetch_configuration(config_url, secret=None):
                 else:
                     logging.warning(f"Attempt {retries}: Received status code {response.status_code}. Retrying...")
 
+            logging.info(f"Attempt {retries}: Waiting {interval}s before retrying...")
             await asyncio.sleep(interval)
-
-        logging.info(f"Moving to next retry phase: {interval}s interval for {max_retries} retries.")
-    logging.INFO("This process will end when the service is installed.")
+    
+    logging.info("This process will end when the service is installed.")
  
  
 config_module/host_info.py :
@@ -808,65 +873,70 @@ def get_mac_address():
 def is_domain_controller():
     if platform.system().lower() != 'windows':
         return False
-    domain_name = get_ad_domain_name()
-    if domain_name is None:
-        logging.warning("Could not determine domain name.")
-        return False
-    try:
-        result = subprocess.run([f'nltest', f'/dclist:{domain_name}'], text=True, capture_output=True, check=True)
-        domain_controllers = result.stdout.split('\n')
-        local_machine = socket.gethostname()
-        return any(local_machine in dc for dc in domain_controllers)
-    except subprocess.CalledProcessError as e:
-        logging.error(f"Command failed with error: {str(e)}")
-        return False
-    except Exception as e:
-        logging.error(f"An unexpected error occurred: {str(e)}")
-        return False
+    else:
+        domain_name = get_ad_domain_name()
+        if domain_name is None:
+            return False
+        try:
+            result = subprocess.run([f'nltest', f'/dclist:{domain_name}'], text=True, capture_output=True, check=True)
+            domain_controllers = result.stdout.split('\n')
+            local_machine = socket.gethostname()
+            return any(local_machine in dc for dc in domain_controllers)
+        except subprocess.CalledProcessError as e:
+            logging.error(f"Command failed with error: {str(e)}")
+            return False
+        except Exception as e:
+            logging.error(f"An unexpected error occurred: {str(e)}")
+            return False
 
 
 def get_ad_domain_name():
     if platform.system().lower() != 'windows':
         return None
-    try:
-        result = subprocess.run(['dsregcmd', '/status'], text=True, capture_output=True, check=True)
-        for line in result.stdout.split('\n'):
-            if 'Domain Name' in line:
-                return line.split(':')[1].strip()
-        logging.warning("Domain Name not found in dsregcmd output.")
-        return None
-    except subprocess.CalledProcessError as e:
-        logging.error(f"Command failed with error: {str(e)}")
-        return None
-    except Exception as e:
-        logging.error(f"An unexpected error occurred: {str(e)}")
-        return None
+    else:
+        try:
+            result = subprocess.run(['dsregcmd', '/status'], text=True, capture_output=True, check=True)
+            for line in result.stdout.split('\n'):
+                if 'Domain Name' in line:
+                    return line.split(':')[1].strip()
+            logging.warning("Domain Name not found in dsregcmd output. This is expected if the computer is not domain-joined.")
+            return None
+        except subprocess.CalledProcessError as e:
+            logging.error(f"Command failed with error: {str(e)}")
+            return None
+        except Exception as e:
+            logging.error(f"An unexpected error occurred: {str(e)}")
+            return None
 
 
 def get_entra_domain():
-    try:
-        result = subprocess.run(['dsregcmd', '/status'], text=True, capture_output=True)
-        output = result.stdout
-        for line in output.splitlines():
-            if 'AzureAdJoined' in line and 'YES' in line:
-                for line in output.splitlines():
-                    if 'DomainName' in line:
-                        domain_name = line.split(':')[1].strip()
-                        return domain_name
-    except Exception as e:
-        logging.warning(f"Unexpected issue querying for Entra Domain: {str(e)}")
-        pass  # Handle exception if necessary
-    return None
+    if platform.system().lower() != 'windows':
+        return None
+    else:
+        try:
+            result = subprocess.run(['dsregcmd', '/status'], text=True, capture_output=True)
+            output = result.stdout
+            for line in output.splitlines():
+                if 'AzureAdJoined' in line and 'YES' in line:
+                    for line in output.splitlines():
+                        if 'DomainName' in line:
+                            domain_name = line.split(':')[1].strip()
+                            return domain_name
+        except Exception as e:
+            logging.warning(f"Unexpected issue querying for Entra Domain: {str(e)}")
+            pass  # Handle exception if necessary
+        return None
 
 
 def is_entra_connect_server():
     if platform.system().lower() != 'windows':
         return False
-    potential_service_names = ["ADSync", "Azure AD Sync", "EntraConnectSync", "OtherFutureName"]
-    for service_name in potential_service_names:
-        if is_service_running(service_name):
-            return True
-    return False
+    else:
+        potential_service_names = ["ADSync", "Azure AD Sync", "EntraConnectSync", "OtherFutureName"]
+        for service_name in potential_service_names:
+            if is_service_running(service_name):
+                return True
+        return False
 
 
 def is_service_running(service_name):
@@ -1076,10 +1146,12 @@ import httpx
 import base64
 import subprocess
 import platform
-from config_module import load_configuration
+from config_module.config_io import (
+    get_config_file_path,
+    get_agent_executable_path
+)
+from .error_handling import log_error
 
-
-from error_handling import log_error
 
 os_type = platform.system().lower()
 
@@ -1188,7 +1260,7 @@ async def handle_message(client, message, config_data):
         log_error(f"An unexpected error occurred: {e}")
 
 async def get_installation(org_id, post_url):
-    executable_path = get_executable_path(org_id)
+    executable_path = get_agent_executable_path(org_id)
     config_file_path = get_config_file_path(org_id)
     
     paths_data = {
