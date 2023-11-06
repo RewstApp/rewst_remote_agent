@@ -175,9 +175,12 @@ async def main(config_url, config_secret):
 
         # Load Configurationg
         logging.info("Loading configuration from file...")
-        config = load_configuration()
+        config_data = load_configuration()
 
-        org_id = config["rewst_org_id"]
+        # Show Config JSON
+        logging.info(f"Configuration: {config_data}")
+        
+        org_id = config_data["rewst_org_id"]
 
         # Authenticate Device
         logging.info("Authenticating device with IoT Hub...")

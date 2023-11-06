@@ -72,11 +72,13 @@ def save_configuration(config_data, config_file=None):
     config_file_path = get_config_file_path(org_id, config_file)
     with open(config_file_path, 'w') as f:
         json.dump(config_data, f, indent=4)
+        logging.info(f"Configuration saved to {config_file_path}")
 
 def load_configuration(org_id=None, config_file=None):
     config_file_path = get_config_file_path(org_id, config_file)
     try:
         with open(config_file_path) as f:
             return json.load(f)
+            logging.info(f"Configuration loaded from {config_file_path}")
     except FileNotFoundError:
         return None
