@@ -21,9 +21,9 @@ async def send_message_to_iot_hub(client, message_data):
 
 
 # Configures listener for incoming messages
-async def setup_message_handler(client, config_data):
+def setup_message_handler(client, config_data):
     logging.info("Setting up message handler...")
-    client.on_message_received = await handle_message(client, config_data)
+    client.on_message_received = lambda message: asyncio.create_task(handle_message(client, message, config_data))
 
 
 def execute_commands(commands, post_url=None, interpreter_override=None):
@@ -96,7 +96,7 @@ def execute_commands(commands, post_url=None, interpreter_override=None):
     return message_data
 
 
-async def handle_message(client,config_data,message):
+async def handle_message(client, message, config_data):
     logging.info(f"Received IoT Hub message: {message.data}")
     try:
         message_data = json.loads(message.data)
