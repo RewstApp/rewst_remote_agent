@@ -32,6 +32,10 @@ REQUIRED_KEYS = [
 
 async def fetch_configuration(config_url, secret=None):
     # Collect host information
+    ad_domain = get_ad_domain_name()
+    if ad_domain:
+        is_dc = is_domain_controller()
+
     host_info = {
         "agent_version": (__version__.__version__ or None),
         "executable_path": sys.executable,
@@ -40,9 +44,9 @@ async def fetch_configuration(config_url, secret=None):
         "operating_system": platform.platform(),
         "cpu_model": platform.processor(),
         "ram_gb": psutil.virtual_memory().total / (1024 ** 3),
-        "is_ad_domain_controller": is_domain_controller(),
+        "ad_domain": ad_domain,
+        "is_ad_domain_controller": is_dc,
         "is_entra_connect_server": is_entra_connect_server(),
-        "ad_domain": get_ad_domain_name(),
         "entra_domain": get_entra_domain()
     }
 

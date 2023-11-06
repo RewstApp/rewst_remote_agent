@@ -10,8 +10,8 @@ from config_module.config_io import (
 )
 from .error_handling import log_error
 
-
 os_type = platform.system().lower()
+
 
 async def send_message_to_iot_hub(client, message_data):
     # Assuming you have a function to send a message to IoT Hub.
@@ -19,10 +19,12 @@ async def send_message_to_iot_hub(client, message_data):
     message_json = json.dumps(message_data)
     await client.send_message(message_json)
 
+
 # Configures listener for incoming messages
 async def setup_message_handler(client):
     logging.info("Setting up message handler...")
     client.on_message_received = handle_message
+
 
 def execute_commands(commands, post_url=None, interpreter_override=None):
     # Determine the interpreter based on the operating system
@@ -93,7 +95,7 @@ def execute_commands(commands, post_url=None, interpreter_override=None):
 
     return message_data
 
-async def handle_message(client, message, config_data):
+async def handle_message(message):
     logging.info(f"Received IoT Hub message: {message.data}")
     try:
         message_data = json.loads(message.data)
