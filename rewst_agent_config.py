@@ -196,8 +196,10 @@ async def main(config_url, config_secret):
         # Set Message Handler
         logging.info("Setting message handler...")
         # device_client.on_message_received = message_handling.handle_message(device_client)
-        await setup_message_handler(device_client, config_data)
-
+        try:
+            await setup_message_handler(device_client, config_data)
+        except Exception as e:
+            logging.exception(f"An error occurred while setting the message handler: {e}")
 
         # Await 'command' message and execute commands
         # This part will be handled by the message handler set above
