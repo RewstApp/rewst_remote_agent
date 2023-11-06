@@ -180,7 +180,8 @@ async def main(config_url, config_secret):
         # Show Config JSON
         logging.info(f"Configuration: {config_data}")
 
-        org_id = config_data["rewst_org_id"]
+        org_id = config_data['rewst_org_id']
+        logging.info(f"Organization ID: {org_id}")
 
         # Authenticate Device
         logging.info("Authenticating device with IoT Hub...")
