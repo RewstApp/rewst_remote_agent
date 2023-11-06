@@ -1,8 +1,8 @@
 import argparse
 import asyncio
-import base64
 import logging
 import os
+import re
 import subprocess
 import sys
 from urllib.parse import urlparse
@@ -33,13 +33,19 @@ def is_valid_url(url):
         return False
 
 
-def is_base64(s):
+def is_base64(sb):
      # Check if it's a base64 string by trying to decode it
     try:
-        base64.b64decode(s)
-        return True
-    except base64.binascii.Error:
+        if isinstance(sb, str):
+            # If there's any whitespace, remove it
+            sb = sb.strip()
+        if bool(re.match('^[A-Za-z0-9+/]+={0,2}$', sb)):
+            return True
         return False
+    except Exception as e:
+        print(e)
+        return False
+
 
 async def wait_for_files(org_id, timeout=3600) -> bool:
     """
