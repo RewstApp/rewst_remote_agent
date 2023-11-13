@@ -30,7 +30,7 @@ async def setup_message_handler(client, config_data):
         logging.exception(f"An error occurred setting the message handler: {e}")
 
 
-def execute_commands(commands, post_url=None, interpreter_override=None):
+async def execute_commands(commands, post_url=None, interpreter_override=None):
     # Determine the interpreter based on the operating system
     if os_type == 'windows':
         default_interpreter = 'powershell'
@@ -92,7 +92,8 @@ def execute_commands(commands, post_url=None, interpreter_override=None):
 
     if post_url:
         logging.info("Sending Results to Rewst via httpx.")
-        response = httpx.post(post_url, json=message_data)
+        async with httpx.AsyncClient() as client:
+            response = await client.post(post_url, json=message_data)
         logging.info(f"POST request status: {response.status_code}")
         if response.status_code != 200:
             logging.info(f"Error response: {response.text}")
@@ -115,10 +116,12 @@ async def handle_message(client, message, config_data):
             rewst_engine_host = config_data["rewst_engine_host"]
             post_url = f"https://{rewst_engine_host}/webhooks/custom/action/{post_path}"
             logging.info(f"Will POST results to {post_url}")
+        else:
+            post_url = None
 
         if commands:
             logging.info("Received commands in message")
-            command_output = execute_commands(commands, post_url, interpreter_override)
+            command_output = await execute_commands(commands, post_url, interpreter_override)
             await send_message_to_iot_hub(client, command_output)
 
         if get_installation_info:
@@ -129,6 +132,7 @@ async def handle_message(client, message, config_data):
         logging.error(f"Error decoding message data as JSON: {e}")
     except Exception as e:
         log_error(f"An unexpected error occurred: {e}")
+
 
 async def get_installation(org_id, post_url):
     executable_path = get_agent_executable_path(org_id)

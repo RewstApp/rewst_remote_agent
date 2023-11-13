@@ -200,9 +200,6 @@ async def main(config_url, config_secret):
         except Exception as e:
             logging.exception(f"An error occurred while setting the message handler: {e}")
 
-        # Await 'command' message and execute commands
-        # This part will be handled by the message handler set above
-
         # Wait for files to be written
         await wait_for_files(org_id)
 
