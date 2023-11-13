@@ -13,7 +13,6 @@ from iot_hub_module.message_handling import (
     handle_message
 )
 
-
 # Configure logging
 setup_logging("RewstRemoteAgent")
 
@@ -24,7 +23,7 @@ stop_event = asyncio.Event()
 if os_type == 'Windows':
     import pywin32
     import win32serviceutil
-    from pywin32 import win32api,win32con
+    from pywin32 import win32api, win32con
     from rewst_service_manager import RewstService
 
 
@@ -43,7 +42,8 @@ async def create_event_source(app_name):
         # Set the EventMessageFile registry value
         event_message_file = win32api.GetModuleHandle(None)
         win32api.RegSetValueEx(reg_key, "EventMessageFile", 0, win32con.REG_SZ, event_message_file)
-        win32api.RegSetValueEx(reg_key, "TypesSupported", 0, win32con.REG_DWORD, win32con.EVENTLOG_ERROR_TYPE | win32con.EVENTLOG_WARNING_TYPE | win32con.EVENTLOG_INFORMATION_TYPE)
+        win32api.RegSetValueEx(reg_key, "TypesSupported", 0, win32con.REG_DWORD,
+                               win32con.EVENTLOG_ERROR_TYPE | win32con.EVENTLOG_WARNING_TYPE | win32con.EVENTLOG_INFORMATION_TYPE)
     except Exception as e:
         logging.error(f"Failed to set registry values: {e}")
     finally:
@@ -63,7 +63,6 @@ async def main(config_file=None):
     if os_type == "Windows":
         await create_event_source(app_name)
 
-
     # If Windows, log to event logs
     if os_type == 'Windows':
         nt_event_log_handler = logging.handlers.NTEventLogHandler('RewstService')
@@ -74,7 +73,7 @@ async def main(config_file=None):
         if config_file:
             logging.info(f"Using config file {config_file}.")
             config_data = load_configuration(config_file=config_file)
-        
+
         else:
             # Get Org ID for Config
             executable_path = sys.argv[0]  # Gets the file name of the current script
@@ -93,11 +92,10 @@ async def main(config_file=None):
         if not config_data:
             logging.error("No configuration was found. Exiting.")
             exit(1)
-        
+
         # Retrieve org_id from the configuration if it wasn't already found
         if not org_id:
             org_id = config_data['rewst_org_id']
-        
 
     except Exception as e:
         logging.exception(f"Exception Caught during self-configuration: {str(e)}")
@@ -113,7 +111,7 @@ async def main(config_file=None):
         # Set Message Handler
         logging.info("Setting message handler...")
         device_client.on_message_received = handle_message
-    
+
     except Exception as e:
         logging.exception(f"Exception Caught during IoT Hub Communications: {str(e)}")
 

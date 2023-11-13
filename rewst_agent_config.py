@@ -26,18 +26,19 @@ logging.basicConfig(
 
 logging.info(f"Running on {platform.system()} version {platform.release()}")
 
+
 def is_valid_url(url):
     # Check if the URL is parsable
     try:
         result = urlparse(url)
-        return all([result.scheme, result.netloc])
         logging.info("URL is valid.")
+        return all([result.scheme, result.netloc])
     except ValueError:
         return False
 
 
 def is_base64(sb):
-     # Check if it's a base64 string by trying to decode it
+    # Check if it's a base64 string by trying to decode it
     try:
         if isinstance(sb, str):
             # If there's any whitespace, remove it
@@ -108,7 +109,7 @@ async def install_and_start_service(org_id):
     except Exception as e:
         logging.error(f"Failed to install the service: {e}")
         return False
-    
+
     # Command to start the service
     start_command = [service_manager_path, '--org-id', org_id, '--start']
     try:
@@ -117,7 +118,7 @@ async def install_and_start_service(org_id):
     except subprocess.CalledProcessError as e:
         logging.error(f"Failed to start the service: {e}")
         return False
-    
+
     return True
 
 
@@ -129,7 +130,7 @@ async def check_service_status(org_id):
     :return: True if the service is running, False otherwise.
     """
     # Obtain the explicit path to the rewst_service_manager executable
-    service_manager_path = config_io.get_service_manager_path(org_id)
+    service_manager_path = get_service_manager_path(org_id)
 
     # Command to check the service status
     status_command = [service_manager_path, '--org-id', org_id, '--status']
@@ -143,13 +144,12 @@ async def check_service_status(org_id):
         return False
 
 
-def end_program(exit_level=1,service_status=None):
+def end_program(exit_level=1, service_status=None):
     logging.info(f"Agent configuration is exiting with exit level {exit_level}.")
     exit(exit_level)
 
 
 async def main(config_url, config_secret):
-    
     # Check URL and Secret for valid strings
     if not is_valid_url(config_url):
         logging.error("The config URL provided is not valid.")
@@ -160,11 +160,11 @@ async def main(config_url, config_secret):
 
     try:
         # Check that arguments are provided
-        if not config_url or not config_secret:
+        if not (config_url and config_secret):
             print("Error: Missing required parameters.")
             print("Please make sure '--config-url' and '--config-secret' are provided.")
             sys.exit(1)  # Exit with a non-zero status to indicate an error
-        
+
         # Fetch Configuration
         logging.info("Fetching configuration from Rewst...")
         config_data = await fetch_configuration(config_url, config_secret)
@@ -176,7 +176,7 @@ async def main(config_url, config_secret):
         logging.info("Saving configuration to file...")
         save_configuration(config_data)
 
-        # Load Configurationg
+        # Load Configuration
         logging.info("Loading configuration from file...")
         config_data = load_configuration()
 
@@ -205,15 +205,15 @@ async def main(config_url, config_secret):
 
         # Wait for files to be written
         await wait_for_files(org_id)
-        
+
         # Disconnect from IoT Hub to not conflict with the Service
         logging.info("Disconnecting from IoT Hub...")
         await device_client.disconnect()
         await asyncio.sleep(4)
         logging.info("Disconnected from IoT Hub.")
 
-        if (await install_and_start_service(org_id)):
-        # Wait for the service to start successfully
+        if await install_and_start_service(org_id):
+            # Wait for the service to start successfully
             while not (await check_service_status(org_id)):
                 logging.info("Waiting for the service to start...")
                 await asyncio.sleep(5)  # Sleep for 5 seconds before checking the status again
@@ -225,7 +225,7 @@ async def main(config_url, config_secret):
             logging.error("Failed to install or start the service.")
             logging.error("Exiting the program with failure.")
             exit_level = 1
-        
+
         end_program(exit_level)
 
     except Exception as e:
@@ -238,6 +238,6 @@ if __name__ == "__main__":
     parser.add_argument('--config-url', help='URL to fetch the configuration from.')
     args = parser.parse_args()  # Extract arguments from the parser
     asyncio.run(main(
-            config_secret=args.config_secret,
-            config_url=args.config_url
+        config_secret=args.config_secret,
+        config_url=args.config_url
     ))

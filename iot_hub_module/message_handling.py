@@ -24,7 +24,10 @@ async def send_message_to_iot_hub(client, message_data):
 # Configures listener for incoming messages
 async def setup_message_handler(client, config_data):
     logging.info("Setting up message handler.")
-    client.on_message_received = lambda message: asyncio.create_task(handle_message(client, message, config_data))
+    try:
+        client.on_message_received = lambda message: asyncio.create_task(handle_message(client, message, config_data))
+    except Exception as e:
+        logging.exception(f"An error occurred setting the message handler: {e}")
 
 
 def execute_commands(commands, post_url=None, interpreter_override=None):
@@ -49,7 +52,7 @@ def execute_commands(commands, post_url=None, interpreter_override=None):
         preamble = f"post_url = '{post_url}'\n"
         combined_commands = preamble + decoded_commands
         re_encoded_commands = base64.b64encode(combined_commands.encode('utf-8'))
-        shell_command = (f"base64 --decode '{re_encoded_commands}' | interpreter")
+        shell_command = f"base64 --decode '{re_encoded_commands}' | interpreter"
 
     # Execute the command
     try:

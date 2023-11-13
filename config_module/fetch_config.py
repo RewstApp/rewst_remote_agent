@@ -14,7 +14,6 @@ from .host_info import (
     get_entra_domain
 )
 
-
 # Put Timestamps on logging entries
 logging.basicConfig(
     level=logging.INFO,
@@ -29,6 +28,7 @@ REQUIRED_KEYS = [
     'rewst_engine_host',
     'rewst_org_id'
 ]
+
 
 async def fetch_configuration(config_url, secret=None):
     # Collect host information
@@ -55,7 +55,7 @@ async def fetch_configuration(config_url, secret=None):
     headers = {}
     if secret:
         headers['x-rewst-secret'] = secret
-    
+
     logging.debug(f"Sending host information to {config_url}: {str(host_info)}")
 
     retry_intervals = [(5, 12), (60, 60), (300, float('inf'))]  # (interval, max_retries) for each phase
@@ -95,5 +95,5 @@ async def fetch_configuration(config_url, secret=None):
 
             logging.info(f"Attempt {retries}: Waiting {interval}s before retrying...")
             await asyncio.sleep(interval)
-    
+
     logging.info("This process will end when the service is installed.")
