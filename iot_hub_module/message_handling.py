@@ -53,6 +53,7 @@ async def execute_commands(commands, post_url=None, interpreter_override=None):
     logging.info(f"Using interpreter: {interpreter}")
 
     # If PowerShell is the interpreter, update the commands to include the post_url variable
+    # Typical Rewst workflows include Invoke-RestMethod to POST back to Rewst via this URL
     if "powershell" in interpreter:
         shell_command = f'{interpreter} -EncodedCommand "{commands}"'
     else:
@@ -110,9 +111,13 @@ async def execute_commands(commands, post_url=None, interpreter_override=None):
 
 
 async def handle_message(message, config_data):
-    logging.info(f"Received IoT Hub message: {message.data}")
+    logging.info(f"Received IoT Hub message in handle_message: {message.data}")
     try:
-        message_data = json.loads(message.data)
+        try:
+            message_data = json.loads(message.data)
+        except json.JSONDecodeError as e:
+            logging.error(f"Error decoding message data as JSON: {e}")
+            return
         get_installation_info = message_data.get("get_installation")
         commands = message_data.get("commands")
         post_id = message_data.get("post_id")
