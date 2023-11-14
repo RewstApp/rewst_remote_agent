@@ -92,8 +92,8 @@ def execute_commands(commands, post_url=None, interpreter_override=None):
 
     if post_url:
         logging.info("Sending Results to Rewst via httpx.")
-        async with httpx.AsyncClient() as client:
-            response = await client.post(post_url, json=message_data)
+        with httpx.AsyncClient() as client:
+            response = client.post(post_url, json=message_data)
         logging.info(f"POST request status: {response.status_code}")
         if response.status_code != 200:
             logging.info(f"Error response: {response.text}")

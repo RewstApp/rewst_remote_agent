@@ -15,15 +15,15 @@ from config_module.config_io import (
 )
 from config_module.fetch_config import fetch_configuration
 from iot_hub_module import authentication
-from iot_hub_module.message_handling import setup_message_handler
-
+from iot_hub_module.message_handling import (
+    setup_message_handler
+)
 # Configure logging
 logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s %(levelname)s: %(message)s',
     datefmt='%Y-%m-%d %H:%M:%S',
 )
-
 logging.info(f"Running on {platform.system()} version {platform.release()}")
 
 
@@ -31,14 +31,14 @@ def is_valid_url(url):
     # Check if the URL is parsable
     try:
         result = urlparse(url)
-        logging.info("URL is valid.")
         return all([result.scheme, result.netloc])
     except ValueError:
+        logging.error(f"The provided string {url} is not a valid URL")
         return False
 
 
 def is_base64(sb):
-    # Check if it's a base64 string by trying to decode it
+    # Check if it's a base64 string by regex for valid characters
     try:
         if isinstance(sb, str):
             # If there's any whitespace, remove it
