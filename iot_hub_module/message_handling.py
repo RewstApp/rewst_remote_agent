@@ -5,6 +5,7 @@ import httpx
 import base64
 import subprocess
 import platform
+
 from config_module.config_io import (
     get_config_file_path,
     get_agent_executable_path
@@ -25,7 +26,8 @@ async def send_message_to_iot_hub(client, message_data):
 async def setup_message_handler(client, config_data):
     logging.info("Setting up message handler.")
     try:
-        client.on_message_received = handle_message(client, message, config_data)
+        # client.on_message_received = handle_message(message, config_data)
+        client.on_message_received = handle_message
     except Exception as e:
         logging.exception(f"An error occurred setting the message handler: {e}")
 
@@ -84,7 +86,7 @@ def execute_commands(commands, post_url=None, interpreter_override=None):
             'error': f"Command failed with error code {e.returncode}: {e.output}"
         }
     except Exception as e:
-        log_error(f"An unexpected error occurred: {e}")
+        logging.error(f"An unexpected error occurred: {e}")
         message_data = {
             'output': '',
             'error': f"An unexpected error occurred: {e}"
@@ -101,7 +103,7 @@ def execute_commands(commands, post_url=None, interpreter_override=None):
     return message_data
 
 
-def handle_message(client, message, config_data):
+async def handle_message(message):
     logging.info(f"Received IoT Hub message: {message.data}")
     try:
         message_data = json.loads(message.data)
@@ -109,24 +111,26 @@ def handle_message(client, message, config_data):
         commands = message_data.get("commands")
         post_id = message_data.get("post_id")
         interpreter_override = message_data.get("interpreter_override")
-        org_id = config_data["rewst_org_id"]
+        #org_id = config_data["rewst_org_id"]
 
         if post_id:
             post_path = post_id.replace(":", "/")
-            rewst_engine_host = config_data["rewst_engine_host"]
-            post_url = f"https://{rewst_engine_host}/webhooks/custom/action/{post_path}"
-            logging.info(f"Will POST results to {post_url}")
+            # rewst_engine_host = config_data["rewst_engine_host"]
+            # post_url = f"https://{rewst_engine_host}/webhooks/custom/action/{post_path}"
+            logging.info(f"Will POST results to {post_path}")
         else:
             post_url = None
 
         if commands:
             logging.info("Received commands in message")
-            command_output = execute_commands(commands, post_url, interpreter_override)
-            send_message_to_iot_hub(client, command_output)
+            try:
+                execute_commands(commands, post_id, interpreter_override)
+            except Exception as e:
+                logging.exception(f"Exception running commands: {e}")
 
         if get_installation_info:
             logging.info("Received request for installation paths")
-            get_installation(org_id, post_url)
+            # get_installation(org_id, post_url)
         return True
 
     except json.JSONDecodeError as e:

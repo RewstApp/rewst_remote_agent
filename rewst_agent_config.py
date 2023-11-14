@@ -24,7 +24,7 @@ logging.basicConfig(
     format='%(asctime)s %(levelname)s: %(message)s',
     datefmt='%Y-%m-%d %H:%M:%S',
 )
-logging.info(f"Running on {platform.system()} version {platform.release()}")
+logging.info(f"Running on {platform.system()} {platform.release()}")
 
 
 def is_valid_url(url):
@@ -150,6 +150,7 @@ def end_program(exit_level=1, service_status=None):
 
 
 async def main(config_url, config_secret):
+
     # Check URL and Secret for valid strings
     if not is_valid_url(config_url):
         logging.error("The config URL provided is not valid.")

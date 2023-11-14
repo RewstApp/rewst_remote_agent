@@ -1,5 +1,6 @@
 from azure.iot.device.aio import IoTHubDeviceClient
 
+
 class ConnectionManager:
     def __init__(self, connection_string):
         self.connection_string = connection_string
