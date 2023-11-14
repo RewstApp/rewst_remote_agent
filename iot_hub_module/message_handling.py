@@ -102,7 +102,7 @@ def execute_commands(commands, post_url=None, interpreter_override=None):
     return message_data
 
 
-async def handle_message(message, config_data):
+async def handle_message(config_data, message):
     logging.info(f"Received IoT Hub message: {message.data}")
     try:
         message_data = json.loads(message.data)
