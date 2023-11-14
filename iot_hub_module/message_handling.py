@@ -10,7 +10,6 @@ from config_module.config_io import (
     get_config_file_path,
     get_agent_executable_path
 )
-from .error_handling import log_error
 
 os_type = platform.system().lower()
 
@@ -27,7 +26,7 @@ async def setup_message_handler(client, config_data):
     logging.info("Setting up message handler.")
     try:
         # client.on_message_received = handle_message(message, config_data)
-        client.on_message_received = handle_message
+        client.on_message_received = handle_message(config_data)
     except Exception as e:
         logging.exception(f"An error occurred setting the message handler: {e}")
 
@@ -103,7 +102,7 @@ def execute_commands(commands, post_url=None, interpreter_override=None):
     return message_data
 
 
-async def handle_message(message):
+async def handle_message(message, config_data):
     logging.info(f"Received IoT Hub message: {message.data}")
     try:
         message_data = json.loads(message.data)
@@ -111,13 +110,13 @@ async def handle_message(message):
         commands = message_data.get("commands")
         post_id = message_data.get("post_id")
         interpreter_override = message_data.get("interpreter_override")
-        #org_id = config_data["rewst_org_id"]
+        org_id = config_data["rewst_org_id"]
 
         if post_id:
             post_path = post_id.replace(":", "/")
-            # rewst_engine_host = config_data["rewst_engine_host"]
-            # post_url = f"https://{rewst_engine_host}/webhooks/custom/action/{post_path}"
-            logging.info(f"Will POST results to {post_path}")
+            rewst_engine_host = config_data["rewst_engine_host"]
+            post_url = f"https://{rewst_engine_host}/webhooks/custom/action/{post_path}"
+            logging.info(f"Will POST results to {post_url}")
         else:
             post_url = None
 
@@ -130,7 +129,7 @@ async def handle_message(message):
 
         if get_installation_info:
             logging.info("Received request for installation paths")
-            # get_installation(org_id, post_url)
+            await get_installation(org_id, post_url)
         return True
 
     except json.JSONDecodeError as e:

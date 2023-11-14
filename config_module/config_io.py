@@ -33,6 +33,7 @@ def get_service_manager_path(org_id):
     executable_path = f"{get_executable_folder(org_id)}{executable_name}"
     return executable_path
 
+
 def get_agent_executable_path(org_id):
     os_type = platform.system().lower()
     if os_type == "windows":
@@ -44,6 +45,7 @@ def get_agent_executable_path(org_id):
     executable_path = f"{get_executable_folder(org_id)}{executable_name}"
     return executable_path
 
+
 def get_config_file_path(org_id=None, config_file=None):
     if config_file:
         return config_file
@@ -54,7 +56,10 @@ def get_config_file_path(org_id=None, config_file=None):
         config_dir = f"/etc/rewst_remote_agent/{org_id}/"
     elif os_type == "darwin":
         config_dir = os.path.expanduser(f"~/Library/Application Support/RewstRemoteAgent/{org_id}/")
-    
+    else:
+        logging.error(f"Unable to determine configuration directory: org_id {org_id}")
+        return None
+
     if not os.path.exists(config_dir):
         try:
             if not os.path.exists(config_dir):
@@ -67,6 +72,7 @@ def get_config_file_path(org_id=None, config_file=None):
     logging.info(f"Config File Path: {config_file_path}")
     return config_file_path
 
+
 def save_configuration(config_data, config_file=None):
     org_id = config_data["rewst_org_id"]
     config_file_path = get_config_file_path(org_id, config_file)
@@ -74,11 +80,12 @@ def save_configuration(config_data, config_file=None):
         json.dump(config_data, f, indent=4)
         logging.info(f"Configuration saved to {config_file_path}")
 
+
 def load_configuration(org_id=None, config_file=None):
     config_file_path = get_config_file_path(org_id, config_file)
     try:
         with open(config_file_path) as f:
+            logging.info(f"Configuration loading from {config_file_path}")
             return json.load(f)
-            logging.info(f"Configuration loaded from {config_file_path}")
     except FileNotFoundError:
         return None
