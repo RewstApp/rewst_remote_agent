@@ -26,7 +26,7 @@ async def setup_message_handler(client, config_data):
     logging.info("Setting up message handler.")
     try:
         # client.on_message_received = handle_message(message, config_data)
-        client.on_message_received = handle_message(config_data)
+        client.on_message_received = handle_message(config_data, message)
     except Exception as e:
         logging.exception(f"An error occurred setting the message handler: {e}")
 
