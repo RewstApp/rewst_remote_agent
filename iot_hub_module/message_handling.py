@@ -30,7 +30,7 @@ async def send_message_to_iot_hub(client, message_data):
 #     except Exception as e:
 #         logging.exception(f"An error occurred setting the message handler: {e}")
 async def setup_message_handler(client, config_data):
-    logging.info("Setting up message handler.")
+    logging.info(f"Setting up message handler with config_data: {str(config_data)}")
     try:
         # Create a closure that captures config_data and passes it along with the message to handle_message
         client.on_message_received = lambda message: asyncio.create_task(handle_message(message, config_data))
@@ -38,7 +38,7 @@ async def setup_message_handler(client, config_data):
         logging.exception(f"An error occurred setting the message handler: {e}")
 
 
-def execute_commands(commands, post_url=None, interpreter_override=None):
+async def execute_commands(commands, post_url=None, interpreter_override=None):
     # Determine the interpreter based on the operating system
     if os_type == 'windows':
         default_interpreter = 'powershell'
@@ -100,8 +100,8 @@ def execute_commands(commands, post_url=None, interpreter_override=None):
 
     if post_url:
         logging.info("Sending Results to Rewst via httpx.")
-        with httpx.AsyncClient() as client:
-            response = client.post(post_url, json=message_data)
+        async with httpx.AsyncClient() as client:
+            response = await client.post(post_url, json=message_data)
         logging.info(f"POST request status: {response.status_code}")
         if response.status_code != 200:
             logging.info(f"Error response: {response.text}")
@@ -130,14 +130,13 @@ async def handle_message(message, config_data):
         if commands:
             logging.info("Received commands in message")
             try:
-                execute_commands(commands, post_id, interpreter_override)
+                await execute_commands(commands, post_id, interpreter_override)
             except Exception as e:
                 logging.exception(f"Exception running commands: {e}")
 
         if get_installation_info:
             logging.info("Received request for installation paths")
             await get_installation(org_id, post_url)
-        return True
 
     except json.JSONDecodeError as e:
         logging.exception(f"Error decoding message data as JSON: {e}")
