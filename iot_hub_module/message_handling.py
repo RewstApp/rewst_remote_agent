@@ -25,12 +25,12 @@ async def send_message_to_iot_hub(client, message_data):
 async def setup_message_handler(client, config_data):
     logging.info("Setting up message handler.")
     try:
-        client.on_message_received = lambda message: asyncio.create_task(handle_message(client, message, config_data))
+        client.on_message_received = handle_message(client, message, config_data)
     except Exception as e:
         logging.exception(f"An error occurred setting the message handler: {e}")
 
 
-async def execute_commands(commands, post_url=None, interpreter_override=None):
+def execute_commands(commands, post_url=None, interpreter_override=None):
     # Determine the interpreter based on the operating system
     if os_type == 'windows':
         default_interpreter = 'powershell'
@@ -101,7 +101,7 @@ async def execute_commands(commands, post_url=None, interpreter_override=None):
     return message_data
 
 
-async def handle_message(client, message, config_data):
+def handle_message(client, message, config_data):
     logging.info(f"Received IoT Hub message: {message.data}")
     try:
         message_data = json.loads(message.data)
@@ -121,17 +121,18 @@ async def handle_message(client, message, config_data):
 
         if commands:
             logging.info("Received commands in message")
-            command_output = await execute_commands(commands, post_url, interpreter_override)
-            await send_message_to_iot_hub(client, command_output)
+            command_output = execute_commands(commands, post_url, interpreter_override)
+            send_message_to_iot_hub(client, command_output)
 
         if get_installation_info:
             logging.info("Received request for installation paths")
-            await get_installation(org_id, post_url)
+            get_installation(org_id, post_url)
+        return True
 
     except json.JSONDecodeError as e:
-        logging.error(f"Error decoding message data as JSON: {e}")
+        logging.exception(f"Error decoding message data as JSON: {e}")
     except Exception as e:
-        log_error(f"An unexpected error occurred: {e}")
+        logging.exception(f"An unexpected error occurred: {e}")
 
 
 async def get_installation(org_id, post_url):

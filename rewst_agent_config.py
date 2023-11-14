@@ -146,7 +146,7 @@ async def check_service_status(org_id):
 
 def end_program(exit_level=1, service_status=None):
     logging.info(f"Agent configuration is exiting with exit level {exit_level}.")
-    exit(exit_level)
+    sys.exit(exit_level)
 
 
 async def main(config_url, config_secret):
@@ -231,7 +231,7 @@ async def main(config_url, config_secret):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Rewst Agent Configuration Tool.')
-    parser.add_argument('--config-secret', help='Path to the configuration file.')
+    parser.add_argument('--config-secret', help='Secret Key for Configuration Access')
     parser.add_argument('--config-url', help='URL to fetch the configuration from.')
     args = parser.parse_args()  # Extract arguments from the parser
     asyncio.run(main(
