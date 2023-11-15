@@ -6,12 +6,9 @@ import re
 import signal
 import sys
 from config_module.config_io import load_configuration
-from iot_hub_module.authentication import authenticate_device, disconnect_device
 from iot_hub_module.connection_management import ConnectionManager
 from iot_hub_module.error_handling import setup_logging
-from iot_hub_module.message_handling import (
-    handle_message
-)
+
 
 # Configure logging
 setup_logging("RewstRemoteAgent")

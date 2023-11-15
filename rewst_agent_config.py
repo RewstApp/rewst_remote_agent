@@ -14,10 +14,8 @@ from config_module.config_io import (
     load_configuration
 )
 from config_module.fetch_config import fetch_configuration
-from iot_hub_module import authentication
-from iot_hub_module.message_handling import (
-    setup_message_handler
-)
+from iot_hub_module.connection_management import ConnectionManager
+
 # Configure logging
 logging.basicConfig(
     level=logging.INFO,
@@ -26,8 +24,6 @@ logging.basicConfig(
 )
 logging.info(f"Running on {platform.system()} {platform.release()}")
 asyncio.get_event_loop().set_debug(True)
-
-config_data = None
 
 
 def is_valid_url(url):
@@ -170,9 +166,6 @@ async def main(config_url, config_secret):
             print("Please make sure '--config-url' and '--config-secret' are provided.")
             sys.exit(1)  # Exit with a non-zero status to indicate an error
 
-        # Set config_data to be global
-        global config_data
-
         # Fetch Configuration
         logging.info("Fetching configuration from Rewst...")
         config_data = await fetch_configuration(config_url, config_secret)
@@ -194,28 +187,23 @@ async def main(config_url, config_secret):
         org_id = config_data['rewst_org_id']
         logging.info(f"Organization ID: {org_id}")
 
-        # Authenticate Device
-        logging.info("Authenticating device with IoT Hub...")
-        device_client = await authentication.authenticate_device(config_data)
-        if not device_client:
-            logging.error("Failed to authenticate device.")
-            return
+        # Instantiate ConnectionManager
+        connection_manager = ConnectionManager(config_data)
+
+        # Connect to IoT Hub
+        logging.info("Connecting to IoT Hub...")
+        await connection_manager.connect()
 
         # Set Message Handler
-        # device_client.on_message_received = message_handling.handle_message(device_client)
-        try:
-            await setup_message_handler(device_client)
-            logging.info("Message handler setup complete.")
-
-        except Exception as e:
-            logging.exception(f"An error occurred while setting the message handler: {e}")
+        logging.info("Setting up message handler...")
+        await connection_manager.set_message_handler()
 
         # Wait for files to be written
         await wait_for_files(org_id)
 
         # Disconnect from IoT Hub to not conflict with the Service
         logging.info("Disconnecting from IoT Hub...")
-        await device_client.disconnect()
+        await connection_manager.disconnect()
         await asyncio.sleep(4)
         logging.info("Disconnected from IoT Hub.")
 
