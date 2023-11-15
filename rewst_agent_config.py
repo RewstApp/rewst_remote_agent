@@ -27,6 +27,8 @@ logging.basicConfig(
 logging.info(f"Running on {platform.system()} {platform.release()}")
 asyncio.get_event_loop().set_debug(True)
 
+config_data = None
+
 
 def is_valid_url(url):
     # Check if the URL is parsable
@@ -167,6 +169,9 @@ async def main(config_url, config_secret):
             print("Error: Missing required parameters.")
             print("Please make sure '--config-url' and '--config-secret' are provided.")
             sys.exit(1)  # Exit with a non-zero status to indicate an error
+
+        # Set config_data to be global
+        global config_data
 
         # Fetch Configuration
         logging.info("Fetching configuration from Rewst...")

@@ -12,6 +12,7 @@ from config_module.config_io import (
 )
 
 os_type = platform.system().lower()
+config_data = None
 
 
 async def send_message_to_iot_hub(client, message_data):
@@ -22,20 +23,20 @@ async def send_message_to_iot_hub(client, message_data):
 
 
 # Configures listener for incoming messages
-# async def setup_message_handler(client, config_data):
-#     logging.info("Setting up message handler.")
-#     try:
-#         # client.on_message_received = handle_message(message, config_data)
-#         client.on_message_received = handle_message(config_data, message)
-#     except Exception as e:
-#         logging.exception(f"An error occurred setting the message handler: {e}")
-async def setup_message_handler(client, config_data):
-    logging.info(f"Setting up message handler with config_data: {str(config_data)}")
+async def setup_message_handler(client):
+    logging.info("Setting up message handler.")
     try:
-        # Create a closure that captures config_data and passes it along with the message to handle_message
-        client.on_message_received = lambda message: asyncio.create_task(handle_message(message, config_data))
+        # client.on_message_received = handle_message(message, config_data)
+        client.on_message_received = handle_message
     except Exception as e:
         logging.exception(f"An error occurred setting the message handler: {e}")
+# async def setup_message_handler(client, config_data):
+#     logging.info(f"Setting up message handler with config_data: {str(config_data)}")
+#     try:
+#         # Create a closure that captures config_data and passes it along with the message to handle_message
+#         client.on_message_received = lambda message: asyncio.create_task(handle_message(message, config_data))
+#     except Exception as e:
+#         logging.exception(f"An error occurred setting the message handler: {e}")
 
 
 async def execute_commands(commands, post_url=None, interpreter_override=None):
@@ -110,7 +111,8 @@ async def execute_commands(commands, post_url=None, interpreter_override=None):
     return message_data
 
 
-async def handle_message(message, config_data):
+async def handle_message(message):
+    global config_data
     logging.info(f"Received IoT Hub message in handle_message: {message.data}")
     try:
         try:
