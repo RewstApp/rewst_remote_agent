@@ -25,6 +25,7 @@ logging.basicConfig(
     datefmt='%Y-%m-%d %H:%M:%S',
 )
 logging.info(f"Running on {platform.system()} {platform.release()}")
+asyncio.get_event_loop().set_debug(True)
 
 
 def is_valid_url(url):
