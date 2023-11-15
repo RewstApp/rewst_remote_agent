@@ -194,10 +194,16 @@ async def main(config_url, config_secret):
             logging.error("Failed to authenticate device.")
             return
 
+
         # Set Message Handler
         # device_client.on_message_received = message_handling.handle_message(device_client)
         try:
+            await device_client.connect()
+            logging.info("Device client connected to IoT Hub.")
+
             await setup_message_handler(device_client, config_data)
+            logging.info("Message handler setup complete.")
+
         except Exception as e:
             logging.exception(f"An error occurred while setting the message handler: {e}")
 
