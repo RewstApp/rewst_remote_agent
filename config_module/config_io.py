@@ -11,6 +11,7 @@ logging.basicConfig(
     datefmt='%Y-%m-%d %H:%M:%S',
 )
 
+
 def get_executable_folder(org_id):
     os_type = platform.system().lower()
     if os_type == "windows":
@@ -20,7 +21,11 @@ def get_executable_folder(org_id):
         executable_path = f"/usr/local/bin/"
     elif os_type == "darwin":
         executable_path = os.path.expanduser(f"~/Library/Application Support/RewstRemoteAgent/{org_id}/")
+    else:
+        logging.error(f"Unsupported OS type: {os_type}. Send this output to Rewst for investigation!")
+        exit(1)
     return executable_path
+
 
 def get_service_manager_path(org_id):
     os_type = platform.system().lower()
@@ -30,6 +35,9 @@ def get_service_manager_path(org_id):
         executable_name = f"rewst_service_manager.linux.bin"
     elif os_type == "darwin":
         executable_name = f"rewst_service_manager.macos.bin"
+    else:
+        logging.error(f"Unsupported OS type: {os_type}. Send this output to Rewst for investigation!")
+        exit(1)
     executable_path = f"{get_executable_folder(org_id)}{executable_name}"
     return executable_path
 
@@ -42,6 +50,9 @@ def get_agent_executable_path(org_id):
         executable_name = f"rewst_remote_agent_{org_id}.linux.bin"
     elif os_type == "darwin":
         executable_name = f"rewst_remote_agent_{org_id}.macos.bin"
+    else:
+        logging.error(f"Unsupported OS type: {os_type}. Send this output to Rewst for investigation!")
+        exit(1)
     executable_path = f"{get_executable_folder(org_id)}{executable_name}"
     return executable_path
 
@@ -57,8 +68,8 @@ def get_config_file_path(org_id=None, config_file=None):
     elif os_type == "darwin":
         config_dir = os.path.expanduser(f"~/Library/Application Support/RewstRemoteAgent/{org_id}/")
     else:
-        logging.error(f"Unable to determine configuration directory: org_id {org_id}")
-        return None
+        logging.error(f"Unsupported OS type: {os_type}. Send this output to Rewst for investigation!")
+        exit(1)
 
     if not os.path.exists(config_dir):
         try:
@@ -88,4 +99,5 @@ def load_configuration(org_id=None, config_file=None):
             logging.info(f"Configuration loading from {config_file_path}")
             return json.load(f)
     except FileNotFoundError:
+        logging.exception("Error: Configuration File not found")
         return None

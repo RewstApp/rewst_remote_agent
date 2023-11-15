@@ -70,6 +70,7 @@ async def wait_for_files(org_id, timeout=3600) -> bool:
         # Check if all files exist
         all_files_exist = all(os.path.exists(file_path) for file_path in file_paths)
         if all_files_exist:
+            await asyncio.sleep(20)
             logging.info("All files have been written.")
             return True
 
@@ -195,13 +196,9 @@ async def main(config_url, config_secret):
             logging.error("Failed to authenticate device.")
             return
 
-
         # Set Message Handler
         # device_client.on_message_received = message_handling.handle_message(device_client)
         try:
-            await device_client.connect()
-            logging.info("Device client connected to IoT Hub.")
-
             await setup_message_handler(device_client, config_data)
             logging.info("Message handler setup complete.")
 
