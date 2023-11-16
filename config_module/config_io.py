@@ -57,12 +57,11 @@ def get_agent_executable_path(org_id):
     return executable_path
 
 
-def get_config_file_path(org_id=None, config_file=None):
-    if config_file:
-        return config_file
+def get_config_file_path(org_id=None):
     os_type = platform.system().lower()
+    logging.info(f"Returning {os_type} config file path.")
     if os_type == "windows":
-        config_dir = os.path.join(os.environ.get('PROGRAMDATA'), 'RewstRemoteAgent', org_id if org_id else '',"\\")
+        config_dir = os.path.join(os.environ.get('PROGRAMDATA'), 'RewstRemoteAgent', org_id if org_id else '', "\\")
     elif os_type == "linux":
         config_dir = f"/etc/rewst_remote_agent/{org_id}/"
     elif os_type == "darwin":
@@ -70,6 +69,7 @@ def get_config_file_path(org_id=None, config_file=None):
     else:
         logging.error(f"Unsupported OS type: {os_type}. Send this output to Rewst for investigation!")
         exit(1)
+    logging.info(f"path: {config_dir}")
 
     if not os.path.exists(config_dir):
         try:
@@ -86,14 +86,14 @@ def get_config_file_path(org_id=None, config_file=None):
 
 def save_configuration(config_data, config_file=None):
     org_id = config_data["rewst_org_id"]
-    config_file_path = get_config_file_path(org_id, config_file)
+    config_file_path = get_config_file_path(org_id)
     with open(config_file_path, 'w') as f:
         json.dump(config_data, f, indent=4)
         logging.info(f"Configuration saved to {config_file_path}")
 
 
 def load_configuration(org_id=None, config_file=None):
-    config_file_path = get_config_file_path(org_id, config_file)
+    config_file_path = get_config_file_path(org_id)
     try:
         with open(config_file_path) as f:
             logging.info(f"Configuration loading from {config_file_path}")

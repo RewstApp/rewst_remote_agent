@@ -23,7 +23,7 @@ logging.basicConfig(
     datefmt='%Y-%m-%d %H:%M:%S',
 )
 logging.info(f"Running on {platform.system()} {platform.release()}")
-asyncio.get_event_loop().set_debug(True)
+# asyncio.get_event_loop().set_debug(True)
 
 
 def is_valid_url(url):
@@ -58,12 +58,17 @@ async def wait_for_files(org_id, timeout=3600) -> bool:
     :param timeout: The maximum time to wait, in seconds. Default is 3600 seconds (60 minutes).
     :return: True if both files were written, False if the timeout was reached.
     """
+
+    logging.info("Waiting for files to be written...")
     # Determine the file paths using functions from config_io.py
     service_manager_path = get_service_manager_path(org_id)
+    logging.info(f"Service Manager: {service_manager_path}")
     agent_executable_path = get_agent_executable_path(org_id)
+    logging.info(f"Agent Service: {agent_executable_path}")
     file_paths = [service_manager_path, agent_executable_path]
 
     start_time = asyncio.get_running_loop().time()
+
     while True:
         # Check if all files exist
         all_files_exist = all(os.path.exists(file_path) for file_path in file_paths)
@@ -178,8 +183,8 @@ async def main(config_url, config_secret):
         save_configuration(config_data)
 
         # Load Configuration
-        logging.info("Loading configuration from file...")
-        config_data = load_configuration()
+        # logging.info("Loading configuration from file...")
+        # config_data = load_configuration()
 
         # Show Config JSON
         logging.info(f"Configuration: {config_data}")
