@@ -24,17 +24,26 @@ class ConnectionManager:
         self.os_type = platform.system().lower()
 
     async def connect(self):
-        await self.client.connect()
+        try:
+            await self.client.connect()
+        except Exception as e:
+            logging.exception(f"Exception in connection to the IoT Hub: {e}")
 
     async def disconnect(self):
-        await self.client.disconnect()
+        try:
+            await self.client.disconnect()
+        except Exception as e:
+            logging.exception(f"Exception in disconnecting from the IoT Hub: {e}")
 
     async def send_message(self, message_data):
         message_json = json.dumps(message_data)
         await self.client.send_message(message_json)
 
     async def set_message_handler(self):
-        self.client.on_message_received = self.handle_message
+        try:
+            self.client.on_message_received = self.handle_message
+        except Exception as e:
+            logging.exception(f"Exception in handling message: {e}")
 
     async def execute_commands(self, commands, post_url=None, interpreter_override=None):
         interpreter = interpreter_override or self.get_default_interpreter()

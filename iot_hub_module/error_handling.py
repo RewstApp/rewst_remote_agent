@@ -3,6 +3,7 @@ import logging.handlers
 import platform
 import sys
 
+
 def setup_logging(app_name):
     logger = logging.getLogger(app_name)
     logger.setLevel(logging.INFO)  # Set logging level to INFO or DEBUG as needed
@@ -31,8 +32,10 @@ def setup_logging(app_name):
 
     return logger
 
+
 def log_error(logger, error_message):
     logger.error(error_message)
+
 
 def log_info(logger, info_message):
     logger.info(info_message)

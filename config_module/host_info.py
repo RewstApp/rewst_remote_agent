@@ -5,6 +5,7 @@ import psutil
 import subprocess
 import logging
 
+
 def get_mac_address():
     # Returns the MAC address of the host without colons
     mac_num = hex(uuid.UUID(int=uuid.getnode()).int)[2:]
@@ -41,7 +42,7 @@ def get_ad_domain_name():
             for line in result.stdout.split('\n'):
                 if 'Domain Name' in line:
                     return line.split(':')[1].strip()
-            logging.warning("Domain Name not found in dsregcmd output. This is expected if the computer is not domain-joined.")
+            logging.warning("No Domain Name found in dsregcmd. This is normal if the computer isn't domain-joined")
             return None
         except subprocess.CalledProcessError as e:
             logging.error(f"Command failed with error: {str(e)}")
