@@ -152,7 +152,7 @@ class ConnectionManager:
             logging.exception(f"An unexpected error occurred: {e}")
 
     async def get_installation(self, post_url):
-        org_id = self.config_data["org_id"]
+        org_id = self.config_data['org_id']
         executable_path = get_agent_executable_path(org_id)
         config_file_path = get_config_file_path(org_id)
 
