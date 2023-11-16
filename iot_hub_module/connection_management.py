@@ -18,10 +18,18 @@ logging.basicConfig(level=logging.INFO)
 
 class ConnectionManager:
     def __init__(self, config_data):
-        self.connection_string = config_data['connection_string']
-        self.client = IoTHubDeviceClient.create_from_connection_string(self.connection_string)
         self.config_data = config_data
+        self.connection_string = get_connection_string()
         self.os_type = platform.system().lower()
+        self.client = IoTHubDeviceClient.create_from_connection_string(self.connection_string)
+
+    async def get_connection_string(self):
+        conn_str = (
+            f"HostName={self.config_data['azure_iot_hub_host']};"
+            f"DeviceId={self.config_data['device_id']};"
+            f"SharedAccessKey={self.config_data['shared_access_key']}"
+        )
+        return conn_str
 
     async def connect(self):
         try:
