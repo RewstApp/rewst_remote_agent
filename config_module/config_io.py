@@ -2,7 +2,10 @@ import json
 import logging
 import os
 import platform
-
+from appdirs import (
+    AppDirs,
+    site_data_dir
+)
 
 # Put Timestamps on logging entries
 logging.basicConfig(
@@ -57,11 +60,11 @@ def get_agent_executable_path(org_id):
     return executable_path
 
 
-def get_config_file_path(org_id=None):
+def get_config_file_path(org_id):
     os_type = platform.system().lower()
     logging.info(f"Returning {os_type} config file path.")
     if os_type == "windows":
-        config_dir = os.path.join(os.environ.get('PROGRAMDATA'), 'RewstRemoteAgent', org_id if org_id else '', "\\")
+        config_dir = AppDirs(org_id, 'RewstRemoteAgent').site_config_dir
     elif os_type == "linux":
         config_dir = f"/etc/rewst_remote_agent/{org_id}/"
     elif os_type == "darwin":

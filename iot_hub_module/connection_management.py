@@ -9,7 +9,8 @@ from azure.iot.device.aio import IoTHubDeviceClient
 
 from config_module.config_io import (
     get_config_file_path,
-    get_agent_executable_path
+    get_agent_executable_path,
+    get_service_manager_path
 )
 
 # Set up logging
@@ -154,11 +155,13 @@ class ConnectionManager:
     async def get_installation(self, post_url):
         org_id = self.config_data['rewst_org_id']
         executable_path = get_agent_executable_path(org_id)
+        service_manager_path = get_service_manager_path(org_id)
         config_file_path = get_config_file_path(org_id)
 
         paths_data = {
             "executable_path": executable_path,
-            "config_file_path": config_file_path
+            "config_file_path": config_file_path,
+            "service_manager_path": service_manager_path
         }
 
         try:

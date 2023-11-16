@@ -8,7 +8,7 @@ from config_module import (
     config_io
 )
 
-os_type = platform.system()
+os_type = platform.system().lower()
 
 # Configure logging
 logging.basicConfig(
@@ -17,13 +17,12 @@ logging.basicConfig(
     datefmt='%Y-%m-%d %H:%M:%S',
 )
 
-if os_type == "Windows":
+if os_type == "windows":
     import win32service
     import win32serviceutil
     import win32event
     import pywintypes
 
-if os_type == 'Windows':
     class RewstService(win32serviceutil.ServiceFramework):
         _svc_name_ = None  # Placeholder, will be set in __init__
         _svc_display_name_ = None  # Placeholder, will be set in __init__
@@ -58,6 +57,7 @@ if os_type == 'Windows':
                 self.ReportServiceStatus(win32service.SERVICE_STOPPED)  # Report service as stopped
             except Exception as e:
                 logging.error(f"Exception in SvcStop: {e}")
+
 
 def get_service_name(org_id):
     return f"Rewst_Remote_Agent_{org_id}"

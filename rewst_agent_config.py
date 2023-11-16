@@ -10,8 +10,7 @@ from urllib.parse import urlparse
 from config_module.config_io import (
     get_service_manager_path,
     get_agent_executable_path,
-    save_configuration,
-    load_configuration
+    save_configuration
 )
 from config_module.fetch_config import fetch_configuration
 from iot_hub_module.connection_management import ConnectionManager
@@ -156,6 +155,7 @@ def end_program(exit_level=1, service_status=None):
 
 async def main(config_url, config_secret):
 
+    exit_level = None
     # Check URL and Secret for valid strings
     if not is_valid_url(config_url):
         logging.error("The config URL provided is not valid.")
@@ -212,19 +212,26 @@ async def main(config_url, config_secret):
         await asyncio.sleep(4)
         logging.info("Disconnected from IoT Hub.")
 
-        if await install_and_start_service(org_id):
-            # Wait for the service to start successfully
-            while not (await check_service_status(org_id)):
-                logging.info("Waiting for the service to start...")
-                await asyncio.sleep(5)  # Sleep for 5 seconds before checking the status again
+        # if await install_and_start_service(org_id):
+        #     # Wait for the service to start successfully
+        #     while not (await check_service_status(org_id)):
+        #         logging.info("Waiting for the service to start...")
+        #         await asyncio.sleep(5)  # Sleep for 5 seconds before checking the status again
+        #
+        #     logging.info("Service started successfully.")
+        #     logging.info("Exiting the program with success.")
+        #     exit_level = 0
+        # else:
+        #     logging.error("Failed to install or start the service.")
+        #     logging.error("Exiting the program with failure.")
+        #     exit_level = 1
+        #
+        # end_program(exit_level)
 
-            logging.info("Service started successfully.")
-            logging.info("Exiting the program with success.")
+        while not (await check_service_status(org_id)):
+            logging.info("Waiting for the service to start...")
+            await asyncio.sleep(5)  # Sleep for 5 seconds before checking the status again
             exit_level = 0
-        else:
-            logging.error("Failed to install or start the service.")
-            logging.error("Exiting the program with failure.")
-            exit_level = 1
 
         end_program(exit_level)
 
