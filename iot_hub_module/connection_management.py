@@ -17,8 +17,8 @@ logging.basicConfig(level=logging.INFO)
 
 
 class ConnectionManager:
-    def __init__(self, connection_string, config_data):
-        self.connection_string = connection_string
+    def __init__(self, config_data):
+        self.connection_string = config_data['connection_string']
         self.client = IoTHubDeviceClient.create_from_connection_string(self.connection_string)
         self.config_data = config_data
         self.os_type = platform.system().lower()
