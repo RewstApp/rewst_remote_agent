@@ -95,8 +95,9 @@ def save_configuration(config_data, config_file=None):
         logging.info(f"Configuration saved to {config_file_path}")
 
 
-def load_configuration(org_id=None, config_file=None):
-    config_file_path = get_config_file_path(org_id)
+def load_configuration(org_id=None, config_file_path=None):
+    if not config_file_path:
+        config_file_path = get_config_file_path(org_id)
     try:
         with open(config_file_path) as f:
             logging.info(f"Configuration loading from {config_file_path}")

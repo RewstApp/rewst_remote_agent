@@ -1,25 +1,34 @@
-import argparse
 import asyncio
+from asyncio import Event
 import logging
 import platform
 import re
 import signal
 import sys
-from config_module.config_io import load_configuration
-from iot_hub_module.connection_management import ConnectionManager
-
-# Configure logging
-setup_logging("RewstRemoteAgent")
+from __version__ import __version__
+from argparse import ArgumentParser
+from config_module.config_io import (
+    load_configuration
+)
+from iot_hub_module.connection_management import (
+    ConnectionManager
+)
 
 os_type = platform.system().lower()
 
-stop_event = asyncio.Event()
+if os_type == "windows":
+    from pywin32 import (
+        win32con,
+        win32api
+    )
 
-if os_type == 'Windows':
-    import pywin32
-    import win32serviceutil
-    from pywin32 import win32api, win32con
-    from rewst_service_manager import RewstService
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s %(levelname)s: %(message)s',
+    datefmt='%Y-%m-%d %H:%M:%S',
+)
+
+stop_event = Event()
 
 
 # Sets up event log handling
@@ -50,16 +59,25 @@ def signal_handler(signum, frame):
     stop_event.set()
 
 
+signal.signal(signal.SIGTERM, signal_handler)
+signal.signal(signal.SIGINT, signal_handler)
+
+
+# Set the status update interval
+status_update_checkin_time = 600
+
+
 # Main function
 async def main(config_file=None):
+    logging.info(f"Version: {__version__}")
     logging.info(f"Running on {os_type}")
 
+    org_id = None
     app_name = "RewstRemoteAgent"
-    if os_type == "Windows":
-        await create_event_source(app_name)
 
-    # If Windows, log to event logs
-    if os_type == 'Windows':
+    # Set up Event Logs for Windows
+    if os_type == "windows":
+        await create_event_source(app_name)
         nt_event_log_handler = logging.handlers.NTEventLogHandler('RewstService')
         logging.getLogger().addHandler(nt_event_log_handler)
 
@@ -67,7 +85,8 @@ async def main(config_file=None):
         logging.info("Loading Configuration")
         if config_file:
             logging.info(f"Using config file {config_file}.")
-            config_data = load_configuration(config_file=config_file)
+            config_data = load_configuration(None, config_file)
+            org_id = config_data['rewst_org_id']
 
         else:
             # Get Org ID for Config
@@ -78,7 +97,7 @@ async def main(config_file=None):
                 logging.info("Found GUID")
                 org_id = match.group(1)
                 logging.info(f"Found Org ID {org_id}")
-                config_data = config_io.load_configuration(org_id, None)
+                config_data = load_configuration(org_id)
             else:
                 logging.warning(f"Did not find guid in file {executable_path}")
                 config_data = None
@@ -88,46 +107,44 @@ async def main(config_file=None):
             logging.error("No configuration was found. Exiting.")
             exit(1)
 
-        # Retrieve org_id from the configuration if it wasn't already found
-        if not org_id:
-            org_id = config_data['rewst_org_id']
-
     except Exception as e:
         logging.exception(f"Exception Caught during self-configuration: {str(e)}")
+        exit(1)
+
+    logging.info(f"Running for Org ID {org_id}")
 
     try:
-        # Authenticate Device
-        logging.info("Authenticating device with IoT Hub...")
-        device_client = await authenticate_device(config_data)
-        if not device_client:
-            logging.error("Failed to authenticate device.")
-            return
+        # Instantiate ConnectionManager
+        connection_manager = ConnectionManager(config_data)
+
+        # Connect to IoT Hub
+        logging.info("Connecting to IoT Hub...")
+        await connection_manager.connect()
 
         # Set Message Handler
-        logging.info("Setting message handler...")
-        device_client.on_message_received = handle_message
+        logging.info("Setting up message handler...")
+        await connection_manager.set_message_handler()
 
-    except Exception as e:
-        logging.exception(f"Exception Caught during IoT Hub Communications: {str(e)}")
-
-    try:
         while not stop_event.is_set():
             await asyncio.sleep(1)
-        disconnect_device()
-    except Exception as e:
-        logging.exception(f"Exception caught: {str(e)}")
 
+        await connection_manager.disconnect()
+
+    except Exception as e:
+        logging.exception(f"Exception Caught during IoT Hub Loop: {str(e)}")
+        exit(1)
+
+    while not stop_event.is_set():
+        await asyncio.sleep(1)
 
 # Entry point
 if __name__ == "__main__":
     signal.signal(signal.SIGTERM, signal_handler)
     signal.signal(signal.SIGINT, signal_handler)
-    parser = argparse.ArgumentParser(description='Run the IoT Hub device client.')
+    parser = ArgumentParser(description='Run the IoT Hub device client.')
     parser.add_argument('--config-file', help='Path to the configuration file.')
     args = parser.parse_args()
     asyncio.run(main(
         config_file=args.config_file
     ))
-else:
-    if os_type == 'Windows':
-        win32serviceutil.HandleCommandLine(RewstService)
+

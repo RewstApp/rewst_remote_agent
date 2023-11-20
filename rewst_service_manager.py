@@ -4,8 +4,10 @@ import logging
 import os
 import platform
 import subprocess
-from config_module import (
-    config_io
+from config_module.config_io import (
+    get_agent_executable_path,
+    get_config_file_path,
+    load_configuration
 )
 
 os_type = platform.system().lower()
@@ -24,17 +26,17 @@ if os_type == "windows":
     import pywintypes
 
     class RewstService(win32serviceutil.ServiceFramework):
-        _svc_name_ = None  # Placeholder, will be set in __init__
-        _svc_display_name_ = None  # Placeholder, will be set in __init__
+        _svc_name_ = 'RewstAgentService'  # Placeholder, will be reset in __init__
+        _svc_display_name_ = 'Rewst Agent Service'  # Placeholder, will be reset in __init__
 
         # Defining stop_event as a class variable
         stop_event = asyncio.Event()
 
         def __init__(self, args):
-            super().__init__(args)
-            config_data = config_io.load_configuration()  # Load the configuration
-            self.org_id = config_data.get('rewst_org_id')
+            win32serviceutil.ServiceFramework.__init__(self, args)
+            self.config_data = load_configuration(self.org_id)
             self.set_service_name(self.org_id)
+            self.service_executable = get_agent_executable_path(self.org_id)
             self.hWaitStop = win32event.CreateEvent(None, 0, 0, None)
 
         @classmethod
@@ -81,14 +83,14 @@ def is_service_installed(org_id=None):
 
 
 def install_service(org_id, config_file=None):
-    executable_path = config_io.get_executable_path(org_id)
+    executable_path = get_agent_executable_path(org_id)
     service_name = get_service_name(org_id)
     display_name = f"Rewst Remote Agent {org_id}"
     if is_service_installed(org_id):
         logging.info(f"Service is already installed.")
         return
     
-    config_file_path = get_config_file_path(org_id, config_file)
+    config_file_path = get_config_file_path(org_id)
 
     # Install the service
     if os_type == "Windows":
@@ -141,6 +143,7 @@ def install_service(org_id, config_file=None):
             f.write(launchd_plist_content)
         os.system(f"launchctl load {service_name}")
 
+
 def uninstall_service(org_id):
     service_name = get_service_name(org_id)
     logging.info(f"Uninstalling service {service_name}.")
@@ -186,6 +189,7 @@ def check_service_status(org_id):
             print(f'Service status: {result.stdout.strip()}')
         except subprocess.CalledProcessError as e:
             print(f'Error: {e.stdout.strip()}')
+
         except Exception as e:
             print(f'Error: {e}')
     
@@ -216,6 +220,7 @@ def start_service(org_id):
     elif os_type == "Darwin":
         os.system(f"launchctl start {service_name}")
 
+
 def stop_service(org_id):
     service_name = get_service_name(org_id)
     if os_type == "Windows":
@@ -228,6 +233,7 @@ def stop_service(org_id):
         os.system(f"systemctl stop {service_name}")
     elif os_type == "Darwin":
         os.system(f"launchctl stop {service_name}")
+
 
 def restart_service(org_id):
     stop_service(org_id)
@@ -249,7 +255,7 @@ def main():
 
     # Load configuration if config file path is provided
     if args.config_file:
-        config_io.load_from_file(args.config_file)
+        load_configuration(None,args.config_file)
 
     # Set the service name based on the organization ID
     RewstService.set_service_name(args.org_id)
@@ -267,6 +273,7 @@ def main():
         restart_service(args.org_id)
     else:
         print("No action specified. Use --install, --uninstall, --start, --stop, or --restart.")
+
 
 if __name__ == "__main__":
     main()
