@@ -2,7 +2,6 @@ import asyncio
 from asyncio import Event
 import logging
 import logging.handlers
-import os
 import platform
 import re
 import signal
@@ -39,12 +38,18 @@ def create_event_source(app_name):
     registry_key_path = f"SYSTEM\\CurrentControlSet\\Services\\EventLog\\Application\\{app_name}"
     # Registry key flags
     key_flags = win32con.KEY_SET_VALUE | win32con.KEY_CREATE_SUB_KEY
+
+    # Ensure sys.executable is a string and contains the correct path
+    assert isinstance(sys.executable, str), "sys.executable is not a string"
+    event_message_file = sys.executable
+
     # Open or create the registry key
     with win32api.RegCreateKeyEx(win32con.HKEY_LOCAL_MACHINE, registry_key_path, 0, key_flags) as reg_key:
         try:
-            event_message_file = sys.executable
             win32api.RegSetValueEx(reg_key, "EventMessageFile", 0, win32con.REG_SZ, event_message_file)
+
             types_supported = win32con.EVENTLOG_ERROR_TYPE | win32con.EVENTLOG_WARNING_TYPE | win32con.EVENTLOG_INFORMATION_TYPE
+            # Explicitly cast to int just to be sure
             win32api.RegSetValueEx(reg_key, "TypesSupported", 0, win32con.REG_DWORD, int(types_supported))
         except Exception as e:
             logging.error(f"Failed to set registry values: {e}")
