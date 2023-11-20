@@ -13,14 +13,16 @@ from config_module.config_io import (
 from iot_hub_module.connection_management import (
     ConnectionManager
 )
+from pywin32 import (
+    win32con,
+    win32api
+)
 
 os_type = platform.system().lower()
 
 if os_type == "windows":
-    from pywin32 import (
-        win32con,
-        win32api
-    )
+    logging.info(f"Running on {os_type}")
+
 
 logging.basicConfig(
     level=logging.INFO,
