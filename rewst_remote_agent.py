@@ -45,7 +45,7 @@ def create_event_source(app_name):
             event_message_file = sys.executable
             win32api.RegSetValueEx(reg_key, "EventMessageFile", 0, win32con.REG_SZ, event_message_file)
             types_supported = win32con.EVENTLOG_ERROR_TYPE | win32con.EVENTLOG_WARNING_TYPE | win32con.EVENTLOG_INFORMATION_TYPE
-            win32api.RegSetValueEx(reg_key, "TypesSupported", 0, win32con.REG_DWORD, types_supported)
+            win32api.RegSetValueEx(reg_key, "TypesSupported", 0, win32con.REG_DWORD, int(types_supported))
         except Exception as e:
             logging.error(f"Failed to set registry values: {e}")
 
