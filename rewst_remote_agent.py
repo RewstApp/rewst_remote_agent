@@ -1,6 +1,8 @@
 import asyncio
 from asyncio import Event
 import logging
+import logging.handlers
+import os
 import platform
 import re
 import signal
@@ -32,26 +34,22 @@ stop_event = Event()
 
 
 # Sets up event log handling
-async def create_event_source(app_name):
-    registry_key = f"SYSTEM\\CurrentControlSet\\Services\\EventLog\\Application\\{app_name}"
+def create_event_source(app_name):
+    # Path to the registry key
+    registry_key_path = f"SYSTEM\\CurrentControlSet\\Services\\EventLog\\Application\\{app_name}"
+    # Registry key flags
     key_flags = win32con.KEY_SET_VALUE | win32con.KEY_CREATE_SUB_KEY
-    try:
-        # Try to open the registry key
-        reg_key = win32api.RegOpenKey(win32con.HKEY_LOCAL_MACHINE, registry_key, 0, key_flags)
-    except Exception as e:
-        logging.error(f"Failed to open or create registry key: {e}")
-        return
-
-    try:
-        # Set the EventMessageFile registry value
-        event_message_file = win32api.GetModuleHandle(None)
-        win32api.RegSetValueEx(reg_key, "EventMessageFile", 0, win32con.REG_SZ, event_message_file)
-        win32api.RegSetValueEx(reg_key, "TypesSupported", 0, win32con.REG_DWORD,
-                               win32con.EVENTLOG_ERROR_TYPE | win32con.EVENTLOG_WARNING_TYPE | win32con.EVENTLOG_INFORMATION_TYPE)
-    except Exception as e:
-        logging.error(f"Failed to set registry values: {e}")
-    finally:
-        win32api.RegCloseKey(reg_key)
+    # Open or create the registry key
+    with win32api.RegCreateKeyEx(win32con.HKEY_LOCAL_MACHINE, registry_key_path, 0, key_flags) as reg_key:
+        try:
+            event_message_file = os.path.abspath(app_name + ".exe")
+            # Set the "EventMessageFile" registry value
+            win32api.RegSetValueEx(reg_key, "EventMessageFile", 0, win32con.REG_SZ, event_message_file)
+            # Set the "TypesSupported" registry value
+            types_supported = win32con.EVENTLOG_ERROR_TYPE | win32con.EVENTLOG_WARNING_TYPE | win32con.EVENTLOG_INFORMATION_TYPE
+            win32api.RegSetValueEx(reg_key, "TypesSupported", 0, win32con.REG_DWORD, types_supported)
+        except Exception as e:
+            logging.error(f"Failed to set registry values: {e}")
 
 
 def signal_handler(signum, frame):
