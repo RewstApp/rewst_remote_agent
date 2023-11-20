@@ -2,6 +2,8 @@
 REM Explicitly include the pywin32 module
 SET PYWIN32_INCLUDE=--hidden-import=pywin32
 
+python Scripts/pywin32_postinstall.py -install
+
 REM Build the first executable with hidden imports
 pyinstaller %PYWIN32_INCLUDE% --name=rewst_remote_agent --icon=logo-rewsty.ico --onefile --version-file=version.txt rewst_remote_agent.py
 
