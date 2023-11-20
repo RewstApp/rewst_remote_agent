@@ -34,6 +34,7 @@ if os_type == "windows":
 
         def __init__(self, args):
             win32serviceutil.ServiceFramework.__init__(self, args)
+            self.process = None
             self.config_data = load_configuration(self.org_id)
             self.set_service_name(self.org_id)
             self.service_executable = get_agent_executable_path(self.org_id)
@@ -46,19 +47,25 @@ if os_type == "windows":
 
         def SvcDoRun(self):
             try:
-                self.ReportServiceStatus(win32service.SERVICE_RUNNING)  # Report service as running
-                asyncio.run(main(org_id=self.org_id, stop_event=RewstService.stop_event))  # pass stop_event to main
+                # Start the service process
+                self.process = subprocess.Popen([self.service_executable], shell=True)
+                self.ReportServiceStatus(win32service.SERVICE_RUNNING)
+                # Wait for the service process to exit (which should be never during normal operations)
+                self.process.wait()
             except Exception as e:
                 logging.error(f"Exception in SvcDoRun: {e}")
-                self.ReportServiceStatus(win32service.SERVICE_STOPPED)  # Report service as stopped if there's an error
+            finally:
+                # If the process exits unexpectedly, report the service as stopped
+                self.ReportServiceStatus(win32service.SERVICE_STOPPED)
 
         def SvcStop(self):
-            try:
-                self.ReportServiceStatus(win32service.SERVICE_STOP_PENDING)  # Report service as stopping
-                RewstService.stop_event.set()  # Set stop_event to signal the service to stop
-                self.ReportServiceStatus(win32service.SERVICE_STOPPED)  # Report service as stopped
-            except Exception as e:
-                logging.error(f"Exception in SvcStop: {e}")
+            self.ReportServiceStatus(win32service.SERVICE_STOP_PENDING)
+            # Try to terminate the subprocess gracefully
+            if self.process:
+                self.process.terminate()
+                self.process.wait()  # Wait for the subprocess to terminate
+            # Report the service as stopped
+            self.ReportServiceStatus(win32service.SERVICE_STOPPED)
 
 
 def get_service_name(org_id):
