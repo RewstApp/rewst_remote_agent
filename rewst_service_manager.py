@@ -105,6 +105,7 @@ def install_service(org_id, config_file=None):
     executable_path = get_agent_executable_path(org_id)
     service_name = get_service_name(org_id)
     display_name = f"Rewst Remote Agent {org_id}"
+    logging.info(f"Installing {display_name} Service...")
     if is_service_installed(org_id):
         logging.info(f"Service is already installed.")
         return
@@ -112,7 +113,7 @@ def install_service(org_id, config_file=None):
     config_file_path = get_config_file_path(org_id)
 
     # Install the service
-    if os_type == "Windows":
+    if os_type == "windows":
         logging.info(f"Installing Windows Service: {service_name}")
         win32serviceutil.InstallService(
             f"{RewstService.__module__}.{RewstService.__name__}",
@@ -122,7 +123,7 @@ def install_service(org_id, config_file=None):
             exeName=executable_path
         )
 
-    elif os_type == "Linux":
+    elif os_type == "linux":
         systemd_service_content = f"""
         [Unit]
         Description={service_name}
@@ -139,7 +140,7 @@ def install_service(org_id, config_file=None):
         os.system("systemctl daemon-reload")
         os.system(f"systemctl enable {service_name}")
     
-    elif os_type == "Darwin":
+    elif os_type == "darwin":
         launchd_plist_content = f"""
         <?xml version="1.0" encoding="UTF-8"?>
         <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
