@@ -17,7 +17,6 @@ from iot_hub_module.connection_management import (
 os_type = platform.system().lower()
 
 if os_type == "windows":
-    import pywin32
     from pywin32 import (
         win32con,
         win32api
