@@ -46,9 +46,12 @@ def create_event_source(app_name):
     # Open or create the registry key
     with win32api.RegCreateKeyEx(win32con.HKEY_LOCAL_MACHINE, registry_key_path, 0, key_flags) as reg_key:
         try:
+            logging.info(f"Logging for executable name: {event_message_file}")
             win32api.RegSetValueEx(reg_key, "EventMessageFile", 0, win32con.REG_SZ, event_message_file)
 
             types_supported = win32con.EVENTLOG_ERROR_TYPE | win32con.EVENTLOG_WARNING_TYPE | win32con.EVENTLOG_INFORMATION_TYPE
+            logging.info(f"types_supported: {types_supported}")
+
             # Explicitly cast to int just to be sure
             win32api.RegSetValueEx(reg_key, "TypesSupported", 0, win32con.REG_DWORD, int(types_supported))
         except Exception as e:
