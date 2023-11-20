@@ -3,6 +3,7 @@ import asyncio
 import logging
 import os
 import platform
+import psutil
 import subprocess
 from config_module.config_io import (
     get_agent_executable_path,
@@ -39,6 +40,7 @@ if os_type == "windows":
             self.set_service_name(self.org_id)
             self.service_executable = get_agent_executable_path(self.org_id)
             self.hWaitStop = win32event.CreateEvent(None, 0, 0, None)
+            self.process_name = self.service_executable.replace('.exe','')
 
         @classmethod
         def set_service_name(cls, org_id):
@@ -49,9 +51,9 @@ if os_type == "windows":
             try:
                 # Start the service process
                 self.process = subprocess.Popen([self.service_executable], shell=True)
+                while not self.is_service_process_running():
+                    asyncio.sleep(1)
                 self.ReportServiceStatus(win32service.SERVICE_RUNNING)
-                # Wait for the service process to exit (which should be never during normal operations)
-                self.process.wait()
             except Exception as e:
                 logging.error(f"Exception in SvcDoRun: {e}")
             finally:
@@ -60,12 +62,22 @@ if os_type == "windows":
 
         def SvcStop(self):
             self.ReportServiceStatus(win32service.SERVICE_STOP_PENDING)
-            # Try to terminate the subprocess gracefully
-            if self.process:
-                self.process.terminate()
-                self.process.wait()  # Wait for the subprocess to terminate
-            # Report the service as stopped
+            self.stop_service_process()
+            while self.is_service_process_running():
+                asyncio.sleep(1)
             self.ReportServiceStatus(win32service.SERVICE_STOPPED)
+
+        def is_service_process_running(self):
+            for proc in psutil.process_iter(['pid', 'name']):
+                if proc.info['name'] == self.process_name:
+                    return True
+            return False
+
+        def stop_service_process(self):
+            for proc in psutil.process_iter(['pid', 'name']):
+                if proc.info['name'] == self.process_name:
+                    proc.terminate()  # or proc.kill() if necessary
+                    break
 
 
 def get_service_name(org_id):
