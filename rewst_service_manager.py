@@ -5,6 +5,7 @@ import os
 import platform
 import psutil
 import subprocess
+import time
 from config_module.config_io import (
     get_agent_executable_path,
     get_config_file_path,
@@ -50,14 +51,19 @@ if os_type == "windows":
         def SvcDoRun(self):
             try:
                 # Start the service process
-                self.process = subprocess.Popen([self.service_executable], shell=True)
+                self.process = subprocess.Popen([self.service_executable], shell=False)
+                logging.info(f"Service started with PID {self.process.pid}")
                 while not self.is_service_process_running():
-                    asyncio.sleep(1)
+                    time.sleep(1)
                 self.ReportServiceStatus(win32service.SERVICE_RUNNING)
+                time.sleep(5)
+                if self.process.poll() is None:
+                    logging.info("Service is still running after 5 seconds.")
+                else:
+                    logging.error("Service stopped unexpectedly.")
+                    self.ReportServiceStatus(win32service.SERVICE_STOPPED)
             except Exception as e:
                 logging.error(f"Exception in SvcDoRun: {e}")
-            finally:
-                # If the process exits unexpectedly, report the service as stopped
                 self.ReportServiceStatus(win32service.SERVICE_STOPPED)
 
         def SvcStop(self):
@@ -86,17 +92,16 @@ def get_service_name(org_id):
 
 def is_service_installed(org_id=None):
     service_name = get_service_name(org_id)
-    if os_type == "Windows":
-        import win32serviceutil
+    if os_type == "windows":
         try:
             win32serviceutil.QueryServiceStatus(service_name)
             return True  # Service is installed
         except Exception as e:
             return False  # Service is not installed
-    elif os_type == "Linux":
+    elif os_type == "linux":
         service_path = f"/etc/systemd/system/{service_name}.service"
         return os.path.exists(service_path)
-    elif os_type == "Darwin":
+    elif os_type == "darwin":
         plist_path = f"{os.path.expanduser('~/Library/LaunchAgents')}/{service_name}.plist"
         return os.path.exists(plist_path)
 
@@ -107,8 +112,14 @@ def install_service(org_id, config_file=None):
     display_name = f"Rewst Remote Agent {org_id}"
     logging.info(f"Installing {display_name} Service...")
     if is_service_installed(org_id):
-        logging.info(f"Service is already installed.")
-        return
+        logging.info(f"Service is already installed. Reinstalling...")
+        if RewstService.is_service_process_running():
+            logging.info("Stopping Service...")
+            stop_service(org_id)
+            time.sleep(5)
+        logging.info("Uninstalling existing Service Entry")
+        uninstall_service(org_id)
+        time.sleep(5)
     
     config_file_path = get_config_file_path(org_id)
 
@@ -173,19 +184,18 @@ def uninstall_service(org_id):
     except Exception as e:
         logging.warning(f"Unable to stop service: {e}")
          
-    if os_type == "Windows":
-        import win32serviceutil
+    if os_type == "windows":
         try:
             win32serviceutil.RemoveService(service_name)
         except Exception as e:
             logging.warning(f"Exception removing service: {e}")
     
-    elif os_type == "Linux":
+    elif os_type == "linux":
         os.system(f"systemctl disable {service_name}")
         os.system(f"rm /etc/systemd/system/{service_name}.service")
         os.system("systemctl daemon-reload")
     
-    elif os_type == "Darwin":
+    elif os_type == "darwin":
         plist_path = f"{os.path.expanduser('~/Library/LaunchAgents')}/{service_name}.plist"
         os.system(f"launchctl unload {plist_path}")
         os.system(f"rm {plist_path}")
@@ -194,15 +204,14 @@ def uninstall_service(org_id):
 def check_service_status(org_id):
     service_name = get_service_name(org_id)
     
-    if os_type == "Windows":
-        import win32serviceutil
+    if os_type == "windows":
         try:
             status = win32serviceutil.QueryServiceStatus(service_name)
             print(f'Service status: {status[1]}')  # Printing the status to stdout
         except Exception as e:
             print(f'Error: {e}')
     
-    elif os_type == "Linux":
+    elif os_type == "linux":
         try:
             result = subprocess.run(['systemctl', 'is-active', service_name], 
                                     text=True, capture_output=True, check=True)
@@ -213,7 +222,7 @@ def check_service_status(org_id):
         except Exception as e:
             print(f'Error: {e}')
     
-    elif os_type == "Darwin":
+    elif os_type == "darwin":
         try:
             result = subprocess.run(['launchctl', 'list', service_name], 
                                     text=True, capture_output=True, check=True)
@@ -233,25 +242,25 @@ def check_service_status(org_id):
 def start_service(org_id):
     service_name = get_service_name(org_id)
     logging.info(f"Starting Service {service_name}")
-    if os_type == "Windows":
-        os.system(f"net start {service_name}")
-    elif os_type == "Linux":
+    if os_type == "windows":
+        win32serviceutil.StartService(service_name)
+    elif os_type == "linux":
         os.system(f"systemctl start {service_name}")
-    elif os_type == "Darwin":
+    elif os_type == "darwin":
         os.system(f"launchctl start {service_name}")
 
 
 def stop_service(org_id):
     service_name = get_service_name(org_id)
-    if os_type == "Windows":
+    if os_type == "windows":
         if win32serviceutil.QueryServiceStatus(service_name):
             try:
                 win32serviceutil.StopService(service_name)
             except pywintypes.error as e:
                 logging.error(f"Failed to stop service: {e.strerror}") 
-    elif os_type == "Linux":
+    elif os_type == "linux":
         os.system(f"systemctl stop {service_name}")
-    elif os_type == "Darwin":
+    elif os_type == "darwin":
         os.system(f"launchctl stop {service_name}")
 
 
