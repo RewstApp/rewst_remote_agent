@@ -33,7 +33,7 @@ stop_event = Event()
 
 
 # Sets up event log handling
-def create_event_source(app_name):
+async def create_event_source(app_name):
     # Path to the registry key
     registry_key_path = f"SYSTEM\\CurrentControlSet\\Services\\EventLog\\Application\\{app_name}"
     # Registry key flags
@@ -81,9 +81,12 @@ async def main(config_file=None):
 
     # Set up Event Logs for Windows
     if os_type == "windows":
-        await create_event_source(app_name)
-        nt_event_log_handler = logging.handlers.NTEventLogHandler('RewstService')
-        logging.getLogger().addHandler(nt_event_log_handler)
+        try:
+            await create_event_source(app_name)
+            nt_event_log_handler = logging.handlers.NTEventLogHandler('RewstService')
+            logging.getLogger().addHandler(nt_event_log_handler)
+        except Exception as e:
+            logging.exception(f"Exception setting up Windows Event Handler: {e}")
 
     try:
         logging.info("Loading Configuration")
