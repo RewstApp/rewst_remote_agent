@@ -18,10 +18,8 @@ os_type = platform.system().lower()
 
 if os_type == "windows":
     logging.info(f"Importing pywin32 on {os_type}")
-    from pywin32 import (
-        win32con,
-        win32api
-    )
+    import win32con
+    import win32api
 
 
 logging.basicConfig(
