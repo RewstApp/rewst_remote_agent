@@ -12,6 +12,7 @@ from config_module.config_io import (
 )
 
 os_type = platform.system().lower()
+
 if os_type == "windows":
     import win32service
     import win32serviceutil

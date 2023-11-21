@@ -3,7 +3,6 @@ import logging
 import logging.handlers
 import platform
 import re
-import signal
 import sys
 from __version__ import __version__
 from argparse import ArgumentParser

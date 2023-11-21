@@ -1,16 +1,10 @@
 import win32service
 import win32serviceutil
 import win32event
-import asyncio
-import subprocess
 import logging
 import time
-import psutil
-
-if os_type == "windows":
-    logging.info(f"Importing pywin32 on {os_type}")
-    import win32con
-    import win32api
+import win32con
+import win32api
 
 from service_module.service_management import (
     get_service_name,
