@@ -1,5 +1,4 @@
 import asyncio
-from asyncio import Event
 import logging
 import logging.handlers
 import platform
@@ -12,63 +11,21 @@ from config_module.config_io import (
     load_configuration
 )
 from iot_hub_module.connection_management import (
-    ConnectionManager
+    iot_hub_connection_loop
 )
 
 os_type = platform.system().lower()
 
 if os_type == "windows":
-    logging.info(f"Importing pywin32 on {os_type}")
-    import win32con
-    import win32api
-    from service_module.windows_service import RewstService
+    from service_module.windows_service import (
+        RewstWindowsService
+    )
 
 logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s %(levelname)s: %(message)s',
     datefmt='%Y-%m-%d %H:%M:%S',
 )
-
-stop_event = Event()
-
-
-# Sets up event log handling
-async def create_event_source(app_name):
-    # Path to the registry key
-    registry_key_path = f"SYSTEM\\CurrentControlSet\\Services\\EventLog\\Application\\{app_name}"
-    # Registry key flags
-    key_flags = win32con.KEY_SET_VALUE | win32con.KEY_CREATE_SUB_KEY
-
-    # Ensure sys.executable is a string and contains the correct path
-    assert isinstance(sys.executable, str), "sys.executable is not a string"
-    event_message_file = sys.executable
-
-    # Open or create the registry key
-    with win32api.RegCreateKeyEx(win32con.HKEY_LOCAL_MACHINE, registry_key_path, 0, key_flags) as reg_key:
-        try:
-            logging.info(f"Logging for executable name: {event_message_file}")
-            win32api.RegSetValueEx(reg_key, "EventMessageFile", 0, win32con.REG_SZ, event_message_file)
-
-            types_supported = win32con.EVENTLOG_ERROR_TYPE | win32con.EVENTLOG_WARNING_TYPE | win32con.EVENTLOG_INFORMATION_TYPE
-            logging.info(f"types_supported: {types_supported}")
-
-            # Explicitly cast to int just to be sure
-            win32api.RegSetValueEx(reg_key, "TypesSupported", 0, win32con.REG_DWORD, int(types_supported))
-        except Exception as e:
-            logging.error(f"Failed to set registry values: {e}")
-
-
-def signal_handler(signum, frame):
-    logging.info(f"Received signal {signum}. Initiating graceful shutdown.")
-    stop_event.set()
-
-
-signal.signal(signal.SIGTERM, signal_handler)
-signal.signal(signal.SIGINT, signal_handler)
-
-
-# Set the status update interval
-status_update_checkin_time = 600
 
 
 # Main function
@@ -77,17 +34,6 @@ async def main(config_file=None):
     logging.info(f"Running on {os_type}")
 
     org_id = None
-    app_name = "RewstRemoteAgent"
-
-    # Set up Event Logs for Windows
-    if os_type == "windows":
-        # Set up Windows Event Logging
-        try:
-            await create_event_source(app_name)
-            nt_event_log_handler = logging.handlers.NTEventLogHandler('RewstService')
-            logging.getLogger().addHandler(nt_event_log_handler)
-        except Exception as e:
-            logging.exception(f"Exception setting up Windows Event Handler: {e}")
 
     try:
         logging.info("Loading Configuration")
@@ -121,34 +67,13 @@ async def main(config_file=None):
 
     logging.info(f"Running for Org ID {org_id}")
 
-    try:
-        # Instantiate ConnectionManager
-        connection_manager = ConnectionManager(config_data)
-
-        # Connect to IoT Hub
-        logging.info("Connecting to IoT Hub...")
-        await connection_manager.connect()
-
-        # Set Message Handler
-        logging.info("Setting up message handler...")
-        await connection_manager.set_message_handler()
-
-        while not stop_event.is_set():
-            await asyncio.sleep(1)
-
-        await connection_manager.disconnect()
-
-    except Exception as e:
-        logging.exception(f"Exception Caught during IoT Hub Loop: {str(e)}")
-        exit(1)
-
-    while not stop_event.is_set():
-        await asyncio.sleep(1)
+    if os_type == "windows":
+        RewstWindowsService(config_data)
+    else:
+        await iot_hub_connection_loop(config_data)
 
 # Entry point
 if __name__ == "__main__":
-    signal.signal(signal.SIGTERM, signal_handler)
-    signal.signal(signal.SIGINT, signal_handler)
     parser = ArgumentParser(description='Run the IoT Hub device client.')
     parser.add_argument('--config-file', help='Path to the configuration file.')
     args = parser.parse_args()

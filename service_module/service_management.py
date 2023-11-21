@@ -5,11 +5,10 @@ import os
 import platform
 import subprocess
 import time
-from service_module.windows_service import RewstService
+from service_module.windows_service import RewstWindowsService
 from config_module.config_io import (
     get_agent_executable_path,
-    get_config_file_path,
-    load_configuration
+    get_config_file_path
 )
 
 os_type = platform.system().lower()
@@ -48,7 +47,7 @@ def is_service_running(org_id=None):
     service_name = get_service_name(org_id)
     if os_type == "windows":
         try:
-            if RewstService.is_service_process_running():
+            if RewstWindowsService.is_service_process_running():
                 logging.info(f"Service {service_name} is Running.")
                 return True
         except Exception as e:
@@ -76,7 +75,7 @@ def install_service(org_id):
         if os_type == "windows":
             logging.info(f"Installing Windows Service: {service_name}")
             win32serviceutil.InstallService(
-                f"{RewstService.__module__}.{RewstService.__name__}",
+                f"{RewstWindowsService.__module__}.{RewstWindowsService.__name__}",
                 service_name,
                 displayName=display_name,
                 startType=win32service.SERVICE_AUTO_START,

@@ -4,6 +4,7 @@ import httpx
 import json
 import logging
 import platform
+import signal
 import subprocess
 from azure.iot.device.aio import IoTHubDeviceClient
 
@@ -183,4 +184,36 @@ class ConnectionManager:
             return '/bin/zsh'
         else:
             return '/bin/bash'
+
+
+async def iot_hub_connection_loop(config_data):
+    stop_event = asyncio.Event()
+
+    def signal_handler(signum, frame):
+        logging.info(f"Received signal {signum}. Initiating graceful shutdown.")
+        stop_event.set()
+
+    signal.signal(signal.SIGTERM, signal_handler)
+    signal.signal(signal.SIGINT, signal_handler)
+
+    try:
+        # Instantiate ConnectionManager
+        connection_manager = ConnectionManager(config_data)
+
+        # Connect to IoT Hub
+        logging.info("Connecting to IoT Hub...")
+        await connection_manager.connect()
+
+        # Set Message Handler
+        logging.info("Setting up message handler...")
+        await connection_manager.set_message_handler()
+
+        while not stop_event.is_set():
+            await asyncio.sleep(1)
+
+        await connection_manager.disconnect()
+
+    except Exception as e:
+        logging.exception(f"Exception Caught during IoT Hub Loop: {str(e)}")
+
 
