@@ -1,11 +1,8 @@
-import argparse
-import asyncio
 import logging
 import os
 import platform
+import psutil
 import subprocess
-import time
-from service_module.windows_service import RewstWindowsService
 from config_module.config_io import (
     get_agent_executable_path,
     get_config_file_path
@@ -43,25 +40,13 @@ def is_service_installed(org_id=None):
         return os.path.exists(plist_path)
 
 
-# This is only partially built:
 def is_service_running(org_id=None):
-    service_name = get_service_name(org_id)
-    if os_type == "windows":
-        try:
-            if RewstWindowsService.is_service_process_running():
-                logging.info(f"Service {service_name} is Running.")
-                return True
-        except Exception as e:
-            logging.exception(f"Error returning service information: {e}")
-        return False
-    elif os_type == "linux":
-        service_path = f"/etc/systemd/system/{service_name}.service"
-        logging.info(f"Service {service_name} is installed.")
-        return os.path.exists(service_path)
-    elif os_type == "darwin":
-        plist_path = f"{os.path.expanduser('~/Library/LaunchAgents')}/{service_name}.plist"
-        logging.info(f"Service {service_name} is installed.")
-        return os.path.exists(plist_path)
+    executable_path = get_agent_executable_path(org_id)
+    executable_name = os.path.basename(executable_path)
+    for proc in psutil.process_iter(['pid', 'name']):
+        if proc.info['name'] == executable_name:
+            return True
+    return False
 
 
 def install_service(org_id):

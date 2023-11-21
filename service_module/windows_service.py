@@ -2,6 +2,7 @@ import win32service
 import win32serviceutil
 import win32event
 import logging
+import sys
 import time
 import win32con
 import win32api
