@@ -9,15 +9,16 @@ from argparse import ArgumentParser
 from config_module.config_io import (
     load_configuration
 )
-from iot_hub_module.connection_management import (
-    iot_hub_connection_loop
-)
 
 os_type = platform.system().lower()
 
 if os_type == "windows":
     from service_module.windows_service import (
         RewstWindowsService
+    )
+else:
+    from iot_hub_module.connection_management import (
+        iot_hub_connection_loop
     )
 
 logging.basicConfig(

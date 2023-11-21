@@ -5,16 +5,13 @@ import logging
 import time
 import win32con
 import win32api
-
 from service_module.service_management import (
     get_service_name,
     get_agent_executable_path
 )
-
 from config_module.config_io import (
     load_configuration
 )
-
 from iot_hub_module.connection_management import (
     iot_hub_connection_loop,
     ConnectionManager
