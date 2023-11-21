@@ -68,7 +68,7 @@ async def main(config_file=None):
     logging.info(f"Running for Org ID {org_id}")
 
     if os_type == "windows":
-        RewstWindowsService(config_data)
+        service = RewstWindowsService(sys.argv, org_id)
     else:
         await iot_hub_connection_loop(config_data)
 
