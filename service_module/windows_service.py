@@ -43,7 +43,7 @@ class RewstWindowsService(win32serviceutil.ServiceFramework):
         cls._svc_name_ = get_service_name(org_id)
         cls._svc_display_name_ = f"Rewst Remote Service {org_id}"
 
-    async def SvcDoRun(self):
+    def SvcDoRun(self):
         logging.info("Service is starting.")
         self.ReportServiceStatus(win32service.SERVICE_RUNNING)
 
