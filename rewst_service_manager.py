@@ -25,7 +25,7 @@ logging.basicConfig(
 )
 
 if os_type == "windows":
-    from service_module.windows_service import RewstService
+    from service_module.windows_service import RewstWindowsService
 
 
 def main():
@@ -46,7 +46,7 @@ def main():
         load_configuration(None,args.config_file)
 
     # Set the service name based on the organization ID
-    RewstService.set_service_name(args.org_id)
+    RewstWindowsService.set_service_name(args.org_id)
 
     # Perform the requested service action
     if args.install:
