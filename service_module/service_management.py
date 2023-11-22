@@ -14,7 +14,6 @@ if os_type == "windows":
     import win32service
     import win32serviceutil
     import pywintypes
-    from service_module.windows_service import RewstWindowsService
 
 
 def get_service_name(org_id):
@@ -61,6 +60,8 @@ def install_service(org_id):
     else:
         if os_type == "windows":
             logging.info(f"Installing Windows Service: {service_name}")
+
+            from service_module.windows_service import RewstWindowsService
             win32serviceutil.InstallService(
                 f"{RewstWindowsService.__module__}.{RewstWindowsService.__name__}",
                 service_name,
