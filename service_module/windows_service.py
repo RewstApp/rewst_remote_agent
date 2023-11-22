@@ -11,7 +11,8 @@ from service_module.service_management import (
     get_agent_executable_path
 )
 from config_module.config_io import (
-    load_configuration
+    load_configuration,
+    get_org_id_from_executable_name
 )
 from iot_hub_module.connection_management import (
     iot_hub_connection_loop,
@@ -25,11 +26,16 @@ class RewstWindowsService(win32serviceutil.ServiceFramework):
 
     def __init__(self, args):
         win32serviceutil.ServiceFramework.__init__(self, args)
-        self.process = None
-        self.config_data = load_configuration(self.org_id)
-        self.set_service_name(self.org_id)
-        self.service_executable = get_agent_executable_path(self.org_id)
+        self.org_id = None
         self.hWaitStop = win32event.CreateEvent(None, 0, 0, None)
+        self.config_data = None
+        self.service_executable = None
+        self.process_name = None
+
+    def set_up(self, org_id):
+        self.config_data = load_configuration(org_id)
+        self.set_service_name(org_id)
+        self.service_executable = get_agent_executable_path(org_id)
         self.process_name = self.service_executable.replace('.exe', '')
 
     @classmethod
@@ -38,22 +44,22 @@ class RewstWindowsService(win32serviceutil.ServiceFramework):
         cls._svc_display_name_ = f"Rewst Remote Service {org_id}"
 
     async def SvcDoRun(self):
+        logging.info("Service is starting.")
+        self.ReportServiceStatus(win32service.SERVICE_RUNNING)
+
+        self.org_id = get_org_id_from_executable_name(sys.argv)
+        if not self.org_id:
+            logging.error("Organization ID could not be determined. The service will shut down.")
+            self.ReportServiceStatus(win32service.SERVICE_STOPPED)
+            return
+        self.set_up(self.org_id)
+
         try:
-            # Set up Windows Event Logging
-            try:
-                await create_event_source(self.process_name)
-            except Exception as e:
-                logging.exception(f"Exception setting up Windows Event Handler: {e}")
-
-            self.ReportServiceStatus(win32service.SERVICE_RUNNING)
-
             await iot_hub_connection_loop(config_data=self.config_data)
-
         except Exception as e:
             logging.error(f"Exception in SvcDoRun: {e}")
+        finally:
             self.ReportServiceStatus(win32service.SERVICE_STOPPED)
-
-        self.ReportServiceStatus(win32service.SERVICE_STOPPED)
 
     def SvcStop(self):
         self.ReportServiceStatus(win32service.SERVICE_STOP_PENDING)

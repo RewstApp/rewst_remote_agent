@@ -2,6 +2,7 @@ import json
 import logging
 import os
 import platform
+import re
 from appdirs import (
     AppDirs,
     site_data_dir
@@ -105,3 +106,12 @@ def load_configuration(org_id=None, config_file_path=None):
     except FileNotFoundError:
         logging.exception("Error: Configuration File not found")
         return None
+
+
+def get_org_id_from_executable_name(commandline_args):
+    executable_path = commandline_args[0]  # Gets the file name of the current script
+    pattern = re.compile(r'rewst_remote_agent_(.+?)\.')
+    match = pattern.search(executable_path)
+    if match:
+        return match.group(1)
+    return False

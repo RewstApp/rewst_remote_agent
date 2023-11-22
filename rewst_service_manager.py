@@ -50,7 +50,7 @@ def main():
 
     # Perform the requested service action
     if args.install:
-        install_service(args.org_id, args.config_file)
+        install_service(args.org_id)
     elif args.uninstall:
         uninstall_service(args.org_id)
     elif args.start:

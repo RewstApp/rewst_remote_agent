@@ -2,17 +2,18 @@ import asyncio
 import logging
 import logging.handlers
 import platform
-import re
 import sys
 from __version__ import __version__
 from argparse import ArgumentParser
 from config_module.config_io import (
-    load_configuration
+    load_configuration,
+    get_org_id_from_executable_name
 )
 
 os_type = platform.system().lower()
 
 if os_type == "windows":
+    import win32serviceutil
     from service_module.windows_service import (
         RewstWindowsService
     )
@@ -43,17 +44,12 @@ async def main(config_file=None):
             org_id = config_data['rewst_org_id']
 
         else:
-            # Get Org ID for Config
-            executable_path = sys.argv[0]  # Gets the file name of the current script
-            pattern = re.compile(r'rewst_remote_agent_(.+?)\.')
-            match = pattern.search(executable_path)
-            if match:
-                logging.info("Found GUID")
-                org_id = match.group(1)
+            org_id = get_org_id_from_executable_name(sys.argv)
+            if org_id:
                 logging.info(f"Found Org ID {org_id}")
                 config_data = load_configuration(org_id)
             else:
-                logging.warning(f"Did not find guid in file {executable_path}")
+                logging.warning(f"Did not find guid in executable name")
                 config_data = None
 
         # Exit if no configuration was found
@@ -68,7 +64,9 @@ async def main(config_file=None):
     logging.info(f"Running for Org ID {org_id}")
 
     if os_type == "windows":
-        service = RewstWindowsService(sys.argv, org_id)
+        service = RewstWindowsService(None)
+        service.set_up(org_id)
+
     else:
         await iot_hub_connection_loop(config_data)
 
@@ -77,7 +75,10 @@ if __name__ == "__main__":
     parser = ArgumentParser(description='Run the IoT Hub device client.')
     parser.add_argument('--config-file', help='Path to the configuration file.')
     args = parser.parse_args()
-    asyncio.run(main(
-        config_file=args.config_file
-    ))
 
+    if os_type == "windows":
+        win32serviceutil.HandleCommandLine(RewstWindowsService)
+    else:
+        asyncio.run(main(
+            config_file=args.config_file
+        ))
