@@ -1,91 +1,53 @@
 import asyncio
-import win32service
+import threading
 import win32serviceutil
+import win32service
 import win32event
 import logging
-import sys
-import threading
-import time
-import win32con
-import win32api
-from service_module.service_management import (
-    get_service_name,
-    get_agent_executable_path
-)
 from config_module.config_io import (
     load_configuration,
     get_org_id_from_executable_name
 )
-from iot_hub_module.connection_management import (
-    iot_hub_connection_loop,
-    ConnectionManager
-)
+from iot_hub_module.connection_management import iot_hub_connection_loop
 
 
 class RewstWindowsService(win32serviceutil.ServiceFramework):
-    _svc_name_ = 'RewstAgentService'  # Placeholder, will be reset in __init__
-    _svc_display_name_ = 'Rewst Agent Service'  # Placeholder, will be reset in __init__
+    _svc_name_ = 'RewstAgentService'
+    _svc_display_name_ = 'Rewst Agent Service'
 
     def __init__(self, args):
         win32serviceutil.ServiceFramework.__init__(self, args)
-        self.org_id = None
         self.hWaitStop = win32event.CreateEvent(None, 0, 0, None)
-        self.config_data = None
-        self.service_executable = None
-        self.process_name = None
-        self.is_running = True
-
-    def set_up(self, org_id):
-        self.config_data = load_configuration(org_id)
-        self.set_service_name(org_id)
-        self.service_executable = get_agent_executable_path(org_id)
-        self.process_name = self.service_executable.replace('.exe', '')
-
-    @classmethod
-    def set_service_name(cls, org_id):
-        cls._svc_name_ = get_service_name(org_id)
-        cls._svc_display_name_ = f"Rewst Remote Service {org_id}"
+        self.reporter = None
+        self.loop = None
+        self.org_id = get_org_id_from_executable_name(sys.argv)
+        self.config_data = load_configuration(self.org_id)
 
     def SvcDoRun(self):
         logging.info("Service is starting.")
-
         self.ReportServiceStatus(win32service.SERVICE_RUNNING)
+        self.start_async_loop()
 
-        # Set up the event loop for the new thread
+    def start_async_loop(self):
         self.loop = asyncio.new_event_loop()
-        asyncio_thread = threading.Thread(target=self.asyncio_thread)
-        asyncio_thread.start()
-
-        # Wait for the stop signal
-        while self.is_running:
-            # You can fine-tune this time
-            time.sleep(1)
-
-        # Clean up: Join the asyncio thread
-        self.loop.call_soon_threadsafe(self.loop.stop)
-        asyncio_thread.join()
-
-        self.ReportServiceStatus(win32service.SERVICE_STOPPED)
-
-    def asyncio_thread(self):
         asyncio.set_event_loop(self.loop)
-        self.loop.run_until_complete(iot_hub_connection_loop(config_data=self.config_data))
-        self.loop.close()
+
+        # Ensure that the async loop runs in a separate thread
+        thread = threading.Thread(target=self.loop.run_until_complete, args=(iot_hub_connection_loop(self.config_data),))
+        thread.start()
+        thread.join()
 
     def SvcStop(self):
+        logging.info("Service stop requested.")
         self.ReportServiceStatus(win32service.SERVICE_STOP_PENDING)
-        self.is_running = False  # Signal the service to stop
-        ConnectionManager.disconnect(self)
+        if self.loop:
+            self.loop.call_soon_threadsafe(self.loop.stop)
+        win32event.SetEvent(self.hWaitStop)
         self.ReportServiceStatus(win32service.SERVICE_STOPPED)
 
-    def is_service_process_running(self):
-        if self.ReportServiceStatus.is_running():
-            return True
-        return False
 
-    def stop_service_process(self):
-        self.SvcStop()
-        return True
+if __name__ == '__main__':
+    win32serviceutil.HandleCommandLine(RewstWindowsService)
 
 
 # Sets up event log handling

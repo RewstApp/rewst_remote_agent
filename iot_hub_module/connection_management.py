@@ -208,6 +208,7 @@ async def iot_hub_connection_loop(config_data):
         logging.info("Setting up message handler...")
         await connection_manager.set_message_handler()
 
+        # Use an asyncio.Event to exit the loop when the service stops
         while not stop_event.is_set():
             await asyncio.sleep(1)
 
