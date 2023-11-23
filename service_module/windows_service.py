@@ -33,6 +33,7 @@ class RewstWindowsService(win32serviceutil.ServiceFramework):
         self.config_data = None
         self.service_executable = None
         self.process_name = None
+        self.is_running = True
 
     def set_up(self, org_id):
         self.config_data = load_configuration(org_id)
@@ -47,30 +48,34 @@ class RewstWindowsService(win32serviceutil.ServiceFramework):
 
     def SvcDoRun(self):
         logging.info("Service is starting.")
+
         self.ReportServiceStatus(win32service.SERVICE_RUNNING)
 
-        self.org_id = get_org_id_from_executable_name(sys.argv)
-        # Prepare the event loop for asynchronous operations
-        loop = asyncio.new_event_loop()
-        asyncio.set_event_loop(loop)
+        # Set up the event loop for the new thread
+        self.loop = asyncio.new_event_loop()
+        asyncio_thread = threading.Thread(target=self.asyncio_thread)
+        asyncio_thread.start()
 
-        # Run the asynchronous iot_hub_connection_loop in a separate thread
-        loop_thread = threading.Thread(target=self.async_loop_thread, args=(loop,))
-        loop_thread.start()
-        loop_thread.join()
+        # Wait for the stop signal
+        while self.is_running:
+            # You can fine-tune this time
+            time.sleep(1)
+
+        # Clean up: Join the asyncio thread
+        self.loop.call_soon_threadsafe(self.loop.stop)
+        asyncio_thread.join()
 
         self.ReportServiceStatus(win32service.SERVICE_STOPPED)
 
-    def async_loop_thread(self, loop):
-        asyncio.set_event_loop(loop)
-        loop.run_until_complete(iot_hub_connection_loop(config_data=self.config_data))
-        loop.close()
+    def asyncio_thread(self):
+        asyncio.set_event_loop(self.loop)
+        self.loop.run_until_complete(iot_hub_connection_loop(config_data=self.config_data))
+        self.loop.close()
 
     def SvcStop(self):
         self.ReportServiceStatus(win32service.SERVICE_STOP_PENDING)
+        self.is_running = False  # Signal the service to stop
         ConnectionManager.disconnect(self)
-        while self.is_service_process_running():
-            time.sleep(1)
         self.ReportServiceStatus(win32service.SERVICE_STOPPED)
 
     def is_service_process_running(self):
