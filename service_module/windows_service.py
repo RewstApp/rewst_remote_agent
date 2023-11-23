@@ -15,6 +15,11 @@ class RewstWindowsService(win32serviceutil.ServiceFramework):
     _svc_name_ = 'RewstAgentService'
     _svc_display_name_ = 'Rewst Agent Service'
 
+    @classmethod
+    def set_service_name(cls, org_id):
+        cls._svc_name_ = f"RewstAgentService_{org_id}"
+        cls._svc_display_name_ = f"Rewst Agent Service for {org_id}"
+
     def __init__(self, args):
         win32serviceutil.ServiceFramework.__init__(self, args)
         self.hWaitStop = win32event.CreateEvent(None, 0, 0, None)
