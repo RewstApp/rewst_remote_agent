@@ -46,7 +46,8 @@ def main():
         load_configuration(None,args.config_file)
 
     # Set the service name based on the organization ID
-    RewstWindowsService.set_service_name(args.org_id)
+    if os_type == "windows":
+        RewstWindowsService.set_service_name(args.org_id)
 
     # Perform the requested service action
     if args.install:

@@ -1,8 +1,10 @@
+import asyncio
 import win32service
 import win32serviceutil
 import win32event
 import logging
 import sys
+import threading
 import time
 import win32con
 import win32api
@@ -48,18 +50,21 @@ class RewstWindowsService(win32serviceutil.ServiceFramework):
         self.ReportServiceStatus(win32service.SERVICE_RUNNING)
 
         self.org_id = get_org_id_from_executable_name(sys.argv)
-        if not self.org_id:
-            logging.error("Organization ID could not be determined. The service will shut down.")
-            self.ReportServiceStatus(win32service.SERVICE_STOPPED)
-            return
-        self.set_up(self.org_id)
+        # Prepare the event loop for asynchronous operations
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
 
-        try:
-            await iot_hub_connection_loop(config_data=self.config_data)
-        except Exception as e:
-            logging.error(f"Exception in SvcDoRun: {e}")
-        finally:
-            self.ReportServiceStatus(win32service.SERVICE_STOPPED)
+        # Run the asynchronous iot_hub_connection_loop in a separate thread
+        loop_thread = threading.Thread(target=self.async_loop_thread, args=(loop,))
+        loop_thread.start()
+        loop_thread.join()
+
+        self.ReportServiceStatus(win32service.SERVICE_STOPPED)
+
+    def async_loop_thread(self, loop):
+        asyncio.set_event_loop(loop)
+        loop.run_until_complete(iot_hub_connection_loop(config_data=self.config_data))
+        loop.close()
 
     def SvcStop(self):
         self.ReportServiceStatus(win32service.SERVICE_STOP_PENDING)

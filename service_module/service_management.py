@@ -177,7 +177,7 @@ def check_service_status(org_id):
 
 def start_service(org_id):
     service_name = get_service_name(org_id)
-    logging.info(f"Starting Service {service_name}")
+    logging.info(f"Starting Service {service_name} for {os_type}")
     if os_type == "windows":
         win32serviceutil.StartService(service_name)
     elif os_type == "linux":
