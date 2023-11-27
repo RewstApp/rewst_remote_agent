@@ -2,7 +2,7 @@ import asyncio
 import win32serviceutil
 import win32service
 import win32event
-import servicemanager
+#import servicemanager
 
 from iot_hub_module.connection_management import iot_hub_connection_loop
 
@@ -33,9 +33,7 @@ class RewstWindowsService(win32serviceutil.ServiceFramework):
         win32event.SetEvent(self.hWaitStop)
 
     def SvcDoRun(self):
-        servicemanager.LogMsg(servicemanager.EVENTLOG_INFORMATION_TYPE,
-                              servicemanager.PYS_SERVICE_STARTED,
-                              (self._svc_name_, ''))
+        #servicemanager.LogMsg(servicemanager.EVENTLOG_INFORMATION_TYPE,servicemanager.PYS_SERVICE_STARTED,(self._svc_name_, ''))
         self.stop_event = asyncio.Event()
         self.loop.run_until_complete(iot_hub_connection_loop(self.config_data, self.stop_event))
 
