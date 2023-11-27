@@ -26,12 +26,15 @@ class ConfigurationError(Exception):
 
 
 # Main function
-async def main(config_file=None, foreground=False):
+async def main(args):
     logging.info(f"Version: {__version__}")
     logging.info(f"Running on {os_type}")
 
     org_id = None
     stop_event = asyncio.Event()
+
+    if args.foreground:
+        logging.info("Running in foreground mode")
 
     def signal_handler():
         logging.info("Shutting down gracefully.")
@@ -39,9 +42,9 @@ async def main(config_file=None, foreground=False):
 
     try:
         logging.info("Loading Configuration")
-        if config_file:
-            logging.info(f"Using config file {config_file}.")
-            config_data = load_configuration(None, config_file)
+        if args.config_file:
+            logging.info(f"Using config file {args.config_file}.")
+            config_data = load_configuration(None, args.config_file)
             org_id = config_data['rewst_org_id']
 
         else:
@@ -66,7 +69,7 @@ async def main(config_file=None, foreground=False):
 
     logging.info(f"Running for Org ID {org_id}")
 
-    if os_type == "windows" and not foreground:
+    if os_type == "windows" and not args.foreground:
         import win32serviceutil
         from service_module.windows_service import (
             RewstWindowsService
@@ -92,10 +95,7 @@ if __name__ == "__main__":
     parser.add_argument('start', required=False, help='Start the service.')
     parser.add_argument('restart', required=False, help='Restart the service.')
     parser.add_argument('stop', reuqire=False, help='Stop the service.')
-    parser.add_argument('--foreground', required=False, help='Run the service in foreground mode.')
+    parser.add_argument('--foreground', required=False, help='Run the service in foreground mode.', type=bool)
     args = parser.parse_args()
 
-    asyncio.run(main(
-        config_file=args.config_file,
-        foreground=args.foreground
-    ))
+    asyncio.run(main(args))
