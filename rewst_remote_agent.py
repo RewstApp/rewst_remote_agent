@@ -88,6 +88,7 @@ async def main(config_file=None):
 if __name__ == "__main__":
     parser = ArgumentParser(description='Run the IoT Hub device client.')
     parser.add_argument('--config-file', help='Path to the configuration file.')
+    parser.add_argument('start', help='Start the service.')
     args = parser.parse_args()
 
     asyncio.run(main(
