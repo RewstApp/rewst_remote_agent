@@ -26,15 +26,16 @@ class ConfigurationError(Exception):
 
 
 # Main function
-async def main(args):
+async def main():
     logging.info(f"Version: {__version__}")
     logging.info(f"Running on {os_type}")
 
     org_id = None
+    config_file = None
     stop_event = asyncio.Event()
 
-    if args.foreground:
-        logging.info("Running in foreground mode")
+    #if args.foreground:
+    #    logging.info("Running in foreground mode")
 
     def signal_handler():
         logging.info("Shutting down gracefully.")
@@ -42,9 +43,9 @@ async def main(args):
 
     try:
         logging.info("Loading Configuration")
-        if args.config_file:
+        if config_file:
             logging.info(f"Using config file {args.config_file}.")
-            config_data = load_configuration(None, args.config_file)
+            config_data = load_configuration(None, config_file)
             org_id = config_data['rewst_org_id']
 
         else:
@@ -90,12 +91,12 @@ async def main(args):
 
 # Entry point
 if __name__ == "__main__":
-    parser = ArgumentParser(description='Run the IoT Hub device client.')
-    parser.add_argument('--config-file', help='Path to the configuration file.')
-    parser.add_argument('start', required=False, help='Start the service.')
-    parser.add_argument('restart', required=False, help='Restart the service.')
-    parser.add_argument('stop', reuqire=False, help='Stop the service.')
-    parser.add_argument('--foreground', required=False, help='Run the service in foreground mode.', type=bool)
-    args = parser.parse_args()
+    # parser = ArgumentParser(description='Run the IoT Hub device client.')
+    # parser.add_argument('--config-file', help='Path to the configuration file.')
+    # parser.add_argument('start', required=False, help='Start the service.')
+    # parser.add_argument('restart', required=False, help='Restart the service.')
+    # parser.add_argument('stop', reuqire=False, help='Stop the service.')
+    # parser.add_argument('--foreground', required=False, help='Run the service in foreground mode.', type=bool)
+    # args = parser.parse_args()
 
-    asyncio.run(main(args))
+    asyncio.run(main())
