@@ -186,7 +186,7 @@ class ConnectionManager:
             return '/bin/bash'
 
 
-async def iot_hub_connection_loop(config_data):
+async def iot_hub_connection_loop(config_data, stop_event):
     stop_event = asyncio.Event()
 
     def signal_handler(signum, frame):

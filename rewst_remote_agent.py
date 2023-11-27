@@ -2,6 +2,7 @@ import asyncio
 import logging
 import logging.handlers
 import platform
+import signal
 import sys
 from __version__ import __version__
 from argparse import ArgumentParser
@@ -12,21 +13,16 @@ from config_module.config_io import (
 
 os_type = platform.system().lower()
 
-if os_type == "windows":
-    import win32serviceutil
-    from service_module.windows_service import (
-        RewstWindowsService
-    )
-else:
-    from iot_hub_module.connection_management import (
-        iot_hub_connection_loop
-    )
-
 logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s %(levelname)s: %(message)s',
     datefmt='%Y-%m-%d %H:%M:%S',
 )
+
+
+class ConfigurationError(Exception):
+    """Custom exception for configuration-related errors."""
+    pass
 
 
 # Main function
@@ -35,6 +31,11 @@ async def main(config_file=None):
     logging.info(f"Running on {os_type}")
 
     org_id = None
+    stop_event = asyncio.Event()
+
+    def signal_handler():
+        logging.info("Shutting down gracefully.")
+        stop_event.set()
 
     try:
         logging.info("Loading Configuration")
@@ -54,21 +55,34 @@ async def main(config_file=None):
 
         # Exit if no configuration was found
         if not config_data:
-            logging.error("No configuration was found. Exiting.")
-            exit(1)
+            raise ConfigurationError("No configuration was found.")
 
+    except ConfigurationError as e:
+        logging.error(str(e))
+        return
     except Exception as e:
         logging.exception(f"Exception Caught during self-configuration: {str(e)}")
-        exit(1)
+        return
 
     logging.info(f"Running for Org ID {org_id}")
 
     if os_type == "windows":
-        service = RewstWindowsService(None)
-        service.set_up(org_id)
-
+        import win32serviceutil
+        from service_module.windows_service import (
+            RewstWindowsService
+        )
+        RewstWindowsService.set_service_name(org_id)
+        win32serviceutil.HandleCommandLine(lambda *args: RewstWindowsService(*args, config_data=config_data))
     else:
-        await iot_hub_connection_loop(config_data)
+        from iot_hub_module.connection_management import (
+            iot_hub_connection_loop
+        )
+        loop = asyncio.get_running_loop()
+        for sig in (signal.SIGTERM, signal.SIGINT):
+            loop.add_signal_handler(sig, signal_handler)
+        from iot_hub_module.connection_management import iot_hub_connection_loop
+        await iot_hub_connection_loop(config_data, stop_event)
+
 
 # Entry point
 if __name__ == "__main__":
@@ -76,9 +90,6 @@ if __name__ == "__main__":
     parser.add_argument('--config-file', help='Path to the configuration file.')
     args = parser.parse_args()
 
-    if os_type == "windows":
-        win32serviceutil.HandleCommandLine(RewstWindowsService)
-    else:
-        asyncio.run(main(
-            config_file=args.config_file
-        ))
+    asyncio.run(main(
+        config_file=args.config_file
+    ))
