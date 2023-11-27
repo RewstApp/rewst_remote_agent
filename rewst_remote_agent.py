@@ -32,6 +32,7 @@ async def main():
 
     org_id = None
     config_file = None
+    foreground = None
     stop_event = asyncio.Event()
 
     #if args.foreground:
@@ -44,7 +45,7 @@ async def main():
     try:
         logging.info("Loading Configuration")
         if config_file:
-            logging.info(f"Using config file {args.config_file}.")
+            logging.info(f"Using config file {config_file}.")
             config_data = load_configuration(None, config_file)
             org_id = config_data['rewst_org_id']
 
@@ -70,7 +71,7 @@ async def main():
 
     logging.info(f"Running for Org ID {org_id}")
 
-    if os_type == "windows" and not args.foreground:
+    if os_type == "windows" and not foreground:
         import win32serviceutil
         from service_module.windows_service import (
             RewstWindowsService
