@@ -71,8 +71,9 @@ async def main(config_file=None):
         from service_module.windows_service import (
             RewstWindowsService
         )
+        RewstWindowsService.config_data = config_data
         RewstWindowsService.set_service_name(org_id)
-        win32serviceutil.HandleCommandLine(lambda *args: RewstWindowsService(*args, config_data=config_data))
+        win32serviceutil.HandleCommandLine(RewstWindowsService)
     else:
         from iot_hub_module.connection_management import (
             iot_hub_connection_loop
@@ -89,6 +90,8 @@ if __name__ == "__main__":
     parser = ArgumentParser(description='Run the IoT Hub device client.')
     parser.add_argument('--config-file', help='Path to the configuration file.')
     parser.add_argument('start', help='Start the service.')
+    parser.add_argument('restart', help='Restart the service.')
+    parser.add_argument('stop', help='Stop the service.')
     args = parser.parse_args()
 
     asyncio.run(main(

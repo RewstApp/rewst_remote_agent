@@ -1,4 +1,6 @@
 import asyncio
+import logging
+
 import win32serviceutil
 import win32service
 import win32event
@@ -11,12 +13,14 @@ class RewstWindowsService(win32serviceutil.ServiceFramework):
     _svc_name_ = 'RewstAgentService'
     _svc_display_name_ = 'Rewst Agent Service'
 
+    config_data = None
+
     @classmethod
     def set_service_name(cls, org_id):
         cls._svc_name_ = f"RewstAgentService_{org_id}"
         cls._svc_display_name_ = f"Rewst Agent Service for {org_id}"
 
-    def __init__(self, args, config_data):
+    def __init__(self, args):
         win32serviceutil.ServiceFramework.__init__(self, args)
         self.hWaitStop = win32event.CreateEvent(None, 0, 0, None)
         self.loop = asyncio.get_event_loop()
@@ -33,6 +37,7 @@ class RewstWindowsService(win32serviceutil.ServiceFramework):
         win32event.SetEvent(self.hWaitStop)
 
     def SvcDoRun(self):
+        logging.info(f"Running As a Service named {self._svc_name_}")
         #servicemanager.LogMsg(servicemanager.EVENTLOG_INFORMATION_TYPE,servicemanager.PYS_SERVICE_STARTED,(self._svc_name_, ''))
         self.stop_event = asyncio.Event()
         self.loop.run_until_complete(iot_hub_connection_loop(self.config_data, self.stop_event))
