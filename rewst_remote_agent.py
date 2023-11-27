@@ -26,7 +26,7 @@ class ConfigurationError(Exception):
 
 
 # Main function
-async def main(config_file=None):
+async def main(config_file=None, foreground=False):
     logging.info(f"Version: {__version__}")
     logging.info(f"Running on {os_type}")
 
@@ -66,7 +66,7 @@ async def main(config_file=None):
 
     logging.info(f"Running for Org ID {org_id}")
 
-    if os_type == "windows":
+    if os_type == "windows" and not foreground:
         import win32serviceutil
         from service_module.windows_service import (
             RewstWindowsService
@@ -89,11 +89,13 @@ async def main(config_file=None):
 if __name__ == "__main__":
     parser = ArgumentParser(description='Run the IoT Hub device client.')
     parser.add_argument('--config-file', help='Path to the configuration file.')
-    parser.add_argument('start', help='Start the service.')
-    parser.add_argument('restart', help='Restart the service.')
-    parser.add_argument('stop', help='Stop the service.')
+    parser.add_argument('start', required=False, help='Start the service.')
+    parser.add_argument('restart', required=False, help='Restart the service.')
+    parser.add_argument('stop', reuqire=False, help='Stop the service.')
+    parser.add_argument('--foreground', required=False, help='Run the service in foreground mode.')
     args = parser.parse_args()
 
     asyncio.run(main(
-        config_file=args.config_file
+        config_file=args.config_file,
+        foreground=args.foreground
     ))
