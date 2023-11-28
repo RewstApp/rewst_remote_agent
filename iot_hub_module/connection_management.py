@@ -83,6 +83,7 @@ class ConnectionManager:
 
             try:
                 # Execute the command
+                logging.info(f"Running process via commandline: {shell_command}")
                 process = subprocess.Popen(
                     shell_command,
                     stdout=subprocess.PIPE,
