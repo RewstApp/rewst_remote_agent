@@ -73,6 +73,7 @@ class ConnectionManager:
 
             temp_file.write(decoded_commands)
             temp_file_path = temp_file.name
+            logging.info(f"Wrote commands to temp file {temp_file_path}")
 
             # Construct the shell command to execute the temp file
             if "powershell" in interpreter.lower() or "pwsh" in interpreter.lower():
