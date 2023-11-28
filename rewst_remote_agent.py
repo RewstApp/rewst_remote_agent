@@ -31,7 +31,7 @@ async def main():
     logging.info(f"Version: {__version__}")
     logging.info(f"Running on {os_type}")
 
-    parser = argparse.ArgumentParser(description='Rewst Service Manager.')
+    parser = ArgumentParser(description='Rewst Service Manager.')
     parser.add_argument('--foreground', required=False, help='Run the service in foreground mode.', type=bool)
     args = parser.parse_args()
 
@@ -42,8 +42,8 @@ async def main():
         foreground = None
     stop_event = asyncio.Event()
 
-    #if args.foreground:
-    #    logging.info("Running in foreground mode")
+    if args.foreground:
+       logging.info("Running in foreground mode")
 
     def signal_handler():
         logging.info("Shutting down gracefully.")
