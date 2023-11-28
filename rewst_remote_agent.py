@@ -32,7 +32,7 @@ async def main():
     logging.info(f"Running on {os_type}")
 
     parser = ArgumentParser(description='Rewst Service Manager.')
-    parser.add_argument('--foreground', required=False, help='Run the service in foreground mode.', type=bool)
+    parser.add_argument('--foreground', required=False, action='store_true', help='Run the service in foreground mode.', type=bool)
     args = parser.parse_args()
 
     config_file = None
@@ -83,6 +83,7 @@ async def main():
             from iot_hub_module.connection_management import (
                 iot_hub_connection_loop
             )
+            await iot_hub_connection_loop(config_data, stop_event)
         else:
             import win32serviceutil
             from service_module.windows_service import (
