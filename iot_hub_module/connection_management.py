@@ -108,8 +108,17 @@ class ConnectionManager:
                 }
 
             finally:
-                # Ensure the temporary file is deleted after execution
-                os.remove(temp_file_path)
+                # Loop to wait until the file can be deleted
+                while True:
+                    try:
+                        if os.path.exists(temp_file_path):
+                            os.remove(temp_file_path)
+                        break  # If successful, break out of the loop
+                    except PermissionError:
+                        await asyncio.sleep(1)
+                    except Exception as e:
+                        logging.error(f"Error deleting temporary file: {e}")
+                        break  # If a different error occurs, break out of the loop
 
 
         if post_url:
