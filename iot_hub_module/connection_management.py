@@ -61,6 +61,8 @@ class ConnectionManager:
         interpreter = interpreter_override or self.get_default_interpreter()
         logging.info(f"Using interpreter: {interpreter}")
 
+        output_message_data = None
+
         # Write commands to a temporary file
         with tempfile.NamedTemporaryFile(delete=False, suffix=".ps1" if "powershell" in interpreter.lower() else ".sh",
                                          mode="w") as temp_file:
@@ -128,7 +130,7 @@ class ConnectionManager:
                     break  # If a different error occurs, break out of the loop
 
 
-        if post_url:
+        if post_url and output_message_data:
             logging.info("Sending Results to Rewst via httpx.")
             async with httpx.AsyncClient() as client:
                 response = await client.post(post_url, json=output_message_data)

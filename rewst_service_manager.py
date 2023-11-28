@@ -32,10 +32,10 @@ def main():
     parser = argparse.ArgumentParser(description='Rewst Service Manager.')
     parser.add_argument('--org-id', required=True, help='Organization ID')
     parser.add_argument('--config-file', help='Path to the configuration file')
-    parser.add_argument('--install', action='store_true', help='Install the service')
+    parser.add_argument('--install', 'install', action='store_true', help='Install the service')
     parser.add_argument('--uninstall', action='store_true', help='Uninstall the service')
     parser.add_argument('--status', action='store_true', help='Check the service status')
-    parser.add_argument('--start', action='store_true', help='Start the service')
+    parser.add_argument('--start', '-s', action='store_const', const=True, default=False, help='Start the service')
     parser.add_argument('--stop', action='store_true', help='Stop the service')
     parser.add_argument('--restart', action='store_true', help='Restart the service')
 
@@ -52,6 +52,7 @@ def main():
     # Perform the requested service action
     if args.install:
         install_service(args.org_id)
+        start_service(args.org_id)
     elif args.uninstall:
         uninstall_service(args.org_id)
     elif args.start:
