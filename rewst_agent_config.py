@@ -61,9 +61,9 @@ async def wait_for_files(org_id, timeout=3600) -> bool:
     logging.info("Waiting for files to be written...")
     # Determine the file paths using functions from config_io.py
     service_manager_path = get_service_manager_path(org_id)
-    logging.info(f"Service Manager: {service_manager_path}")
+    logging.info(f"Awaiting Service Manager File: {service_manager_path} ...")
     agent_executable_path = get_agent_executable_path(org_id)
-    logging.info(f"Agent Service: {agent_executable_path}")
+    logging.info(f"Awaiting Agent Service File: {agent_executable_path} ...")
     file_paths = [service_manager_path, agent_executable_path]
 
     start_time = asyncio.get_running_loop().time()

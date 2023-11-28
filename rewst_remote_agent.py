@@ -32,7 +32,7 @@ async def main():
     logging.info(f"Running on {os_type}")
 
     parser = ArgumentParser(description='Rewst Service Manager.')
-    parser.add_argument('--foreground', required=False, action='store_true', help='Run the service in foreground mode.', type=bool)
+    parser.add_argument('-v', '--foreground', action='store_true', help='Run the service in foreground mode.')
     args = parser.parse_args()
 
     config_file = None

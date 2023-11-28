@@ -71,7 +71,7 @@ class ConnectionManager:
                 # For other interpreters, you might want to handle encoding differently
                 decoded_commands = base64.b64decode(commands).decode('utf-8')
 
-            logging.info(f"Decoded Commands:\n{decoded_commands}")
+            #logging.info(f"Decoded Commands:\n{decoded_commands}")
             temp_file.write(decoded_commands)
             temp_file.flush()  # Explicitly flush the file buffer
             os.fsync(temp_file.fileno())  # Ensures all data is written to disk
@@ -140,7 +140,7 @@ class ConnectionManager:
 
     async def handle_message(self, message):
 
-        logging.info(f"Received IoT Hub message in handle_message: {message.data}")
+        logging.info("Received IoT Hub message in handle_message.")
         try:
             message_data = json.loads(message.data)
             get_installation_info = message_data.get("get_installation")
