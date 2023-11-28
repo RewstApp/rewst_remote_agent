@@ -27,12 +27,19 @@ class ConfigurationError(Exception):
 
 # Main function
 async def main():
+
     logging.info(f"Version: {__version__}")
     logging.info(f"Running on {os_type}")
 
-    org_id = None
+    parser = argparse.ArgumentParser(description='Rewst Service Manager.')
+    parser.add_argument('--foreground', required=False, help='Run the service in foreground mode.', type=bool)
+    args = parser.parse_args()
+
     config_file = None
-    foreground = None
+    if args.foreground:
+        foreground = args.foreground
+    else:
+        foreground = None
     stop_event = asyncio.Event()
 
     #if args.foreground:
