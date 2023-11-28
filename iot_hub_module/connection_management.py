@@ -71,56 +71,61 @@ class ConnectionManager:
                 # For other interpreters, you might want to handle encoding differently
                 decoded_commands = base64.b64decode(commands).decode('utf-8')
 
+            logging.info(f"Decoded Commands:\n{decoded_commands}")
             temp_file.write(decoded_commands)
+            temp_file.flush()  # Explicitly flush the file buffer
+            os.fsync(temp_file.fileno())  # Ensures all data is written to disk
             temp_file_path = temp_file.name
-            logging.info(f"Wrote commands to temp file {temp_file_path}")
 
-            # Construct the shell command to execute the temp file
-            if "powershell" in interpreter.lower() or "pwsh" in interpreter.lower():
-                shell_command = f'{interpreter} -File "{temp_file_path}"'
-            else:
-                shell_command = f'{interpreter} "{temp_file_path}"'
+        logging.info(f"Wrote commands to temp file {temp_file_path}")
 
-            try:
-                # Execute the command
-                logging.info(f"Running process via commandline: {shell_command}")
-                process = subprocess.Popen(
-                    shell_command,
-                    stdout=subprocess.PIPE,
-                    stderr=subprocess.PIPE,
-                    shell=True,
-                    text=True
-                )
-                stdout, stderr = process.communicate()
-                exit_code = process.returncode
+        # Construct the shell command to execute the temp file
+        if "powershell" in interpreter.lower() or "pwsh" in interpreter.lower():
+            shell_command = f'{interpreter} -File "{temp_file_path}"'
+        else:
+            shell_command = f'{interpreter} "{temp_file_path}"'
 
-            except subprocess.CalledProcessError as e:
-                logging.error(f"Command '{shell_command}' failed with error code {e.returncode}")
-                logging.error(f"Error output: {e.output}")
-                output_message_data = {
-                    'output': '',
-                    'error': f"Command failed with error code {e.returncode}: {e.output}"
-                }
+        try:
+            # Execute the command
+            logging.info(f"Running process via commandline: {shell_command}")
+            process = subprocess.Popen(
+                shell_command,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                shell=True,
+                text=True
+            )
+            stdout, stderr = process.communicate()
+            exit_code = process.returncode
+            logging.info(f"Command completed with exit code {exit_code}")
 
-            except Exception as e:
-                logging.error(f"An unexpected error occurred: {e}")
-                output_message_data = {
-                    'output': '',
-                    'error': f"An unexpected error occurred: {e}"
-                }
+        except subprocess.CalledProcessError as e:
+            logging.error(f"Command '{shell_command}' failed with error code {e.returncode}")
+            logging.error(f"Error output: {e.output}")
+            output_message_data = {
+                'output': '',
+                'error': f"Command failed with error code {e.returncode}: {e.output}"
+            }
 
-            finally:
-                # Loop to wait until the file can be deleted
-                while True:
-                    try:
-                        if os.path.exists(temp_file_path):
-                            os.remove(temp_file_path)
-                        break  # If successful, break out of the loop
-                    except PermissionError:
-                        await asyncio.sleep(1)
-                    except Exception as e:
-                        logging.error(f"Error deleting temporary file: {e}")
-                        break  # If a different error occurs, break out of the loop
+        except Exception as e:
+            logging.error(f"An unexpected error occurred: {e}")
+            output_message_data = {
+                'output': '',
+                'error': f"An unexpected error occurred: {e}"
+            }
+
+        finally:
+            # Loop to wait until the file can be deleted
+            while True:
+                try:
+                    if os.path.exists(temp_file_path):
+                        os.remove(temp_file_path)
+                    break  # If successful, break out of the loop
+                except PermissionError:
+                    await asyncio.sleep(1)
+                except Exception as e:
+                    logging.error(f"Error deleting temporary file: {e}")
+                    break  # If a different error occurs, break out of the loop
 
 
         if post_url:
