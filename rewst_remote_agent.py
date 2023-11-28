@@ -78,14 +78,19 @@ async def main():
 
     logging.info(f"Running for Org ID {org_id}")
 
-    if os_type == "windows" and not foreground:
-        import win32serviceutil
-        from service_module.windows_service import (
-            RewstWindowsService
-        )
-        RewstWindowsService.config_data = config_data
-        RewstWindowsService.set_service_name(org_id)
-        win32serviceutil.HandleCommandLine(RewstWindowsService)
+    if os_type == "windows":
+        if foreground:
+            from iot_hub_module.connection_management import (
+                iot_hub_connection_loop
+            )
+        else:
+            import win32serviceutil
+            from service_module.windows_service import (
+                RewstWindowsService
+            )
+            RewstWindowsService.config_data = config_data
+            RewstWindowsService.set_service_name(org_id)
+            win32serviceutil.HandleCommandLine(RewstWindowsService)
     else:
         from iot_hub_module.connection_management import (
             iot_hub_connection_loop
