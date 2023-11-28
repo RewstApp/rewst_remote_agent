@@ -3,8 +3,10 @@ import base64
 import httpx
 import json
 import logging
+import os
 import platform
 import signal
+import tempfile
 import subprocess
 from azure.iot.device.aio import IoTHubDeviceClient
 
@@ -59,53 +61,56 @@ class ConnectionManager:
         interpreter = interpreter_override or self.get_default_interpreter()
         logging.info(f"Using interpreter: {interpreter}")
 
-        # If PowerShell is the interpreter, update the commands to include the post_url variable
-        # Typical Rewst workflows include Invoke-RestMethod to POST back to Rewst via this URL
-        if "powershell" in interpreter.lower():
-            shell_command = f'{interpreter} -EncodedCommand "{commands}"'
-        else:
-            decoded_commands = base64.b64decode(commands).decode('utf-16-le')
-            preamble = f"post_url = '{post_url}'\n"
-            combined_commands = preamble + decoded_commands
-            re_encoded_commands = base64.b64encode(combined_commands.encode('utf-8'))
-            shell_command = f"echo {re_encoded_commands} | base64 --decode | {interpreter}"
+        # Write commands to a temporary file
+        with tempfile.NamedTemporaryFile(delete=False, suffix=".ps1" if "powershell" in interpreter.lower() else ".sh",
+                                         mode="w") as temp_file:
+            if "powershell" in interpreter.lower():
+                # If PowerShell is used, decode the commands
+                decoded_commands = base64.b64decode(commands).decode('utf-16-le')
+            else:
+                # For other interpreters, you might want to handle encoding differently
+                decoded_commands = base64.b64decode(commands).decode('utf-8')
 
-        # Execute the command
-        try:
-            process = subprocess.Popen(
-                shell_command,
-                stdout=subprocess.PIPE,
-                stderr=subprocess.PIPE,
-                shell=True,
-                text=True
-            )
-            # Gather output
-            stdout, stderr = process.communicate()
-            exit_code = process.returncode  # Get the exit code
-            logging.info(f"Process Completed with exit code {exit_code}.")
-            logging.info(f"Standard Output: {stdout}")
-            if stderr:
-                logging.error(f"Standard Error: {stderr}")
+            temp_file.write(decoded_commands)
+            temp_file_path = temp_file.name
 
-            output_message_data = {
-                'output': stdout.strip(),
-                'error': stderr.strip(),
-                'exit_code': exit_code
-            }
+            # Construct the shell command to execute the temp file
+            if "powershell" in interpreter.lower() or "pwsh" in interpreter.lower():
+                shell_command = f'{interpreter} -File "{temp_file_path}"'
+            else:
+                shell_command = f'{interpreter} "{temp_file_path}"'
 
-        except subprocess.CalledProcessError as e:
-            logging.error(f"Command '{shell_command}' failed with error code {e.returncode}")
-            logging.error(f"Error output: {e.output}")
-            output_message_data = {
-                'output': '',
-                'error': f"Command failed with error code {e.returncode}: {e.output}"
-            }
-        except Exception as e:
-            logging.error(f"An unexpected error occurred: {e}")
-            output_message_data = {
-                'output': '',
-                'error': f"An unexpected error occurred: {e}"
-            }
+            try:
+                # Execute the command
+                process = subprocess.Popen(
+                    shell_command,
+                    stdout=subprocess.PIPE,
+                    stderr=subprocess.PIPE,
+                    shell=True,
+                    text=True
+                )
+                stdout, stderr = process.communicate()
+                exit_code = process.returncode
+
+            except subprocess.CalledProcessError as e:
+                logging.error(f"Command '{shell_command}' failed with error code {e.returncode}")
+                logging.error(f"Error output: {e.output}")
+                output_message_data = {
+                    'output': '',
+                    'error': f"Command failed with error code {e.returncode}: {e.output}"
+                }
+
+            except Exception as e:
+                logging.error(f"An unexpected error occurred: {e}")
+                output_message_data = {
+                    'output': '',
+                    'error': f"An unexpected error occurred: {e}"
+                }
+
+            finally:
+                # Ensure the temporary file is deleted after execution
+                os.remove(temp_file_path)
+
 
         if post_url:
             logging.info("Sending Results to Rewst via httpx.")
