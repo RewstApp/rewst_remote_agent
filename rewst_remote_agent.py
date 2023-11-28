@@ -33,6 +33,11 @@ async def main():
 
     parser = ArgumentParser(description='Rewst Service Manager.')
     parser.add_argument('-v', '--foreground', action='store_true', help='Run the service in foreground mode.')
+    parser.add_argument('start', action='store_true', help='Start as a Windows Service.')
+    parser.add_argument('restart', action='store_true', help='Restart as a Windows Service.')
+    parser.add_argument('stop', action='store_true', help='Stop as a Windows Service.')
+    parser.add_argument('install', action='store_true', help='Install a Windows (not implemented yet).')
+    parser.add_argument('update', action='store_true', help='Update a Windows Service (not implemented yet).')
     args = parser.parse_args()
 
     config_file = None
