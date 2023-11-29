@@ -42,13 +42,13 @@ class RewstWindowsService(win32serviceutil.ServiceFramework):
 
     def setup_logging(self):
         log_file_path = get_logging_path(self.config_data['org_id'])
+        logging.info(f"Configuring logging to directory: {log_file_path}")
         os.makedirs(os.path.dirname(log_file_path), exist_ok=True)
-
         logging.basicConfig(level=logging.INFO,
                             format='%(asctime)s %(levelname)s: %(message)s',
                             datefmt='%Y-%m-%d %H:%M:%S',
                             handlers=[RotatingFileHandler(log_file_path, maxBytes=10485760, backupCount=3)])
-        logging.info("Logging initialized.")
+        logging.info("File Logging initialized.")
 
     def SvcStop(self):
         self.ReportServiceStatus(win32service.SERVICE_STOP_PENDING)
