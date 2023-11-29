@@ -37,6 +37,7 @@ async def main():
     running_as_win_service = False
     if os_type == "windows" and len(sys.argv) > 1:
         if sys.argv[1] in ['start', 'stop', 'restart']:
+            logging.info(f"Running as Windows Service with argument: {sys.argv[1]}")
             running_as_win_service = True
 
     if not running_as_win_service:
@@ -45,16 +46,11 @@ async def main():
         foreground = args.foreground
     else:
         foreground = False
-        args = parser.parse_args()
 
     config_file = None
-    if args.foreground:
-        foreground = args.foreground
-    else:
-        foreground = None
     stop_event = asyncio.Event()
 
-    if args.foreground:
+    if foreground:
        logging.info("Running in foreground mode")
 
     def signal_handler():
