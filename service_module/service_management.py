@@ -14,10 +14,12 @@ if os_type == "windows":
     import win32service
     import win32serviceutil
     import pywintypes
+    from service_module.windows_service import RewstWindowsService
 
 
 def get_service_name(org_id):
-    return f"Rewst_Remote_Agent_{org_id}"
+    service_name = RewstWindowsService.get_service_name(org_id)
+    return service_name
 
 
 def is_service_installed(org_id=None):
@@ -52,8 +54,7 @@ def is_service_running(org_id=None):
 def install_service(org_id):
     executable_path = get_agent_executable_path(org_id)
     service_name = get_service_name(org_id)
-    display_name = f"Rewst Remote Agent {org_id}"
-    logging.info(f"Installing {display_name} Service...")
+    logging.info(f"Installing {service_name} Service...")
     config_file_path = get_config_file_path(org_id)
     if is_service_installed(org_id):
         logging.info(f"Service is already installed.")
