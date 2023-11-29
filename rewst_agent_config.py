@@ -49,13 +49,6 @@ def is_base64(sb):
         return False
 
 async def remove_old_files(org_id):
-    """
-    Identifies existing files and renames them to <filename>_oldver.
-
-    :param org_id: The organization ID used to construct the file paths.
-    :return: None
-    """
-
     # Determine the file paths using functions from config_io.py
     service_manager_path = get_service_manager_path(org_id)
     agent_executable_path = get_agent_executable_path(org_id)

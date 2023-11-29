@@ -18,12 +18,6 @@ if os_type == "windows":
 
 
 def get_service_name(org_id):
-    """
-    Retrieves the service name based on the operating system and organization ID.
-
-    :param org_id: The organization ID.
-    :return: The service name.
-    """
     if os_type == "windows":
         # Fetch the service name from the RewstWindowsService class
         return RewstWindowsService.get_service_name()
