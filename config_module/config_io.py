@@ -63,7 +63,7 @@ def get_agent_executable_path(org_id):
 def get_logging_path(org_id):
     os_type = platform.system().lower()
     if os_type == "windows":
-        log_dir = f"{get_executable_folder(org_id)}\\logs"
+        log_dir = f"{get_config_file_path(org_id)}\\logs"
     elif os_type == "linux":
         log_dir = f"/var/log/rewst_remote_agent/{org_id}"
     elif os_type == "darwin":
