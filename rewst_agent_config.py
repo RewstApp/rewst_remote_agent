@@ -48,6 +48,32 @@ def is_base64(sb):
         print(e)
         return False
 
+async def remove_old_files(org_id):
+    """
+    Identifies existing files and renames them to <filename>_oldver.
+
+    :param org_id: The organization ID used to construct the file paths.
+    :return: None
+    """
+
+    # Determine the file paths using functions from config_io.py
+    service_manager_path = get_service_manager_path(org_id)
+    agent_executable_path = get_agent_executable_path(org_id)
+    file_paths = [service_manager_path, agent_executable_path]
+
+    for file_path in file_paths:
+        if os.path.exists(file_path):
+            # Construct the new file name with '_oldver'
+            new_file_path = f"{file_path}_oldver"
+            try:
+                # Remove any existing old version
+                if os.path.exists(new_file_path):
+                    os.remove(new_file_path)
+                # Rename the current file to old version
+                os.rename(file_path, new_file_path)
+                logging.info(f"Renamed {file_path} to {new_file_path}")
+            except OSError as e:
+                logging.error(f"Error renaming file {file_path}: {e}")
 
 async def wait_for_files(org_id, timeout=3600) -> bool:
     """
@@ -202,6 +228,9 @@ async def main(config_url, config_secret):
         # Set Message Handler
         logging.info("Setting up message handler...")
         await connection_manager.set_message_handler()
+
+        # Move Existing files to _oldver
+        await remove_old_files(org_id)
 
         # Wait for files to be written
         await wait_for_files(org_id)
