@@ -8,7 +8,8 @@ from __version__ import __version__
 from argparse import ArgumentParser
 from config_module.config_io import (
     load_configuration,
-    get_org_id_from_executable_name
+    get_org_id_from_executable_name,
+    setup_file_logging
 )
 
 os_type = platform.system().lower()
@@ -92,6 +93,7 @@ async def main():
             from iot_hub_module.connection_management import (
                 iot_hub_connection_loop
             )
+            setup_file_logging(org_id) # Start logging to file
             await iot_hub_connection_loop(config_data, stop_event)
         else:
             logging.info("Running Service Logic")

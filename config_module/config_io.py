@@ -3,9 +3,9 @@ import logging
 import os
 import platform
 import re
-from appdirs import (
-    AppDirs,
-    site_data_dir
+from logging.handlers import RotatingFileHandler
+from platformdirs import (
+    site_config_dir
 )
 
 # Put Timestamps on logging entries
@@ -63,7 +63,7 @@ def get_agent_executable_path(org_id):
 def get_logging_path(org_id):
     os_type = platform.system().lower()
     if os_type == "windows":
-        log_dir = AppDirs('logs', org_id, 'RewstRemoteAgent').site_config_dir
+        log_dir = site_config_dir('logs', org_id, 'RewstRemoteAgent')
     elif os_type == "linux":
         log_dir = f"/var/log/rewst_remote_agent/{org_id}"
     elif os_type == "darwin":
@@ -78,7 +78,7 @@ def get_config_file_path(org_id):
     os_type = platform.system().lower()
     logging.info(f"Returning {os_type} config file path.")
     if os_type == "windows":
-        config_dir = AppDirs(org_id, 'RewstRemoteAgent').site_config_dir
+        config_dir = site_config_dir(org_id, 'RewstRemoteAgent')
     elif os_type == "linux":
         config_dir = f"/etc/rewst_remote_agent/{org_id}/"
     elif os_type == "darwin":
@@ -128,3 +128,14 @@ def get_org_id_from_executable_name(commandline_args):
     if match:
         return match.group(1)
     return False
+
+
+def setup_file_logging(org_id=None):
+    log_file_path = get_logging_path(org_id)
+    logging.info(f"Configuring logging to directory: {log_file_path}")
+    os.makedirs(os.path.dirname(log_file_path), exist_ok=True)
+    logging.basicConfig(level=logging.INFO,
+                        format='%(asctime)s %(levelname)s: %(message)s',
+                        datefmt='%Y-%m-%d %H:%M:%S',
+                        handlers=[RotatingFileHandler(log_file_path, maxBytes=10485760, backupCount=3)])
+    logging.info("File Logging initialized.")
