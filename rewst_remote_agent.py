@@ -32,13 +32,20 @@ async def main():
     logging.info(f"Running on {os_type}")
 
     parser = ArgumentParser(description='Rewst Service Manager.')
-    parser.add_argument('-v', '--foreground', action='store_true', help='Run the service in foreground mode.')
-    parser.add_argument('start', action='store_true', help='Start as a Windows Service.')
-    parser.add_argument('restart', action='store_true', help='Restart as a Windows Service.')
-    parser.add_argument('stop', action='store_true', help='Stop as a Windows Service.')
-    parser.add_argument('install', action='store_true', help='Install a Windows (not implemented yet).')
-    parser.add_argument('update', action='store_true', help='Update a Windows Service (not implemented yet).')
-    args = parser.parse_args()
+
+    # Check if running as a Windows service
+    running_as_win_service = False
+    if os_type == "windows" and len(sys.argv) > 1:
+        if sys.argv[1] in ['start', 'stop', 'restart']:
+            running_as_win_service = True
+
+    if not running_as_win_service:
+        parser.add_argument('--foreground', action='store_true', help='Run the service in foreground mode.')
+        args = parser.parse_args()
+        foreground = args.foreground
+    else:
+        foreground = False
+        args = parser.parse_args()
 
     config_file = None
     if args.foreground:
