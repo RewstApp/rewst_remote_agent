@@ -56,6 +56,7 @@ foreach ($inputFile in $inputFiles) {
     #Start-Process -FilePath ".\CodeSignTool.bat" -ArgumentList $signArguments -Wait -NoNewWindow
     #Write-Host "Signed to $outputDirPath\$inputFile"
 
+
     # UnComment these to do fake sign
     Write-Host "Faking it: Signed to $outputDirPath\$inputFile"
     Copy-Item $appDistPath\$inputFile $outputDirPath
