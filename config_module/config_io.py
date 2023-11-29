@@ -132,10 +132,19 @@ def get_org_id_from_executable_name(commandline_args):
 
 def setup_file_logging(org_id=None):
     log_file_path = get_logging_path(org_id)
-    logging.info(f"Configuring logging to directory: {log_file_path}")
-    os.makedirs(os.path.dirname(log_file_path), exist_ok=True)
-    logging.basicConfig(level=logging.INFO,
-                        format='%(asctime)s %(levelname)s: %(message)s',
-                        datefmt='%Y-%m-%d %H:%M:%S',
-                        handlers=[RotatingFileHandler(log_file_path, maxBytes=10485760, backupCount=3)])
-    logging.info("File Logging initialized.")
+    print(f"Configuring logging to file: {log_file_path}")  # Debug print
+    try:
+        os.makedirs(os.path.dirname(log_file_path), exist_ok=True)
+        handlers = [RotatingFileHandler(log_file_path, maxBytes=10485760, backupCount=3)]
+        logging.basicConfig(level=logging.INFO,
+                            format='%(asctime)s %(levelname)s: %(message)s',
+                            datefmt='%Y-%m-%d %H:%M:%S',
+                            handlers=handlers)
+        for handler in logging.root.handlers[:]:
+            logging.root.removeHandler(handler)
+        logging.root.handlers = handlers
+        logging.info("File Logging initialized.")
+        return True
+    except Exception as e:
+        print(f"Exception setting up file logging: {e}")  # Debug print
+        return False
