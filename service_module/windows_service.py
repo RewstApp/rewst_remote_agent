@@ -2,10 +2,10 @@ import asyncio
 import logging
 from logging.handlers import RotatingFileHandler
 import os
+import pywin32
 import win32serviceutil
 import win32service
 import win32event
-import servicemanager
 from config_module.config_io import get_logging_path
 
 from iot_hub_module.connection_management import iot_hub_connection_loop
