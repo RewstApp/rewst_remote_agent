@@ -88,11 +88,13 @@ async def main():
 
     if os_type == "windows":
         if foreground:
+            logging.info("Beginning foreground loop")
             from iot_hub_module.connection_management import (
                 iot_hub_connection_loop
             )
             await iot_hub_connection_loop(config_data, stop_event)
         else:
+            logging.info("Running Service Logic")
             import win32serviceutil
             from service_module.windows_service import (
                 RewstWindowsService
