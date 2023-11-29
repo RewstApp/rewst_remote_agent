@@ -2,7 +2,7 @@ import asyncio
 import logging
 from logging.handlers import RotatingFileHandler
 import os
-import pywin32
+import servicemanager
 import win32serviceutil
 import win32service
 import win32event
