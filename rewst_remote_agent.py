@@ -35,9 +35,9 @@ async def main():
     parser = ArgumentParser(description='Rewst Service Manager.')
 
     # Check if running as a Windows service
-    running_as_win_service = False
+    running_as_win_service = True
 
-    if os_type == "windows" and len(sys.argv) >= 1:
+    if os_type == "windows" and len(sys.argv) > 1:
         if sys.argv[1] in ['start', 'stop', 'restart']:
             #logging.info(f"Running as Windows Service with argument: {sys.argv[1]}")
             running_as_win_service = True
