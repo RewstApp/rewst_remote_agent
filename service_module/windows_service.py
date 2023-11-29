@@ -1,10 +1,12 @@
 import asyncio
 import logging
-
+from logging.handlers import RotatingFileHandler
+import os
 import win32serviceutil
 import win32service
 import win32event
 #import servicemanager
+from config_module.config_io import get_logging_path
 
 from iot_hub_module.connection_management import iot_hub_connection_loop
 
@@ -37,6 +39,16 @@ class RewstWindowsService(win32serviceutil.ServiceFramework):
         self.config_data = RewstWindowsService.config_data
         self.stop_event = None
 
+    def setup_logging(self):
+        log_file_path = get_logging_path(self.config_data['org_id'])
+        os.makedirs(os.path.dirname(log_file_path), exist_ok=True)
+
+        logging.basicConfig(level=logging.INFO,
+                            format='%(asctime)s %(levelname)s: %(message)s',
+                            datefmt='%Y-%m-%d %H:%M:%S',
+                            handlers=[RotatingFileHandler(log_file_path, maxBytes=10485760, backupCount=3)])
+        logging.info("Logging initialized.")
+
     def SvcStop(self):
         self.ReportServiceStatus(win32service.SERVICE_STOP_PENDING)
         if self.stop_event:
@@ -55,4 +67,4 @@ class RewstWindowsService(win32serviceutil.ServiceFramework):
 
 if __name__ == '__main__':
     win32serviceutil.HandleCommandLine(RewstWindowsService)
-
+    self.setup_logging()
