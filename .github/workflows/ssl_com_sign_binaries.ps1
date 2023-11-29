@@ -48,12 +48,12 @@ foreach ($inputFile in $inputFiles) {
     )
 
     # Uncomment this to sign for reals
-    # Start-Process -FilePath ".\CodeSignTool.bat" -ArgumentList $signArguments -Wait -NoNewWindow
-    # Write-Host "Signed to $outputDirPath\$inputFile"
+    Start-Process -FilePath ".\CodeSignTool.bat" -ArgumentList $signArguments -Wait -NoNewWindow
+    Write-Host "Signed to $outputDirPath\$inputFile"
 
     # Remove these to do the real thing
-    Write-Host "Faking it: Signed to $outputDirPath\$inputFile"
-    Copy-Item $appDistPath\$inputFile $outputDirPath
+    #Write-Host "Faking it: Signed to $outputDirPath\$inputFile"
+    #Copy-Item $appDistPath\$inputFile $outputDirPath
 
     
 }
