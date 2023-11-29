@@ -63,7 +63,7 @@ def get_agent_executable_path(org_id):
 def get_logging_path(org_id):
     os_type = platform.system().lower()
     if os_type == "windows":
-        log_dir = site_config_dir('logs', org_id, 'RewstRemoteAgent')
+        log_dir = site_config_dir('RewstRemoteAgent', org_id, 'logs')
     elif os_type == "linux":
         log_dir = f"/var/log/rewst_remote_agent/{org_id}"
     elif os_type == "darwin":
@@ -78,7 +78,7 @@ def get_config_file_path(org_id):
     os_type = platform.system().lower()
     logging.info(f"Returning {os_type} config file path.")
     if os_type == "windows":
-        config_dir = site_config_dir(org_id, 'RewstRemoteAgent')
+        config_dir = site_config_dir('RewstRemoteAgent', org_id)
     elif os_type == "linux":
         config_dir = f"/etc/rewst_remote_agent/{org_id}/"
     elif os_type == "darwin":
