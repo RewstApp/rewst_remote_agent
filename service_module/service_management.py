@@ -18,8 +18,18 @@ if os_type == "windows":
 
 
 def get_service_name(org_id):
-    service_name = RewstWindowsService.get_service_name(org_id)
-    return service_name
+    """
+    Retrieves the service name based on the operating system and organization ID.
+
+    :param org_id: The organization ID.
+    :return: The service name.
+    """
+    if os_type == "windows":
+        # Fetch the service name from the RewstWindowsService class
+        return RewstWindowsService.get_service_name()
+    else:
+        # Construct the service name for non-Windows operating systems
+        return f"RewstRemoteAgent_{org_id}"
 
 
 def is_service_installed(org_id=None):
@@ -61,8 +71,8 @@ def install_service(org_id):
     else:
         if os_type == "windows":
             logging.info(f"Installing Windows Service: {service_name}")
-
             from service_module.windows_service import RewstWindowsService
+            display_name = RewstWindowsService.get_service_display_name()
             win32serviceutil.InstallService(
                 f"{RewstWindowsService.__module__}.{RewstWindowsService.__name__}",
                 service_name,
