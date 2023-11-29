@@ -51,8 +51,9 @@ class RewstWindowsService(win32serviceutil.ServiceFramework):
         win32event.SetEvent(self.hWaitStop)
 
     def SvcDoRun(self):
-        self.ReportServiceStatus(win32service.SERVICE_RUNNING)
+        self.ReportServiceStatus(win32service.SERVICE_START_PENDING)
         self.start()
+        self.ReportServiceStatus(win32service.SERVICE_RUNNING)
         servicemanager.LogMsg(servicemanager.EVENTLOG_INFORMATION_TYPE,
                               servicemanager.PYS_SERVICE_STARTED,
                               (self._svc_name_, ''))

@@ -36,7 +36,8 @@ async def main():
 
     # Check if running as a Windows service
     running_as_win_service = False
-    if os_type == "windows" and len(sys.argv) > 1:
+
+    if os_type == "windows" and len(sys.argv) >= 1:
         if sys.argv[1] in ['start', 'stop', 'restart']:
             #logging.info(f"Running as Windows Service with argument: {sys.argv[1]}")
             running_as_win_service = True
@@ -88,7 +89,17 @@ async def main():
     logging.info(f"Running for Org ID {org_id}")
 
     if os_type == "windows":
-        if foreground:
+        import win32serviceutil
+        import servicemanager
+        from service_module.windows_service import (
+            RewstWindowsService
+        )
+        if len(sys.argv) == 1:
+            servicemanager.Initialize()
+            servicemanager.PrepareToHostSingle(RewstWindowsService)
+            servicemanager.StartServiceCtrlDispatcher()
+
+        elif foreground:
             logging.info("Beginning foreground loop")
             from iot_hub_module.connection_management import (
                 iot_hub_connection_loop
