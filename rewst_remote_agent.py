@@ -91,7 +91,7 @@ async def main():
     if os_type == "windows":
         import win32serviceutil
         import servicemanager
-        from service_module.rewst_windows_service import (
+        from rewst_windows_service import (
             RewstWindowsService
         )
         if len(sys.argv) == 1:
@@ -109,7 +109,7 @@ async def main():
         else:
             #logging.info("Running Service Logic")
             import win32serviceutil
-            from service_module.rewst_windows_service import (
+            from rewst_windows_service import (
                 RewstWindowsService
             )
             RewstWindowsService.config_data = config_data

@@ -73,21 +73,21 @@ class RewstWindowsService(win32serviceutil.ServiceFramework):
                               (self._svc_name_, ''))
         logging.info(f"Running As a Service named {self._svc_name_}")
         #servicemanager.LogMsg(servicemanager.EVENTLOG_INFORMATION_TYPE,servicemanager.PYS_SERVICE_STARTED,(self._svc_name_, ''))
-        #self.stop_event = asyncio.Event()
-        #self.loop.run_until_complete(iot_hub_connection_loop(self.config_data, self.stop_event))
+        self.stop_event = asyncio.Event()
+        self.loop.run_until_complete(iot_hub_connection_loop(self.config_data, self.stop_event))
         ##asyncio.ensure_future(iot_hub_connection_loop(self.config_data, self.stop_event))
         ##self.loop.run_forever()
 
 
-        while True:
-            import time
-            logging.info("Service is running in test mode.")
-            time.sleep(10)  # Sleep for 10 seconds
-
-            # Check if a stop request has been made
-            if self.stop_event.is_set():
-                logging.info("Service stop requested. Exiting test loop.")
-                break
+        # while True:
+        #     import time
+        #     logging.info("Service is running in test mode.")
+        #     time.sleep(10)  # Sleep for 10 seconds
+        #
+        #     # Check if a stop request has been made
+        #     if self.stop_event.is_set():
+        #         logging.info("Service stop requested. Exiting test loop.")
+        #         break
 
     def start(self):
         pass
