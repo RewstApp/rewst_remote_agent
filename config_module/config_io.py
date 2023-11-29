@@ -49,7 +49,8 @@ def get_service_manager_path(org_id):
 def get_agent_executable_path(org_id):
     os_type = platform.system().lower()
     if os_type == "windows":
-        executable_name = f"rewst_remote_agent_{org_id}.win.exe"
+        #executable_name = f"rewst_remote_agent_{org_id}.win.exe"
+        executable_name = f"rewst_windows_service_{org_id}.win.exe"
     elif os_type == "linux":
         executable_name = f"rewst_remote_agent_{org_id}.linux.bin"
     elif os_type == "darwin":

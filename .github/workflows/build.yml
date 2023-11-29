@@ -30,7 +30,7 @@ jobs:
     - uses: actions/checkout@v2
 
     - name: Bump version in File
-      if: 
+      if:
       run: echo "__version__ = '${{ needs.bump_version.outputs.new_version }}'" > __version__.py
   
     - name: Set up Python ${{ matrix.python-version }}
@@ -106,7 +106,7 @@ jobs:
       with:
         name: windows-latest-signed-asset
         path: |
-          ./dist/signed/rewst_remote_agent.exe
+          ./dist/signed/rewst_windows_service.exe
           ./dist/signed/rewst_service_manager.exe
           ./dist/signed/rewst_agent_config.exe
 
@@ -141,8 +141,8 @@ jobs:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
         upload_url: ${{ steps.create_release.outputs.upload_url }} 
-        asset_path: ./windows-latest-signed-asset/rewst_remote_agent.exe
-        asset_name: rewst_remote_agent.win.exe
+        asset_path: ./windows-latest-signed-asset/rewst_windows_service.exe
+        asset_name: rewst_windows_service.win.exe
         asset_content_type: application/octet-stream
 
     - name: Upload Release Assets - Windows (rewst_service_manager)

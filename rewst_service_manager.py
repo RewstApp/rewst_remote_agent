@@ -25,7 +25,7 @@ logging.basicConfig(
 )
 
 if os_type == "windows":
-    from service_module.windows_service import RewstWindowsService
+    from service_module.rewst_windows_service import RewstWindowsService
 
 
 def main():

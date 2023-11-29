@@ -1,10 +1,15 @@
 import asyncio
 import logging
 import servicemanager
+import sys
 import win32serviceutil
 import win32service
 import win32event
-from config_module.config_io import setup_file_logging
+from config_module.config_io import (
+    load_configuration,
+    setup_file_logging,
+    get_org_id_from_executable_name
+)
 
 from iot_hub_module.connection_management import iot_hub_connection_loop
 
@@ -37,6 +42,15 @@ class RewstWindowsService(win32serviceutil.ServiceFramework):
         self.config_data = RewstWindowsService.config_data
         self.stop_event = None
         self.setup_logging()
+
+        self.org_id = get_org_id_from_executable_name(sys.argv)
+
+        if self.org_id:
+            logging.info(f"Found Org ID {self.org_id}")
+            self.config_data = load_configuration(self.org_id)
+        else:
+            logging.warning(f"Did not find guid in executable name")
+            self.config_data = None
 
     def setup_logging(self):
         setup_file_logging(self.config_data['org_id'])

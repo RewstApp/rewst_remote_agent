@@ -11,7 +11,8 @@ $appDistPath =  'D:\a\rewst_remote_agent\rewst_remote_agent\dist'
 $inputFiles = @(
     "rewst_remote_agent.exe",
     "rewst_agent_config.exe",
-    "rewst_service_manager.exe"
+    "rewst_service_manager.exe",
+    "rewst_windows_service.exe"
 )
 $outputDirPath = "$appDistPath\signed"
 
