@@ -71,6 +71,7 @@ def get_logging_path(org_id):
     else:
         logging.error(f"Unsupported OS type: {os_type}. Send this output to Rewst for investigation!")
         exit(1)
+    logging.info(f"Logging Directory: {log_dir}")
     return log_dir
 
 def get_config_file_path(org_id):
