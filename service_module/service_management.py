@@ -214,4 +214,3 @@ def stop_service(org_id):
 def restart_service(org_id):
     stop_service(org_id)
     start_service(org_id)
-
