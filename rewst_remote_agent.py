@@ -38,7 +38,7 @@ async def main():
     running_as_win_service = False
     if os_type == "windows" and len(sys.argv) > 1:
         if sys.argv[1] in ['start', 'stop', 'restart']:
-            logging.info(f"Running as Windows Service with argument: {sys.argv[1]}")
+            #logging.info(f"Running as Windows Service with argument: {sys.argv[1]}")
             running_as_win_service = True
 
     if not running_as_win_service:
@@ -59,9 +59,9 @@ async def main():
         stop_event.set()
 
     try:
-        logging.info("Loading Configuration")
+        #logging.info("Loading Configuration")
         if config_file:
-            logging.info(f"Using config file {config_file}.")
+            #logging.info(f"Using config file {config_file}.")
             config_data = load_configuration(None, config_file)
             org_id = config_data['rewst_org_id']
 
@@ -96,7 +96,7 @@ async def main():
             setup_file_logging(org_id) # Start logging to file
             await iot_hub_connection_loop(config_data, stop_event)
         else:
-            logging.info("Running Service Logic")
+            #logging.info("Running Service Logic")
             import win32serviceutil
             from service_module.windows_service import (
                 RewstWindowsService
