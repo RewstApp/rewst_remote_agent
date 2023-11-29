@@ -5,7 +5,7 @@ import os
 import win32serviceutil
 import win32service
 import win32event
-#import servicemanager
+import servicemanager
 from config_module.config_io import get_logging_path
 
 from iot_hub_module.connection_management import iot_hub_connection_loop
@@ -52,6 +52,7 @@ class RewstWindowsService(win32serviceutil.ServiceFramework):
 
     def SvcStop(self):
         self.ReportServiceStatus(win32service.SERVICE_STOP_PENDING)
+        self.stop()
         if self.stop_event:
             self.loop.call_soon_threadsafe(self.stop_event.set)
         self.is_running = False
@@ -60,6 +61,10 @@ class RewstWindowsService(win32serviceutil.ServiceFramework):
 
     def SvcDoRun(self):
         self.ReportServiceStatus(win32service.SERVICE_RUNNING)
+        self.start()
+        servicemanager.LogMsg(servicemanager.EVENTLOG_INFORMATION_TYPE,
+                              servicemanager.PYS_SERVICE_STARTED,
+                              (self._svc_name_, ''))
         logging.info(f"Running As a Service named {self._svc_name_}")
         #servicemanager.LogMsg(servicemanager.EVENTLOG_INFORMATION_TYPE,servicemanager.PYS_SERVICE_STARTED,(self._svc_name_, ''))
         #self.stop_event = asyncio.Event()
@@ -78,7 +83,11 @@ class RewstWindowsService(win32serviceutil.ServiceFramework):
                 logging.info("Service stop requested. Exiting test loop.")
                 break
 
+    def start(self):
+        pass
 
+    def stop(self):
+        pass
 
 if __name__ == '__main__':
     win32serviceutil.HandleCommandLine(RewstWindowsService)
