@@ -38,6 +38,7 @@ class RewstWindowsService(win32serviceutil.ServiceFramework):
         self.is_running = True
         self.config_data = RewstWindowsService.config_data
         self.stop_event = None
+        self.setup_logging()
 
     def setup_logging(self):
         log_file_path = get_logging_path(self.config_data['org_id'])
@@ -61,10 +62,12 @@ class RewstWindowsService(win32serviceutil.ServiceFramework):
         logging.info(f"Running As a Service named {self._svc_name_}")
         self.ReportServiceStatus(win32service.SERVICE_RUNNING)
         #servicemanager.LogMsg(servicemanager.EVENTLOG_INFORMATION_TYPE,servicemanager.PYS_SERVICE_STARTED,(self._svc_name_, ''))
-        self.stop_event = asyncio.Event()
-        self.loop.run_until_complete(iot_hub_connection_loop(self.config_data, self.stop_event))
+        #self.stop_event = asyncio.Event()
+        #self.loop.run_until_complete(iot_hub_connection_loop(self.config_data, self.stop_event))
+        asyncio.ensure_future(iot_hub_connection_loop(self.config_data, self.stop_event))
+        self.loop.run_forever()
 
 
 if __name__ == '__main__':
     win32serviceutil.HandleCommandLine(RewstWindowsService)
-    self.setup_logging()
+
