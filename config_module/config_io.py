@@ -62,23 +62,26 @@ def get_agent_executable_path(org_id):
 
 def get_logging_path(org_id):
     os_type = platform.system().lower()
+    base_dir=site_config_dir('RewstRemoteAgent')
+    log_filename = "rewst_agent.log"
     if os_type == "windows":
-        log_dir = site_config_dir('RewstRemoteAgent', org_id, 'logs')
+        log_path = f"f{base_dir}\\{org_id}\\logs\\{log_filename}"
     elif os_type == "linux":
-        log_dir = f"/var/log/rewst_remote_agent/{org_id}"
+        log_path = f"/var/log/rewst_remote_agent/{org_id}/{log_filename}"
     elif os_type == "darwin":
-        log_dir = f"/var/log/rewst_remote_agent/{org_id}"
+        log_path = f"/var/log/rewst_remote_agent/{org_id}/{log_filename}"
     else:
         logging.error(f"Unsupported OS type: {os_type}. Send this output to Rewst for investigation!")
         exit(1)
-    logging.info(f"Logging Directory: {log_dir}")
-    return log_dir
+    logging.info(f"Logging to: {log_path}")
+    return log_path
 
 def get_config_file_path(org_id):
     os_type = platform.system().lower()
+    base_dir = site_config_dir('RewstRemoteAgent')
     logging.info(f"Returning {os_type} config file path.")
     if os_type == "windows":
-        config_dir = site_config_dir('RewstRemoteAgent', org_id)
+        config_dir = f"f{base_dir}\\{org_id}"
     elif os_type == "linux":
         config_dir = f"/etc/rewst_remote_agent/{org_id}/"
     elif os_type == "darwin":
