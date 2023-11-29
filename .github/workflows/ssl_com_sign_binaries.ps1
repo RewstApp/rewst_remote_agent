@@ -32,7 +32,10 @@ try {
 }
 
 $codeSignDirectory = Get-ChildItem -Directory -Path . -Name CodeSign*
+Write-Host "codeSignDirectory contents:"
+dir $codeSignDirectory
 Set-Location $codeSignDirectory
+
 
 # Sign Application
 foreach ($inputFile in $inputFiles) {
@@ -51,18 +54,19 @@ foreach ($inputFile in $inputFiles) {
     Start-Process -FilePath ".\CodeSignTool.bat" -ArgumentList $signArguments -Wait -NoNewWindow
     Write-Host "Signed to $outputDirPath\$inputFile"
 
-    # Remove these to do the real thing
+    # Comment these to do actually sign
     #Write-Host "Faking it: Signed to $outputDirPath\$inputFile"
     #Copy-Item $appDistPath\$inputFile $outputDirPath
 
     
 }
-# Check if the signing was successful
-# if ($LASTEXITCODE -eq 0) {
-#     Write-Host "Signing succeeded."
-# } else {
-#     Write-Host "Signing failed with exit code $LASTEXITCODE."
-# }
+
+Check if the signing was successful
+if ($LASTEXITCODE -eq 0) {
+    Write-Host "Signing succeeded."
+} else {
+    Write-Host "Signing failed with exit code $LASTEXITCODE."
+}
 
 # Get App Dist Directory Contents
 Write-Host "appDistPath ($appDistPath) Contents:"
