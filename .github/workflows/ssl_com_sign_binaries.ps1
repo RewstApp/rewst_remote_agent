@@ -35,7 +35,7 @@ $codeSignDirectory = Get-ChildItem -Directory -Path . -Name CodeSign*
 Write-Host "codeSignDirectory contents:"
 dir $codeSignDirectory
 
-Set-Location $codeSignDirectory
+#Set-Location $codeSignDirectory
 
 
 # Sign Application
@@ -52,7 +52,7 @@ foreach ($inputFile in $inputFiles) {
     )
 
     # Uncomment this to sign for reals
-    Start-Process -FilePath "$codeSignDirectory\CodeSignTool.bat" -ArgumentList $signArguments -Wait -NoNewWindow
+    Start-Process -FilePath ".\CodeSignTool.bat" -ArgumentList $signArguments -Wait -NoNewWindow
     Write-Host "Signed to $outputDirPath\$inputFile"
 
     # Comment these to do actually sign
