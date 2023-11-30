@@ -40,8 +40,11 @@ class RewstWindowsService(win32serviceutil.ServiceFramework):
         return cls._svc_display_name_
 
     def __init__(self, args):
-        # win32serviceutil.ServiceFramework.__init__(self, args)
-        # self.hWaitStop = win32event.CreateEvent(None, 0, 0, None)
+        _svc_name = self.get_service_name()
+        _svc_display_name = self.get_service_display_name()
+
+        win32serviceutil.ServiceFramework.__init__(self, args)
+        self.hWaitStop = win32event.CreateEvent(None, 0, 0, None)
         # self.loop = asyncio.get_event_loop()
         # self.is_running = True
         # self.config_data = RewstWindowsService.config_data
