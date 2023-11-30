@@ -22,6 +22,10 @@ class RewstWindowsService(win32serviceutil.ServiceFramework):
     config_data = None
 
     @classmethod
+    def parse_command_line(cls):
+        win32serviceutil.HandleCommandLine(cls)
+
+    @classmethod
     def set_service_name(cls, org_id):
         cls._svc_name_ = f"RewstRemoteAgent_{org_id}"
         cls._svc_display_name_ = f"Rewst Agent Service for Org {org_id}"
@@ -87,20 +91,29 @@ class RewstWindowsService(win32serviceutil.ServiceFramework):
         #         break
 
     def start(self):
-        self.SvcDoRun()
         pass
 
     def stop(self):
         pass
 
+def main():
 
-if __name__ == '__main__':
     org_id = get_org_id_from_executable_name(sys.argv)
 
     if org_id:
         RewstWindowsService._svc_name_ = f"RewstRemoteAgent_{org_id}"
         RewstWindowsService._svc_display_name_ = f"Rewst Agent Service for Org {org_id}"
 
-    win32serviceutil.HandleCommandLine(RewstWindowsService)
+    if len(sys.argv) == 1:
+        servicemanager.Initialize()
+        servicemanager.PrepareToHostSingle(RewstWindowsService)
+        servicemanager.StartServiceCtrlDispatcher()
+    else:
+        win32serviceutil.HandleCommandLine(RewstWindowsService)
+
+if __name__ == '__main__':
+    main()
+
+   # win32serviceutil.HandleCommandLine(RewstWindowsService)
 
 
