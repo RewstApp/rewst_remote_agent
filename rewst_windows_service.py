@@ -120,6 +120,15 @@ def main(foreground=False):
     if org_id:
         RewstWindowsService._svc_name_ = f"RewstRemoteAgent_{org_id}"
         RewstWindowsService._svc_display_name_ = f"Rewst Agent Service for Org {org_id}"
+        logging.info(f"Found Org ID {org_id}")
+        config_data = load_configuration(org_id)
+    else:
+        logging.warning("Org ID not found in executable name")
+        config_data = None
+
+    if config_data is None:
+        logging.error("No configuration found. Exiting.")
+        return
 
     stop_event = asyncio.Event()
 
