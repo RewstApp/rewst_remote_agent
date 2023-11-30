@@ -16,8 +16,8 @@ from iot_hub_module.connection_management import iot_hub_connection_loop
 
 
 class RewstWindowsService(win32serviceutil.ServiceFramework):
-    _svc_name_ = 'RewstRemoteAgent'
-    _svc_display_name_ = 'Rewst Agent Service'
+    #_svc_name_ = self.get_service_name()
+    #_svc_display_name_ = 'Rewst Agent Service'
 
     config_data = None
 
