@@ -46,7 +46,7 @@ class RewstWindowsService(win32serviceutil.ServiceFramework):
 
         win32serviceutil.ServiceFramework.__init__(self, args)
         self.hWaitStop = win32event.CreateEvent(None, 0, 0, None)
-        self.loop = asyncio.get_event_loop()
+        #self.loop = asyncio.get_event_loop()
         self.is_running = True
         #self.config_data = RewstWindowsService.config_data
         self.stop_event = None
@@ -144,36 +144,36 @@ class RewstWindowsService(win32serviceutil.ServiceFramework):
         pass
 
 def main(foreground=False):
-    logging.basicConfig(level=logging.INFO)
-    logging.info("Service is starting...")
-    org_id = get_org_id_from_executable_name(sys.argv)
-
-    if org_id:
-        RewstWindowsService._svc_name_ = f"RewstRemoteAgent_{org_id}"
-        RewstWindowsService._svc_display_name_ = f"Rewst Agent Service for Org {org_id}"
-        logging.info(f"Found Org ID {org_id}")
-        config_data = load_configuration(org_id)
-    else:
-        logging.warning("Org ID not found in executable name")
-        config_data = None
-
-    if config_data is None:
-        logging.error("No configuration found. Exiting.")
-        return
-
-    stop_event = asyncio.Event()
-
-    if foreground:
-        logging.info("Running in foreground mode")
-        asyncio.run(iot_hub_connection_loop(config_data, stop_event))
-    else:
-        logging.info("Running as a Windows Service")
-        if len(sys.argv) == 1:
-            servicemanager.Initialize()
-            servicemanager.PrepareToHostSingle(RewstWindowsService)
-            servicemanager.StartServiceCtrlDispatcher()
-        else:
-            win32serviceutil.HandleCommandLine(RewstWindowsService)
+    # logging.basicConfig(level=logging.INFO)
+    # logging.info("Service is starting...")
+    # org_id = get_org_id_from_executable_name(sys.argv)
+    #
+    # if org_id:
+    #     RewstWindowsService._svc_name_ = f"RewstRemoteAgent_{org_id}"
+    #     RewstWindowsService._svc_display_name_ = f"Rewst Agent Service for Org {org_id}"
+    #     logging.info(f"Found Org ID {org_id}")
+    #     config_data = load_configuration(org_id)
+    # else:
+    #     logging.warning("Org ID not found in executable name")
+    #     config_data = None
+    #
+    # if config_data is None:
+    #     logging.error("No configuration found. Exiting.")
+    #     return
+    #
+    # #stop_event = asyncio.Event()
+    #
+    # if foreground:
+    #     logging.info("Running in foreground mode")
+    #     asyncio.run(iot_hub_connection_loop(config_data, stop_event))
+    # else:
+    #     logging.info("Running as a Windows Service")
+    #     if len(sys.argv) == 1:
+    #         servicemanager.Initialize()
+    #         servicemanager.PrepareToHostSingle(RewstWindowsService)
+    #         servicemanager.StartServiceCtrlDispatcher()
+    #     else:
+    #         win32serviceutil.HandleCommandLine(RewstWindowsService)
 
 
 if __name__ == '__main__':
