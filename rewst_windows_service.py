@@ -74,12 +74,9 @@ class RewstWindowsService(win32serviceutil.ServiceFramework):
         win32event.SetEvent(self.hWaitStop)
 
     def SvcDoRun(self):
-        logging.info("Starting SvcDoRun")
-        servicemanager.LogMsg(
-            servicemanager.EVENTLOG_INFORMATION_TYPE,
-            servicemanager.PYS_SERVICE_STARTED,
-            (self._svc_name_, '')
-        )
+        logging.info(f"Starting SvcDoRun for {self._svc_name_}")
+        servicemanager.LogMsg(servicemanager.EVENTLOG_INFORMATION_TYPE,servicemanager.PYS_SERVICE_STARTED,(self._svc_name_, ''))
+        logging.info("Reporting Running")
         self.ReportServiceStatus(win32service.SERVICE_RUNNING)
         logging.info("Service started successfully.")
         try:
