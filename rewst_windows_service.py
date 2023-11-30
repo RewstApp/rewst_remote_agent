@@ -11,6 +11,7 @@ from config_module.config_io import (
     setup_file_logging,
     get_org_id_from_executable_name
 )
+from argparse import ArgumentParser
 
 from iot_hub_module.connection_management import iot_hub_connection_loop
 
@@ -111,23 +112,37 @@ class RewstWindowsService(win32serviceutil.ServiceFramework):
     def stop(self):
         pass
 
-def main():
-
+def main(foreground=False):
+    logging.basicConfig(level=logging.INFO)
+    logging.info("Service is starting...")
     org_id = get_org_id_from_executable_name(sys.argv)
 
     if org_id:
         RewstWindowsService._svc_name_ = f"RewstRemoteAgent_{org_id}"
         RewstWindowsService._svc_display_name_ = f"Rewst Agent Service for Org {org_id}"
 
-    if len(sys.argv) == 1:
-        servicemanager.Initialize()
-        servicemanager.PrepareToHostSingle(RewstWindowsService)
-        servicemanager.StartServiceCtrlDispatcher()
+    stop_event = asyncio.Event()
+
+    if foreground:
+        logging.info("Running in foreground mode")
+        asyncio.run(iot_hub_connection_loop(config_data, stop_event))
     else:
-        win32serviceutil.HandleCommandLine(RewstWindowsService)
+        logging.info("Running as a Windows Service")
+        if len(sys.argv) == 1:
+            servicemanager.Initialize()
+            servicemanager.PrepareToHostSingle(RewstWindowsService)
+            servicemanager.StartServiceCtrlDispatcher()
+        else:
+            win32serviceutil.HandleCommandLine(RewstWindowsService)
+
 
 if __name__ == '__main__':
-    main()
+    parser = ArgumentParser(description="Run the Rewst Remote Agent.")
+    parser.add_argument('--foreground', action='store_true', help='Run the service in foreground mode.')
+    args = parser.parse_args()
+
+    logging.basicConfig(level=logging.INFO)
+    main(foreground=args.foreground)
 
    # win32serviceutil.HandleCommandLine(RewstWindowsService)
 
