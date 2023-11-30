@@ -47,7 +47,7 @@ class RewstWindowsService(win32serviceutil.ServiceFramework):
         self.hWaitStop = win32event.CreateEvent(None, 0, 0, None)
         self.loop = asyncio.get_event_loop()
         self.is_running = True
-        self.config_data = RewstWindowsService.config_data
+        #self.config_data = RewstWindowsService.config_data
         self.stop_event = None
         self.setup_logging()
 
