@@ -167,6 +167,7 @@ if __name__ == '__main__':
     #
     # logging.basicConfig(level=logging.INFO)
     # main(foreground=args.foreground)
+
     org_id = get_org_id_from_executable_name(sys.argv)
 
     if org_id:
@@ -175,8 +176,7 @@ if __name__ == '__main__':
 
     if len(sys.argv) == 1:
         servicemanager.Initialize()
-        servicemanager.PrepareToHostSingle(Service)
+        servicemanager.PrepareToHostSingle(RewstWindowsService)
         servicemanager.StartServiceCtrlDispatcher()
     else:
-        win32serviceutil.HandleCommandLine(Service)
-
+        win32serviceutil.HandleCommandLine(RewstWindowsService)
