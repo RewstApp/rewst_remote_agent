@@ -99,6 +99,14 @@ class RewstWindowsService(win32serviceutil.ServiceFramework):
     def stop(self):
         pass
 
+
 if __name__ == '__main__':
+    org_id = get_org_id_from_executable_name(sys.argv)
+
+    if org_id:
+        RewstWindowsService._svc_name_ = f"RewstRemoteAgent_{org_id}"
+        RewstWindowsService._svc_display_name_ = f"Rewst Agent Service for Org {org_id}"
+
     win32serviceutil.HandleCommandLine(RewstWindowsService)
+
 
