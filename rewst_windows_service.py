@@ -20,7 +20,7 @@ class RewstWindowsService(win32serviceutil.ServiceFramework):
     #_svc_name_ = self.get_service_name()
     #_svc_display_name_ = 'Rewst Agent Service'
 
-    config_data = None
+    #config_data = None
 
     @classmethod
     def parse_command_line(cls):
@@ -73,10 +73,14 @@ class RewstWindowsService(win32serviceutil.ServiceFramework):
         win32event.SetEvent(self.hWaitStop)
 
     def SvcDoRun(self):
-
+        servicemanager.LogMsg(
+            servicemanager.EVENTLOG_INFORMATION_TYPE,
+            servicemanager.PYS_SERVICE_STARTED,
+            (self._svc_name_, '')
+        )
         try:
-            self.ReportServiceStatus(win32service.SERVICE_START_PENDING)
-            self.start()
+            #self.ReportServiceStatus(win32service.SERVICE_START_PENDING)
+            #self.start()
             self.ReportServiceStatus(win32service.SERVICE_RUNNING)
             logging.info("Service started successfully.")
 
