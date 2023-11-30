@@ -30,7 +30,6 @@ class RewstWindowsService(win32serviceutil.ServiceFramework):
     def get_service_name(cls):
         return cls._svc_name_
 
-
     @classmethod
     def get_service_display_name(cls):
         return cls._svc_display_name_
@@ -53,7 +52,6 @@ class RewstWindowsService(win32serviceutil.ServiceFramework):
             logging.warning(f"Did not find guid in executable name")
             self.config_data = None
 
-
     def setup_logging(self):
         setup_file_logging(self.config_data['org_id'])
 
@@ -70,9 +68,6 @@ class RewstWindowsService(win32serviceutil.ServiceFramework):
         self.ReportServiceStatus(win32service.SERVICE_START_PENDING)
         self.start()
         self.ReportServiceStatus(win32service.SERVICE_RUNNING)
-        servicemanager.LogMsg(servicemanager.EVENTLOG_INFORMATION_TYPE,
-                              servicemanager.PYS_SERVICE_STARTED,
-                              (self._svc_name_, ''))
         logging.info(f"Running As a Service named {self._svc_name_}")
         #servicemanager.LogMsg(servicemanager.EVENTLOG_INFORMATION_TYPE,servicemanager.PYS_SERVICE_STARTED,(self._svc_name_, ''))
         self.stop_event = asyncio.Event()
