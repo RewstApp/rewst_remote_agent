@@ -78,8 +78,10 @@ class RewstWindowsService(win32serviceutil.ServiceFramework):
             logging.info("Service started successfully.")
 
             self.stop_event = asyncio.Event()
-            asyncio.ensure_future(iot_hub_connection_loop(self.config_data, self.stop_event))
-            self.loop.run_forever()
+            #asyncio.ensure_future(iot_hub_connection_loop(self.config_data, self.stop_event))
+            #self.loop.run_forever()
+            # Sleep for a minute
+            asyncio.sleep(60)
 
         except Exception as e:
             logging.error(f"Service failed: {e}")
@@ -147,14 +149,13 @@ def main(foreground=False):
 
 if __name__ == '__main__':
 
-    foreground = False
-    parser = ArgumentParser(description="Run the Rewst Remote Agent.")
-    parser.add_argument('--foreground', action='store_true', help='Run the service in foreground mode.')
-    args = parser.parse_args()
+    # parser = ArgumentParser(description="Run the Rewst Remote Agent.")
+    # parser.add_argument('--foreground', action='store_true', help='Run the service in foreground mode.')
+    # args = parser.parse_args()
+    #
+    # logging.basicConfig(level=logging.INFO)
+    # main(foreground=args.foreground)
 
-    logging.basicConfig(level=logging.INFO)
-    main(foreground=args.foreground)
-
-   # win32serviceutil.HandleCommandLine(RewstWindowsService)
+   win32serviceutil.HandleCommandLine(RewstWindowsService)
 
 
