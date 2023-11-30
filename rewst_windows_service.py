@@ -78,13 +78,13 @@ class RewstWindowsService(win32serviceutil.ServiceFramework):
             servicemanager.PYS_SERVICE_STARTED,
             (self._svc_name_, '')
         )
+        self.ReportServiceStatus(win32service.SERVICE_RUNNING)
+        logging.info("Service started successfully.")
         try:
             #self.ReportServiceStatus(win32service.SERVICE_START_PENDING)
             #self.start()
-            self.ReportServiceStatus(win32service.SERVICE_RUNNING)
-            logging.info("Service started successfully.")
 
-            self.stop_event = asyncio.Event()
+            #self.stop_event = asyncio.Event()
             #asyncio.ensure_future(iot_hub_connection_loop(self.config_data, self.stop_event))
             #self.loop.run_forever()
             # Sleep for a minute
