@@ -146,6 +146,8 @@ def main(foreground=False):
 
 
 if __name__ == '__main__':
+
+    foreground = False
     parser = ArgumentParser(description="Run the Rewst Remote Agent.")
     parser.add_argument('--foreground', action='store_true', help='Run the service in foreground mode.')
     args = parser.parse_args()
