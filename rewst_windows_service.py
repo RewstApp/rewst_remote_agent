@@ -5,6 +5,7 @@ import sys
 import win32serviceutil
 import win32service
 import win32event
+import win32timezone
 from config_module.config_io import (
     load_configuration,
     setup_file_logging,
