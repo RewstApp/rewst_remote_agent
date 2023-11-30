@@ -144,6 +144,7 @@ class RewstWindowsService(win32serviceutil.ServiceFramework):
         pass
 
 def main(foreground=False):
+    pass
     # logging.basicConfig(level=logging.INFO)
     # logging.info("Service is starting...")
     # org_id = get_org_id_from_executable_name(sys.argv)
