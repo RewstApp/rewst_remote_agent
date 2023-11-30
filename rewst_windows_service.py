@@ -87,6 +87,7 @@ class RewstWindowsService(win32serviceutil.ServiceFramework):
         #         break
 
     def start(self):
+        self.SvcDoRun()
         pass
 
     def stop(self):
