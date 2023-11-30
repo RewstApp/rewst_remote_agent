@@ -59,7 +59,7 @@ class RewstWindowsService(win32serviceutil.ServiceFramework):
             logging.warning(f"Did not find guid in executable name")
             self.config_data = None
 
-        self.setup_logging()
+        #self.setup_logging()
 
     def setup_logging(self):
         setup_file_logging(self.org_id)
@@ -69,11 +69,12 @@ class RewstWindowsService(win32serviceutil.ServiceFramework):
         self.stop()
         if self.stop_event:
             self.loop.call_soon_threadsafe(self.stop_event.set)
-        self.is_running = False
+        #self.is_running = False
         self.loop.call_soon_threadsafe(self.loop.stop)
         win32event.SetEvent(self.hWaitStop)
 
     def SvcDoRun(self):
+        logging.info("Starting SvcDoRun")
         servicemanager.LogMsg(
             servicemanager.EVENTLOG_INFORMATION_TYPE,
             servicemanager.PYS_SERVICE_STARTED,
@@ -82,9 +83,8 @@ class RewstWindowsService(win32serviceutil.ServiceFramework):
         self.ReportServiceStatus(win32service.SERVICE_RUNNING)
         logging.info("Service started successfully.")
         try:
-            self.start()
-
-            self.stop_event = asyncio.Event()
+            #self.start()
+            #self.stop_event = asyncio.Event()
             asyncio.ensure_future(iot_hub_connection_loop(self.config_data, self.stop_event))
             #self.loop.run_forever()
             # Sleep for a minute
