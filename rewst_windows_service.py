@@ -45,20 +45,20 @@ class RewstWindowsService(win32serviceutil.ServiceFramework):
 
         win32serviceutil.ServiceFramework.__init__(self, args)
         self.hWaitStop = win32event.CreateEvent(None, 0, 0, None)
-        # self.loop = asyncio.get_event_loop()
-        # self.is_running = True
-        # self.config_data = RewstWindowsService.config_data
-        # self.stop_event = None
-        # self.setup_logging()
-        #
-        # self.org_id = get_org_id_from_executable_name(sys.argv)
-        #
-        # if self.org_id:
-        #     logging.info(f"Found Org ID {self.org_id}")
-        #     self.config_data = load_configuration(self.org_id)
-        # else:
-        #     logging.warning(f"Did not find guid in executable name")
-        #     self.config_data = None
+        self.loop = asyncio.get_event_loop()
+        self.is_running = True
+        self.config_data = RewstWindowsService.config_data
+        self.stop_event = None
+        self.setup_logging()
+
+        self.org_id = get_org_id_from_executable_name(sys.argv)
+
+        if self.org_id:
+            logging.info(f"Found Org ID {self.org_id}")
+            self.config_data = load_configuration(self.org_id)
+        else:
+            logging.warning(f"Did not find guid in executable name")
+            self.config_data = None
 
     def setup_logging(self):
         setup_file_logging(self.config_data['org_id'])
@@ -81,14 +81,13 @@ class RewstWindowsService(win32serviceutil.ServiceFramework):
         self.ReportServiceStatus(win32service.SERVICE_RUNNING)
         logging.info("Service started successfully.")
         try:
-            #self.ReportServiceStatus(win32service.SERVICE_START_PENDING)
-            #self.start()
+            self.start()
 
-            #self.stop_event = asyncio.Event()
-            #asyncio.ensure_future(iot_hub_connection_loop(self.config_data, self.stop_event))
+            self.stop_event = asyncio.Event()
+            asyncio.ensure_future(iot_hub_connection_loop(self.config_data, self.stop_event))
             #self.loop.run_forever()
             # Sleep for a minute
-            asyncio.sleep(60)
+            # asyncio.sleep(60)
 
         except Exception as e:
             logging.error(f"Service failed: {e}")
