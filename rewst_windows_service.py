@@ -143,38 +143,37 @@ class RewstWindowsService(win32serviceutil.ServiceFramework):
     def stop(self):
         pass
 
-def main(foreground=False):
-    pass
-    # logging.basicConfig(level=logging.INFO)
-    # logging.info("Service is starting...")
-    # org_id = get_org_id_from_executable_name(sys.argv)
-    #
-    # if org_id:
-    #     RewstWindowsService._svc_name_ = f"RewstRemoteAgent_{org_id}"
-    #     RewstWindowsService._svc_display_name_ = f"Rewst Agent Service for Org {org_id}"
-    #     logging.info(f"Found Org ID {org_id}")
-    #     config_data = load_configuration(org_id)
-    # else:
-    #     logging.warning("Org ID not found in executable name")
-    #     config_data = None
-    #
-    # if config_data is None:
-    #     logging.error("No configuration found. Exiting.")
-    #     return
-    #
-    # #stop_event = asyncio.Event()
+def main():
+    logging.basicConfig(level=logging.INFO)
+    logging.info("Service is starting...")
+    org_id = get_org_id_from_executable_name(sys.argv)
+
+    if org_id:
+        RewstWindowsService._svc_name_ = f"RewstRemoteAgent_{org_id}"
+        RewstWindowsService._svc_display_name_ = f"Rewst Agent Service for Org {org_id}"
+        logging.info(f"Found Org ID {org_id}")
+        config_data = load_configuration(org_id)
+    else:
+        logging.warning("Org ID not found in executable name")
+        config_data = None
+
+    if config_data is None:
+        logging.error("No configuration found. Exiting.")
+        return
+
+    #stop_event = asyncio.Event()
     #
     # if foreground:
     #     logging.info("Running in foreground mode")
     #     asyncio.run(iot_hub_connection_loop(config_data, stop_event))
     # else:
     #     logging.info("Running as a Windows Service")
-    #     if len(sys.argv) == 1:
-    #         servicemanager.Initialize()
-    #         servicemanager.PrepareToHostSingle(RewstWindowsService)
-    #         servicemanager.StartServiceCtrlDispatcher()
-    #     else:
-    #         win32serviceutil.HandleCommandLine(RewstWindowsService)
+    if len(sys.argv) == 1:
+        servicemanager.Initialize()
+        servicemanager.PrepareToHostSingle(RewstWindowsService)
+        servicemanager.StartServiceCtrlDispatcher()
+    else:
+        win32serviceutil.HandleCommandLine(RewstWindowsService)
 
 
 if __name__ == '__main__':
@@ -184,17 +183,17 @@ if __name__ == '__main__':
     # args = parser.parse_args()
     #
     # logging.basicConfig(level=logging.INFO)
-    # main(foreground=args.foreground)
+    main()
 
-    org_id = get_org_id_from_executable_name(sys.argv)
-
-    if org_id:
-        RewstWindowsService._svc_name_ = f"RewstRemoteAgent_{org_id}"
-        RewstWindowsService._svc_display_name_ = f"Rewst Agent Service for Org {org_id}"
-
-    if len(sys.argv) == 1:
-        servicemanager.Initialize()
-        servicemanager.PrepareToHostSingle(RewstWindowsService)
-        servicemanager.StartServiceCtrlDispatcher()
-    else:
-        win32serviceutil.HandleCommandLine(RewstWindowsService)
+    # org_id = get_org_id_from_executable_name(sys.argv)
+    #
+    # if org_id:
+    #     RewstWindowsService._svc_name_ = f"RewstRemoteAgent_{org_id}"
+    #     RewstWindowsService._svc_display_name_ = f"Rewst Agent Service for Org {org_id}"
+    #
+    # if len(sys.argv) == 1:
+    #     servicemanager.Initialize()
+    #     servicemanager.PrepareToHostSingle(RewstWindowsService)
+    #     servicemanager.StartServiceCtrlDispatcher()
+    # else:
+    #     win32serviceutil.HandleCommandLine(RewstWindowsService)
