@@ -53,8 +53,6 @@ class RewstWindowsService(win32serviceutil.ServiceFramework):
             logging.warning(f"Did not find guid in executable name")
             self.config_data = None
 
-    _svc_name_ = get_service_name()
-    _svc_display_name_ = get_service_display_name()
 
     def setup_logging(self):
         setup_file_logging(self.config_data['org_id'])
