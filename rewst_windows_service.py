@@ -155,7 +155,12 @@ if __name__ == '__main__':
     #
     # logging.basicConfig(level=logging.INFO)
     # main(foreground=args.foreground)
+    org_id = get_org_id_from_executable_name(sys.argv)
 
-   win32serviceutil.HandleCommandLine(RewstWindowsService)
+    if org_id:
+        RewstWindowsService._svc_name_ = f"RewstRemoteAgent_{org_id}"
+        RewstWindowsService._svc_display_name_ = f"Rewst Agent Service for Org {org_id}"
+
+    win32serviceutil.HandleCommandLine(RewstWindowsService)
 
 
