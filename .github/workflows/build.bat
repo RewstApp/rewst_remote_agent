@@ -8,4 +8,4 @@ pyinstaller %PYWIN32_INCLUDE% --name=rewst_service_manager --icon=logo-rewsty.ic
 
 pyinstaller %PYWIN32_INCLUDE% --name=rewst_agent_config --icon=logo-rewsty.ico --onefile --version-file=version.txt rewst_agent_config.py
 
-pyinstaller %PYWIN32_INCLUDE% --name=rewst_agent_config --icon=logo-rewsty.ico --onefile --version-file=version.txt rewst_windows_service.py
+pyinstaller %PYWIN32_INCLUDE% --name=rewst_windows_service --icon=logo-rewsty.ico --onefile --version-file=version.txt rewst_windows_service.py
