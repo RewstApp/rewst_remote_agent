@@ -77,12 +77,18 @@ class RewstWindowsService(win32serviceutil.ServiceFramework):
         logging.info(f"Starting SvcDoRun for {self._svc_name_}")
         servicemanager.LogMsg(servicemanager.EVENTLOG_INFORMATION_TYPE,servicemanager.PYS_SERVICE_STARTED,(self._svc_name_, ''))
         logging.info("Reporting Running")
-        self.ReportServiceStatus(win32service.SERVICE_RUNNING)
+        if self.config_data:
+            self.ReportServiceStatus(win32service.SERVICE_RUNNING)
+        else:
+            logging.error("Failure: config_data not loaded")
+            return
         logging.info("Service started successfully.")
         try:
             #self.start()
             #self.stop_event = asyncio.Event()
-            asyncio.ensure_future(iot_hub_connection_loop(self.config_data, self.stop_event))
+            logging.info("Starting iot_hub connection loop...")
+            #asyncio.ensure_future(iot_hub_connection_loop(self.config_data, self.stop_event))
+            asyncio.run(iot_hub_connection_loop(self.config_data, self.stop_event))
             #self.loop.run_forever()
             # Sleep for a minute
             # asyncio.sleep(60)
