@@ -75,43 +75,23 @@ class RewstWindowsService(win32serviceutil.ServiceFramework):
         win32event.SetEvent(self.hWaitStop)
 
     def SvcDoRun(self):
-        self.stop_event = asyncio.Event()
-
-        # Testing crap
-        # self.ReportServiceStatus(win32service.SERVICE_RUNNING)
-        # logging.info(f"Service {self._svc_name_} started.")
-        # while True:
-        #     logging.info("Service is running.")
-        #     time.sleep(10)  # Sleep for 10 seconds
-        #     if self.stop_event.is_set():
-        #         logging.info("Service stop requested.")
-        #         break
-
-        probably working?
         logging.info(f"Starting SvcDoRun for {self._svc_name_}")
         self.ReportServiceStatus(win32service.SERVICE_START_PENDING)
-        servicemanager.LogMsg(servicemanager.EVENTLOG_INFORMATION_TYPE,servicemanager.PYS_SERVICE_STARTED,(self._svc_name_, ''))
-        logging.info("Reporting Running")
-        if self.config_data:
-            logging.info("Configuration is loaded")
-            self.ReportServiceStatus(win32service.SERVICE_RUNNING)
-        else:
-            logging.error("Failure: config_data not loaded")
-            return
-        logging.info("Service started successfully.")
-        try:
-            #self.start()
-            self.stop_event = asyncio.Event()
-            logging.info("Starting iot_hub connection loop...")
-            asyncio.ensure_future(iot_hub_connection_loop(self.config_data, self.stop_event))
-            #asyncio.run(iot_hub_connection_loop(self.config_data, self.stop_event))
-            #self.loop.run_forever()
-            # Sleep for a minute
-            # asyncio.sleep(60)
+        self.ReportServiceStatus(win32service.SERVICE_RUNNING)
 
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
+        self.stop_event = asyncio.Event()
+
+        try:
+            loop.create_task(iot_hub_connection_loop(self.config_data, self.stop_event))
+            loop.run_forever()
         except Exception as e:
             logging.error(f"Service failed: {e}")
+            loop.close()
             servicemanager.LogErrorMsg(f"Service failed: {e}")
+        finally:
+            loop.close()
 
 
 
