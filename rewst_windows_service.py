@@ -62,7 +62,7 @@ class RewstWindowsService(win32serviceutil.ServiceFramework):
         self.setup_logging()
 
     def setup_logging(self):
-        setup_file_logging(self.config_data['org_id'])
+        setup_file_logging(self.org_id)
 
     def SvcStop(self):
         self.ReportServiceStatus(win32service.SERVICE_STOP_PENDING)
