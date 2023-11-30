@@ -40,22 +40,22 @@ class RewstWindowsService(win32serviceutil.ServiceFramework):
         return cls._svc_display_name_
 
     def __init__(self, args):
-        win32serviceutil.ServiceFramework.__init__(self, args)
-        self.hWaitStop = win32event.CreateEvent(None, 0, 0, None)
-        self.loop = asyncio.get_event_loop()
-        self.is_running = True
-        self.config_data = RewstWindowsService.config_data
-        self.stop_event = None
-        self.setup_logging()
-
-        self.org_id = get_org_id_from_executable_name(sys.argv)
-
-        if self.org_id:
-            logging.info(f"Found Org ID {self.org_id}")
-            self.config_data = load_configuration(self.org_id)
-        else:
-            logging.warning(f"Did not find guid in executable name")
-            self.config_data = None
+        # win32serviceutil.ServiceFramework.__init__(self, args)
+        # self.hWaitStop = win32event.CreateEvent(None, 0, 0, None)
+        # self.loop = asyncio.get_event_loop()
+        # self.is_running = True
+        # self.config_data = RewstWindowsService.config_data
+        # self.stop_event = None
+        # self.setup_logging()
+        #
+        # self.org_id = get_org_id_from_executable_name(sys.argv)
+        #
+        # if self.org_id:
+        #     logging.info(f"Found Org ID {self.org_id}")
+        #     self.config_data = load_configuration(self.org_id)
+        # else:
+        #     logging.warning(f"Did not find guid in executable name")
+        #     self.config_data = None
 
     def setup_logging(self):
         setup_file_logging(self.config_data['org_id'])
