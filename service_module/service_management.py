@@ -52,7 +52,7 @@ def is_service_running(org_id=None):
     executable_name = os.path.basename(executable_path)
     for proc in psutil.process_iter(['pid', 'name']):
         if proc.info['name'] == executable_name:
-            return True
+            return executable_name
     return False
 
 

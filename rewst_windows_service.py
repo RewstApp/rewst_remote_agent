@@ -1,4 +1,5 @@
 import logging
+import psutil
 import servicemanager
 import subprocess
 import sys
@@ -6,12 +7,12 @@ import win32serviceutil
 import win32service
 import win32event
 #import time
-import win32timezone
+#import win32timezone
 from config_module.config_io import (
     get_org_id_from_executable_name,
     get_agent_executable_path
 )
-
+from service_module.service_management import is_service_running
 
 
 class RewstWindowsService(win32serviceutil.ServiceFramework):
@@ -50,13 +51,9 @@ class RewstWindowsService(win32serviceutil.ServiceFramework):
         if self.org_id:
             logging.info(f"Found Org ID {self.org_id}")
             self.agent_executable_path = get_agent_executable_path(self.org_id)
-            #self.config_data = load_configuration(self.org_id)
         else:
             logging.warning(f"Did not find guid in executable name")
-            #self.config_data = None
             return
-
-        #self.setup_logging()
 
 
     def SvcStop(self):
@@ -104,8 +101,27 @@ class RewstWindowsService(win32serviceutil.ServiceFramework):
                 self.process.wait()
 
             self.process = None
+
             logging.info("External process stopped.")
 
+        if is_service_running(self.org_id):
+            process_name = is_service_running(self.org_id)
+            try:
+                logging.info(f"Killing process {process_name} via psutil.")
+                kill_process_by_name(process_name)
+            except Exception as e:
+                logging.exception(f"Unable to forcibly kill the process: {e}")
+
+def kill_process_by_name(process_name):
+    """ Kills all processes matching 'process_name'. """
+    for proc in psutil.process_iter():
+        try:
+            # Check if process name matches
+            if process_name.lower() in proc.name().lower():
+                proc.kill()
+                logging.info(f"Process {proc.name()} with PID {proc.pid} was killed.")
+        except (psutil.NoSuchProcess, psutil.AccessDenied, psutil.ZombieProcess):
+            pass
 
 def main():
     logging.basicConfig(level=logging.INFO)
