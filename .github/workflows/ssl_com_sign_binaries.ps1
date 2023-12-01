@@ -65,6 +65,7 @@ foreach ($inputFile in $inputFiles) {
     
 }
 
+
 #Check if the signing was successful
 if ($LASTEXITCODE -eq 0) {
     Write-Host "Signing succeeded."
