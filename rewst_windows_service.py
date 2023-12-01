@@ -45,6 +45,7 @@ class RewstWindowsService(win32serviceutil.ServiceFramework):
         win32serviceutil.ServiceFramework.__init__(self, args)
         self.hWaitStop = win32event.CreateEvent(None, 0, 0, None)
         self.process = None
+        self.process_id = None
 
         self.org_id = get_org_id_from_executable_name(sys.argv)
 
@@ -81,47 +82,28 @@ class RewstWindowsService(win32serviceutil.ServiceFramework):
     def start_process(self):
         try:
             self.process = subprocess.Popen(self.agent_executable_path, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
-            logging.info("External process started.")
+            self.process_id = self.process.pid
+            logging.info(f"External process started with PID {self.process_id}.")
         except Exception as e:
             logging.exception(f"Failed to start external process: {e}")
             self.process = None
 
     def stop_process(self):
-        if self.process:
+        if self.process_id:
             try:
-                self.process.terminate()
-                self.process.wait(timeout=15)
-                try:
-                    self.process.kill()
-                except:
-                    pass
+                proc = psutil.Process(self.process_id)
+                proc.terminate()  # Attempt to terminate gracefully
+                proc.wait(timeout=15)
+                if proc.is_running():
+                    proc.kill()  # Force kill if still running
+            except psutil.NoSuchProcess:
+                pass  # Process already terminated
             except Exception as e:
-                logging.exception(f"Unable to terminate process ({e}), attempting to kill().")
-                self.process.kill()
-                self.process.wait()
-
-            self.process = None
-
-            logging.info("External process stopped.")
-
-        if is_service_running(self.org_id):
-            process_name = is_service_running(self.org_id)
-            try:
-                logging.info(f"Killing process {process_name} via psutil.")
-                kill_process_by_name(process_name)
-            except Exception as e:
-                logging.exception(f"Unable to forcibly kill the process: {e}")
-
-def kill_process_by_name(process_name):
-    """ Kills all processes matching 'process_name'. """
-    for proc in psutil.process_iter():
-        try:
-            # Check if process name matches
-            if process_name.lower() in proc.name().lower():
-                proc.kill()
-                logging.info(f"Process {proc.name()} with PID {proc.pid} was killed.")
-        except (psutil.NoSuchProcess, psutil.AccessDenied, psutil.ZombieProcess):
-            pass
+                logging.exception(f"Unable to terminate process ({e}).")
+            finally:
+                self.process = None
+                self.process_id = None
+                logging.info("External process stopped.")
 
 def main():
     logging.basicConfig(level=logging.INFO)
