@@ -5,7 +5,8 @@ import psutil
 import subprocess
 from config_module.config_io import (
     get_agent_executable_path,
-    get_config_file_path
+    get_config_file_path,
+    get_service_executable_path
 )
 
 os_type = platform.system().lower()
@@ -58,6 +59,7 @@ def is_service_running(org_id=None):
 def install_service(org_id):
     executable_path = get_agent_executable_path(org_id)
     service_name = get_service_name(org_id)
+
     logging.info(f"Installing {service_name} Service...")
     config_file_path = get_config_file_path(org_id)
     if is_service_installed(org_id):
@@ -65,15 +67,9 @@ def install_service(org_id):
     else:
         if os_type == "windows":
             logging.info(f"Installing Windows Service: {service_name}")
-            from rewst_windows_service import RewstWindowsService
-            display_name = RewstWindowsService.get_service_display_name()
-            win32serviceutil.InstallService(
-                f"{RewstWindowsService.__module__}.{RewstWindowsService.__name__}",
-                service_name,
-                displayName=display_name,
-                startType=win32service.SERVICE_AUTO_START,
-                exeName=executable_path
-            )
+            # install using service executable
+            windows_service_path = get_service_executable_path(org_id)
+            subprocess.run(([windows_service_path,"install"]))
 
         elif os_type == "linux":
             systemd_service_content = f"""

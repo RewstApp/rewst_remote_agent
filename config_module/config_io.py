@@ -60,6 +60,16 @@ def get_agent_executable_path(org_id):
     executable_path = f"{get_executable_folder(org_id)}{executable_name}"
     return executable_path
 
+def get_service_executable_path(org_id):
+    os_type = platform.system().lower()
+    if os_type == "windows":
+        executable_name = f"rewst_remote_agent_{org_id}.win.exe"
+        executable_path = f"{get_executable_folder(org_id)}{executable_name}"
+    else:
+        logging.info(f"Windows Service executable is only necessary for Windows, not {os_type}")
+        executable_path = None
+    return executable_path
+
 def get_logging_path(org_id):
     os_type = platform.system().lower()
     base_dir=site_config_dir()

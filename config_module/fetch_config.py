@@ -13,6 +13,11 @@ from .host_info import (
     get_ad_domain_name,
     get_entra_domain
 )
+from config_module.config_io import (
+    get_agent_executable_path,
+    get_config_file_path,
+    get_service_executable_path
+)
 
 # Put Timestamps on logging entries
 logging.basicConfig(
@@ -30,7 +35,7 @@ REQUIRED_KEYS = [
 ]
 
 
-async def fetch_configuration(config_url, secret=None):
+async def fetch_configuration(config_url, secret=None, org_id=None):
     # Collect host information
     ad_domain = get_ad_domain_name()
     if ad_domain:
@@ -40,7 +45,8 @@ async def fetch_configuration(config_url, secret=None):
 
     host_info = {
         "agent_version": (__version__.__version__ or None),
-        "executable_path": sys.executable,
+        "agent_executable_path": get_agent_executable_path(org_id),
+        "service_executable_path": get_service_executable_path(org_id),
         "hostname": socket.gethostname(),
         "mac_address": get_mac_address(),
         "operating_system": platform.platform(),

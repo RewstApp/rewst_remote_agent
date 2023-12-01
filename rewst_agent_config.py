@@ -10,6 +10,7 @@ from urllib.parse import urlparse
 from config_module.config_io import (
     get_service_manager_path,
     get_agent_executable_path,
+    get_service_executable_path,
     save_configuration
 )
 from config_module.fetch_config import fetch_configuration
@@ -24,6 +25,7 @@ logging.basicConfig(
 logging.info(f"Running on {platform.system()} {platform.release()}")
 # asyncio.get_event_loop().set_debug(True)
 
+os_type = platform.system().lower()
 
 def is_valid_url(url):
     # Check if the URL is parsable
@@ -54,36 +56,38 @@ async def remove_old_files(org_id):
     agent_executable_path = get_agent_executable_path(org_id)
     file_paths = [service_manager_path, agent_executable_path]
 
+    if os_type == "windows":
+        service_executable_path = get_service_executable_path(org_id)
+        file_paths.append(service_executable_path)
+
     for file_path in file_paths:
         if os.path.exists(file_path):
             # Construct the new file name with '_oldver'
             new_file_path = f"{file_path}_oldver"
             try:
-                # Remove any existing old version
+                # cycle out old versions
                 if os.path.exists(new_file_path):
                     os.remove(new_file_path)
-                # Rename the current file to old version
                 os.rename(file_path, new_file_path)
                 logging.info(f"Renamed {file_path} to {new_file_path}")
             except OSError as e:
                 logging.error(f"Error renaming file {file_path}: {e}")
 
 async def wait_for_files(org_id, timeout=3600) -> bool:
-    """
-    Waits for the service manager and service agent executables to be written to the filesystem.
-
-    :param org_id: The organization ID used to construct the file paths.
-    :param timeout: The maximum time to wait, in seconds. Default is 3600 seconds (60 minutes).
-    :return: True if both files were written, False if the timeout was reached.
-    """
-
     logging.info("Waiting for files to be written...")
     # Determine the file paths using functions from config_io.py
     service_manager_path = get_service_manager_path(org_id)
     logging.info(f"Awaiting Service Manager File: {service_manager_path} ...")
+
     agent_executable_path = get_agent_executable_path(org_id)
     logging.info(f"Awaiting Agent Service File: {agent_executable_path} ...")
+
     file_paths = [service_manager_path, agent_executable_path]
+
+    if os_type == "windows":
+        service_executable_path = get_service_executable_path(org_id)
+        logging.info(f"Awaiting Service Executable File: {service_executable_path} ...")
+        file_paths.append(service_executable_path)
 
     start_time = asyncio.get_running_loop().time()
 
@@ -167,7 +171,7 @@ async def check_service_status(org_id):
         return False
 
 
-def end_program(exit_level=1, service_status=None):
+def end_program(exit_level=1):
     logging.info(f"Agent configuration is exiting with exit level {exit_level}.")
     sys.exit(exit_level)
 
@@ -188,14 +192,15 @@ async def main(config_url, config_secret):
         if not (config_url and config_secret):
             print("Error: Missing required parameters.")
             print("Please make sure '--config-url' and '--config-secret' are provided.")
-            sys.exit(1)  # Exit with a non-zero status to indicate an error
+            end_program(1)
 
         # Fetch Configuration
         logging.info("Fetching configuration from Rewst...")
-        config_data = await fetch_configuration(config_url, config_secret)
+        url_org_id = config_url.split("/")[-1]
+        config_data = await fetch_configuration(config_url, config_secret, url_org_id)
         if not config_data:
             logging.error("Failed to fetch configuration.")
-            return
+            end_program(2)
 
         # Save Configuration to JSON file
         logging.info("Saving configuration to file...")
