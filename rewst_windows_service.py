@@ -78,6 +78,7 @@ class RewstWindowsService(win32serviceutil.ServiceFramework):
         while True:
             # Check if stop signal received
             if win32event.WaitForSingleObject(self.hWaitStop, 5000) == win32event.WAIT_OBJECT_0:
+                logging.info("Stop signal received.")
                 break
             # Check if process is still running
             if self.process.poll() is not None:
