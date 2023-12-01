@@ -6,24 +6,13 @@ import sys
 import win32serviceutil
 import win32service
 import win32event
-#import time
-#import win32timezone
 from config_module.config_io import (
     get_org_id_from_executable_name,
     get_agent_executable_path
 )
-from service_module.service_management import is_service_running
 
 
 class RewstWindowsService(win32serviceutil.ServiceFramework):
-    #_svc_name_ = self.get_service_name()
-    #_svc_display_name_ = 'Rewst Agent Service'
-
-    #config_data = None
-
-    # @classmethod
-    # def parse_command_line(cls):
-    #     win32serviceutil.HandleCommandLine(cls)
 
     @classmethod
     def set_service_name(cls, org_id):
