@@ -93,7 +93,11 @@ class RewstWindowsService(win32serviceutil.ServiceFramework):
         if self.process:
             try:
                 self.process.terminate()
-                self.process.wait(timeout=5)
+                self.process.wait(timeout=15)
+                try:
+                    self.process.kill()
+                except:
+                    pass
             except Exception as e:
                 logging.exception(f"Unable to terminate process ({e}), attempting to kill().")
                 self.process.kill()
