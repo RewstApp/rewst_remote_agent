@@ -11,7 +11,8 @@ $appDistPath =  'D:\a\rewst_remote_agent\rewst_remote_agent\dist'
 $inputFiles = @(
     "rewst_agent_config.exe",
     "rewst_service_manager.exe",
-    "rewst_windows_service.exe"
+    "rewst_windows_service.exe",
+    "rewst_remote_agent.exe"
 )
 $outputDirPath = "$appDistPath\signed"
 
@@ -36,7 +37,7 @@ Write-Host "codeSignDirectory contents:"
 dir $codeSignDirectory
 
 # Uncomment when faking it
-#Set-Location $codeSignDirectory
+Set-Location $codeSignDirectory
 
 
 # Sign Application
@@ -53,13 +54,13 @@ foreach ($inputFile in $inputFiles) {
     )
 
     # Uncomment this to sign for reals
-    Start-Process -FilePath ".\CodeSignTool.bat" -ArgumentList $signArguments -Wait -NoNewWindow
-    Write-Host "Signed to $outputDirPath\$inputFile"
+    #Start-Process -FilePath ".\CodeSignTool.bat" -ArgumentList $signArguments -Wait -NoNewWindow
+    #Write-Host "Signed to $outputDirPath\$inputFile"
 
 
-    # UnComment these to do fake sign
-    #Write-Host "Faking it: Signed to $outputDirPath\$inputFile"
-    #Copy-Item $appDistPath\$inputFile $outputDirPath
+    UnComment these to do fake sign
+    Write-Host "Faking it: Signed to $outputDirPath\$inputFile"
+    Copy-Item $appDistPath\$inputFile $outputDirPath
 
     
 }

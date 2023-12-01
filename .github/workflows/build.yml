@@ -108,6 +108,7 @@ jobs:
         path: |
           ./dist/signed/rewst_windows_service.exe
           ./dist/signed/rewst_service_manager.exe
+          ./dist/signed/rewst_remote_agent.exe
           ./dist/signed/rewst_agent_config.exe
 
 
@@ -131,11 +132,13 @@ jobs:
         draft: false
         prerelease: false
 
+
+
     - name: Download all assets
       uses: actions/download-artifact@v2
 
     # Windows
-    - name: Upload Release Assets - Windows (rewst_remote_agent)
+    - name: Upload Release Assets - Windows (rewst_windows_service)
       uses: actions/upload-release-asset@v1
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -143,6 +146,16 @@ jobs:
         upload_url: ${{ steps.create_release.outputs.upload_url }} 
         asset_path: ./windows-latest-signed-asset/rewst_windows_service.exe
         asset_name: rewst_windows_service.win.exe
+        asset_content_type: application/octet-stream
+
+    - name: Upload Release Assets - Windows (rewst_remote_agent)
+      uses: actions/upload-release-asset@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        upload_url: ${{ steps.create_release.outputs.upload_url }}
+        asset_path: ./windows-latest-signed-asset/rewst_remote_agent.exe
+        asset_name: rewst_windows_remote_agent.win.exe
         asset_content_type: application/octet-stream
 
     - name: Upload Release Assets - Windows (rewst_service_manager)
