@@ -9,13 +9,10 @@ import win32event
 #import time
 #import win32timezone
 from config_module.config_io import (
-    load_configuration,
     get_org_id_from_executable_name,
     get_agent_executable_path
 )
-# from argparse import ArgumentParser
 
-from iot_hub_module.connection_management import iot_hub_connection_loop
 
 
 class RewstWindowsService(win32serviceutil.ServiceFramework):
@@ -54,10 +51,10 @@ class RewstWindowsService(win32serviceutil.ServiceFramework):
         if self.org_id:
             logging.info(f"Found Org ID {self.org_id}")
             self.agent_executable_path = get_agent_executable_path(self.org_id)
-            self.config_data = load_configuration(self.org_id)
+            #self.config_data = load_configuration(self.org_id)
         else:
             logging.warning(f"Did not find guid in executable name")
-            self.config_data = None
+            #self.config_data = None
             return
 
         #self.setup_logging()
@@ -87,7 +84,7 @@ class RewstWindowsService(win32serviceutil.ServiceFramework):
 
     def start_process(self):
         try:
-            self.process = subprocess.Popen((self.agent_executable_path), stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+            self.process = subprocess.Popen(self.agent_executable_path, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
             logging.info("External process started.")
         except Exception as e:
             logging.exception(f"Failed to start external process: {e}")
@@ -116,14 +113,8 @@ def main():
         RewstWindowsService._svc_name_ = f"RewstRemoteAgent_{org_id}"
         RewstWindowsService._svc_display_name_ = f"Rewst Agent Service for Org {org_id}"
         logging.info(f"Found Org ID {org_id}")
-        config_data = load_configuration(org_id)
     else:
         logging.warning("Org ID not found in executable name")
-        config_data = None
-
-    if config_data is None:
-        logging.error("No configuration found. Exiting.")
-        return
 
     if len(sys.argv) == 1:
         servicemanager.Initialize()
