@@ -10,6 +10,7 @@ from config_module.config_io import (
     get_org_id_from_executable_name,
     get_agent_executable_path
 )
+from service_module.signature_handling import is_signature_valid
 
 
 class RewstWindowsService(win32serviceutil.ServiceFramework):
@@ -70,9 +71,13 @@ class RewstWindowsService(win32serviceutil.ServiceFramework):
 
     def start_process(self):
         try:
-            self.process = subprocess.Popen(self.agent_executable_path, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
-            self.process_id = self.process.pid
-            logging.info(f"External process started with PID {self.process_id}.")
+            if is_signature_valid(self.agent_executable_path):
+                logging.info(f"Verified that the executable {self.agent_executable_path} is valid signed.")
+                self.process = subprocess.Popen(self.agent_executable_path, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+                self.process_id = self.process.pid
+                logging.info(f"External process started with PID {self.process_id}.")
+            else:
+                raise Exception("Agent executable is not valid.")
         except Exception as e:
             logging.exception(f"Failed to start external process: {e}")
             self.process = None
