@@ -1,18 +1,19 @@
 import asyncio
 import logging
 import servicemanager
+import subprocess
 import sys
 import win32serviceutil
 import win32service
 import win32event
-import time
-import win32timezone
+#import time
+#import win32timezone
 from config_module.config_io import (
     load_configuration,
-    setup_file_logging,
-    get_org_id_from_executable_name
+    get_org_id_from_executable_name,
+    get_agent_executable_path
 )
-from argparse import ArgumentParser
+# from argparse import ArgumentParser
 
 from iot_hub_module.connection_management import iot_hub_connection_loop
 
@@ -23,9 +24,9 @@ class RewstWindowsService(win32serviceutil.ServiceFramework):
 
     #config_data = None
 
-    @classmethod
-    def parse_command_line(cls):
-        win32serviceutil.HandleCommandLine(cls)
+    # @classmethod
+    # def parse_command_line(cls):
+    #     win32serviceutil.HandleCommandLine(cls)
 
     @classmethod
     def set_service_name(cls, org_id):
@@ -46,82 +47,60 @@ class RewstWindowsService(win32serviceutil.ServiceFramework):
 
         win32serviceutil.ServiceFramework.__init__(self, args)
         self.hWaitStop = win32event.CreateEvent(None, 0, 0, None)
-        #self.loop = asyncio.get_event_loop()
-        self.is_running = True
-        #self.config_data = RewstWindowsService.config_data
-        self.stop_event = None
+        self.process = None
 
         self.org_id = get_org_id_from_executable_name(sys.argv)
 
         if self.org_id:
             logging.info(f"Found Org ID {self.org_id}")
+            self.agent_executable_path = get_agent_executable_path(self.org_id)
             self.config_data = load_configuration(self.org_id)
         else:
             logging.warning(f"Did not find guid in executable name")
             self.config_data = None
+            return
 
         #self.setup_logging()
 
-    def setup_logging(self):
-        setup_file_logging(self.org_id)
 
     def SvcStop(self):
         self.ReportServiceStatus(win32service.SERVICE_STOP_PENDING)
-        self.stop()
-        if self.stop_event:
-            self.loop.call_soon_threadsafe(self.stop_event.set)
-        #self.is_running = False
-        self.loop.call_soon_threadsafe(self.loop.stop)
+        self.stop_process()
         win32event.SetEvent(self.hWaitStop)
+        self.ReportServiceStatus(win32service.SERVICE_STOPPED)
+
 
     def SvcDoRun(self):
         logging.info(f"Starting SvcDoRun for {self._svc_name_}")
         self.ReportServiceStatus(win32service.SERVICE_START_PENDING)
+        self.start_process()
         self.ReportServiceStatus(win32service.SERVICE_RUNNING)
+        while True:
+            # Check if stop signal received
+            if win32event.WaitForSingleObject(self.hWaitStop, 5000) == win32event.WAIT_OBJECT_0:
+                break
+            # Check if process is still running
+            if self.process.poll() is not None:
+                logging.warning("External process terminated unexpectedly.")
+                break
 
-        loop = asyncio.new_event_loop()
-        asyncio.set_event_loop(loop)
-        self.stop_event = asyncio.Event()
+    def start_process(self):
+        self.process = subprocess.Popen(self.agent_executable_path)
+        logging.info("External process started.")
 
-        try:
-            loop.create_task(iot_hub_connection_loop(self.config_data, self.stop_event))
-            loop.run_forever()
-        except Exception as e:
-            logging.error(f"Service failed: {e}")
-            loop.close()
-            servicemanager.LogErrorMsg(f"Service failed: {e}")
-        finally:
-            loop.close()
+    def stop_process(self):
+        if self.process:
+            try:
+                self.process.terminate()
+                self.process.wait(timeout=5)
+            except Exception as e:
+                logging.exception(f"Unable to terminate process ({e}), attempting to kill().")
+                self.process.kill()
+                self.process.wait()
 
+            self.process = None
+            logging.info("External process stopped.")
 
-
-        # Probably trahs
-        # self.ReportServiceStatus(win32service.SERVICE_START_PENDING)
-        # self.start()
-        # self.ReportServiceStatus(win32service.SERVICE_RUNNING)
-        # logging.info(f"Running As a Service named {self._svc_name_}")
-        # #servicemanager.LogMsg(servicemanager.EVENTLOG_INFORMATION_TYPE,servicemanager.PYS_SERVICE_STARTED,(self._svc_name_, ''))
-        # self.stop_event = asyncio.Event()
-        # self.loop.run_until_complete(iot_hub_connection_loop(self.config_data, self.stop_event))
-        ##asyncio.ensure_future(iot_hub_connection_loop(self.config_data, self.stop_event))
-        ##self.loop.run_forever()
-
-
-        # while True:
-        #     import time
-        #     logging.info("Service is running in test mode.")
-        #     time.sleep(10)  # Sleep for 10 seconds
-        #
-        #     # Check if a stop request has been made
-        #     if self.stop_event.is_set():
-        #         logging.info("Service stop requested. Exiting test loop.")
-        #         break
-
-    def start(self):
-        pass
-
-    def stop(self):
-        pass
 
 def main():
     logging.basicConfig(level=logging.INFO)
@@ -141,13 +120,6 @@ def main():
         logging.error("No configuration found. Exiting.")
         return
 
-    #stop_event = asyncio.Event()
-    #
-    # if foreground:
-    #     logging.info("Running in foreground mode")
-    #     asyncio.run(iot_hub_connection_loop(config_data, stop_event))
-    # else:
-    #     logging.info("Running as a Windows Service")
     if len(sys.argv) == 1:
         servicemanager.Initialize()
         servicemanager.PrepareToHostSingle(RewstWindowsService)
@@ -157,23 +129,4 @@ def main():
 
 
 if __name__ == '__main__':
-
-    # parser = ArgumentParser(description="Run the Rewst Remote Agent.")
-    # parser.add_argument('--foreground', action='store_true', help='Run the service in foreground mode.')
-    # args = parser.parse_args()
-    #
-    # logging.basicConfig(level=logging.INFO)
     main()
-
-    # org_id = get_org_id_from_executable_name(sys.argv)
-    #
-    # if org_id:
-    #     RewstWindowsService._svc_name_ = f"RewstRemoteAgent_{org_id}"
-    #     RewstWindowsService._svc_display_name_ = f"Rewst Agent Service for Org {org_id}"
-    #
-    # if len(sys.argv) == 1:
-    #     servicemanager.Initialize()
-    #     servicemanager.PrepareToHostSingle(RewstWindowsService)
-    #     servicemanager.StartServiceCtrlDispatcher()
-    # else:
-    #     win32serviceutil.HandleCommandLine(RewstWindowsService)
