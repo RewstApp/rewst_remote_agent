@@ -1,4 +1,3 @@
-import asyncio
 import logging
 import servicemanager
 import subprocess
@@ -7,7 +6,7 @@ import win32serviceutil
 import win32service
 import win32event
 #import time
-#import win32timezone
+import win32timezone
 from config_module.config_io import (
     get_org_id_from_executable_name,
     get_agent_executable_path

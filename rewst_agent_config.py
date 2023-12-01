@@ -15,6 +15,7 @@ from config_module.config_io import (
 )
 from config_module.fetch_config import fetch_configuration
 from iot_hub_module.connection_management import ConnectionManager
+from service_module.service_management import is_service_running
 
 # Configure logging
 logging.basicConfig(
@@ -150,12 +151,7 @@ async def install_and_start_service(org_id):
 
 
 async def check_service_status(org_id):
-    """
-    Checks the status of the service using the rewst_service_manager executable.
-    
-    :param org_id: The organization ID used to determine the executable path.
-    :return: True if the service is running, False otherwise.
-    """
+
     # Obtain the explicit path to the rewst_service_manager executable
     service_manager_path = get_service_manager_path(org_id)
 
@@ -255,12 +251,11 @@ async def main(config_url, config_secret):
         #
         # end_program(exit_level)
 
-        while not (await check_service_status(org_id)):
+        while not (is_service_running(org_id)):
             logging.info("Waiting for the service to start...")
             await asyncio.sleep(5)  # Sleep for 5 seconds before checking the status again
-            exit_level = 0
 
-        end_program(exit_level)
+        end_program(0)
 
     except Exception as e:
         logging.exception(f"An error occurred: {e}")
