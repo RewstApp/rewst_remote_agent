@@ -49,7 +49,7 @@ async def main():
                 logging.info(f"Found Org ID {org_id} via executable name.")
                 config_data = load_configuration(org_id)
             else:
-                logging.warning(f"Did not find guid in executable name".)
+                logging.warning(f"Did not find guid in executable name.")
                 config_data = None
 
         # Exit if no configuration was found
