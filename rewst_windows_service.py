@@ -73,8 +73,8 @@ class RewstWindowsService(win32serviceutil.ServiceFramework):
     def SvcDoRun(self):
         logging.info(f"Starting SvcDoRun for {self._svc_name_}")
         self.ReportServiceStatus(win32service.SERVICE_START_PENDING)
-        self.start_process()
         self.ReportServiceStatus(win32service.SERVICE_RUNNING)
+        self.start_process()
         while True:
             # Check if stop signal received
             if win32event.WaitForSingleObject(self.hWaitStop, 5000) == win32event.WAIT_OBJECT_0:
@@ -85,8 +85,12 @@ class RewstWindowsService(win32serviceutil.ServiceFramework):
                 break
 
     def start_process(self):
-        self.process = subprocess.Popen(self.agent_executable_path)
-        logging.info("External process started.")
+        try:
+            self.process = subprocess.Popen((self.agent_executable_path), stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+            logging.info("External process started.")
+        except Exception as e:
+            logging.exception(f"Failed to start external process: {e}")
+            self.process = None
 
     def stop_process(self):
         if self.process:
