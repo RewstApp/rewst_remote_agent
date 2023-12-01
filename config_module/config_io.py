@@ -137,7 +137,7 @@ def load_configuration(org_id=None, config_file_path=None):
 def get_org_id_from_executable_name(commandline_args):
     executable_path = commandline_args[0]  # Gets the file name of the current script
     #pattern = re.compile(r'rewst_remote_agent_(.+?)\.')
-    pattern = re.compile(r'rewst_windows_service_(.+?)\.')
+    pattern = re.compile(r'rewst_.*_(.+?)\.')
     match = pattern.search(executable_path)
     if match:
         return match.group(1)
