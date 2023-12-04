@@ -89,31 +89,34 @@ class RewstWindowsService(win32serviceutil.ServiceFramework):
             self.process_ids = []
 
     def stop_process(self):
+        process_name = os.path.basename(self.agent_executable_path)
+
         for pid in self.process_ids:
             try:
                 logging.info(f"Attempting to terminate process with PID {pid}")
                 proc = psutil.Process(pid)
                 proc.terminate()
-                proc.wait(timeout=15)
-                if proc.is_running():
-                    logging.warning(f"Process with PID {pid} is still running. Attempting to kill.")
+                try:
+                    proc.wait(timeout=10)  # Wait for 10 seconds
+                except psutil.TimeoutExpired:
+                    logging.warning(f"Process with PID {pid} did not terminate in time. Attempting to kill.")
                     proc.kill()
-
-                # Extra kill
-                time.sleep(10)
-                process_name = os.path.basename(self.agent_executable_path).replace('.exe', '')
-                for proc in psutil.process_iter(['pid', 'name']):
-                    if proc.info['name'] == process_name:
-                        logging.info(f"Killing process {proc.info['pid']}.")
-                        proc.kill()
-                        time.sleep(3)
             except psutil.NoSuchProcess:
                 logging.info(f"Process with PID {pid} does not exist or has already terminated.")
             except Exception as e:
                 logging.exception(f"Unable to terminate process ({e}).")
+
+        # Double-check and kill any remaining processes with the same name
+        for proc in psutil.process_iter(['pid', 'name']):
+            if proc.info['name'] == process_name:
+                try:
+                    logging.info(f"Force killing leftover process with PID {proc.info['pid']}.")
+                    proc.kill()
+                except Exception as e:
+                    logging.exception(f"Failed to kill leftover process ({e}).")
+
         self.process_ids = []
         logging.info("All processes stopped.")
-
 
 
 def main():
