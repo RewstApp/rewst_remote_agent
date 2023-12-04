@@ -49,7 +49,7 @@ def fetch_checksum_from_github(checksum_file_name):
         return None
 
     try:
-        with httpx.Client() as client:
+        with httpx.Client(follow_redirects=True) as client:
             response = client.get(checksum_file_url)
             response.raise_for_status()
             checksum_data = response.text.strip()
