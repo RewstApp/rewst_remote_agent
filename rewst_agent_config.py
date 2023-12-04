@@ -28,6 +28,7 @@ logging.info(f"Running on {platform.system()} {platform.release()}")
 
 os_type = platform.system().lower()
 
+
 def is_valid_url(url):
     # Check if the URL is parsable
     try:
@@ -51,6 +52,7 @@ def is_base64(sb):
         print(e)
         return False
 
+
 async def remove_old_files(org_id):
     # Determine the file paths using functions from config_io.py
     service_manager_path = get_service_manager_path(org_id)
@@ -73,6 +75,7 @@ async def remove_old_files(org_id):
                 logging.info(f"Renamed {file_path} to {new_file_path}")
             except OSError as e:
                 logging.error(f"Error renaming file {file_path}: {e}")
+
 
 async def wait_for_files(org_id, timeout=3600) -> bool:
     logging.info("Waiting for files to be written...")
