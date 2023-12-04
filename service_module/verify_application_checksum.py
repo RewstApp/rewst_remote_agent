@@ -14,9 +14,9 @@ def is_checksum_valid(executable_path):
     checksum_file_name = re.sub(r'_[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}', '',
                                 checksum_file_name)
 
-    github_checksum = fetch_checksum_from_github(checksum_file_name)
+    github_checksum = fetch_checksum_from_github(checksum_file_name).lower()
     logging.info(f"GH Checksum: {github_checksum}")
-    local_checksum = calculate_local_file_checksum(executable_path)
+    local_checksum = calculate_local_file_checksum(executable_path).lower()
     logging.info(f"Local Checksum: {local_checksum}")
 
     if github_checksum is None or local_checksum is None:
