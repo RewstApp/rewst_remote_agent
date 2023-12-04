@@ -11,7 +11,7 @@ def is_checksum_valid(executable_path):
     checksum_file_name = f"{executable_name}.sha256"
 
     # Strip out the GUID if present in the filename
-    checksum_file_name = re.sub(r'_[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$', '',
+    checksum_file_name = re.sub(r'_[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}', '',
                                 checksum_file_name)
 
     github_checksum = fetch_checksum_from_github(checksum_file_name)
