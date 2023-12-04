@@ -10,7 +10,7 @@ from config_module.config_io import (
     get_org_id_from_executable_name,
     get_agent_executable_path
 )
-from service_module.signature_handling import is_signature_valid
+from service_module.verify_application_checksum import is_checksum_valid
 from __version__ import __version__
 
 
@@ -70,7 +70,7 @@ class RewstWindowsService(win32serviceutil.ServiceFramework):
 
     def start_process(self):
         try:
-            if is_signature_valid(self.agent_executable_path):
+            if is_checksum_valid(self.agent_executable_path):
                 logging.info(f"Verified that the executable {self.agent_executable_path} is valid signed.")
                 self.process = subprocess.Popen(self.agent_executable_path, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
                 self.process_id = self.process.pid
