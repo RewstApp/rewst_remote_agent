@@ -1,6 +1,7 @@
 # import win32api
 # import win32con
 # import win32security
+from __version__ import __version__
 
 def is_signature_valid(executable_path):
     # WINTRUST_ACTION_GENERIC_VERIFY_V2 = "{00AAC56B-CD44-11d0-8CC2-00C04FC295EE}"

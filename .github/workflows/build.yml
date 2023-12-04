@@ -111,6 +111,14 @@ jobs:
           ./dist/signed/rewst_remote_agent.exe
           ./dist/signed/rewst_agent_config.exe
 
+    - name: Generate Checksums (Windows)
+      if: matrix.os == 'windows-latest'
+      run: |
+        Get-FileHash -Path ./dist/signed/rewst_windows_service.exe -Algorithm SHA256 | Format-List | Out-File -FilePath ./dist/signed/rewst_windows_service.exe.sha256
+        Get-FileHash -Path ./dist/signed/rewst_remote_agent.exe -Algorithm SHA256 | Format-List | Out-File -FilePath ./dist/signed/rewst_remote_agent.exe.sha256
+        Get-FileHash -Path ./dist/signed/rewst_remote_agent.exe -Algorithm SHA256 | Format-List | Out-File -FilePath ./dist/signed/rewst_agent_config.exe.sha256
+        Get-FileHash -Path ./dist/signed/rewst_remote_agent.exe -Algorithm SHA256 | Format-List | Out-File -FilePath ./dist/signed/rewst_service_manager.exe.sha256
+
 
 
   release:
@@ -131,14 +139,6 @@ jobs:
         release_name: Release ${{ needs.bump_version.outputs.new_tag }}
         draft: false
         prerelease: false
-
-    - name: Generate Checksums (Windows)
-      if: matrix.os == 'windows-latest'
-      run: |
-        Get-FileHash -Path ./dist/signed/rewst_windows_service.exe -Algorithm SHA256 | Format-List | Out-File -FilePath ./dist/signed/rewst_windows_service.exe.sha256
-        Get-FileHash -Path ./dist/signed/rewst_remote_agent.exe -Algorithm SHA256 | Format-List | Out-File -FilePath ./dist/signed/rewst_remote_agent.exe.sha256
-        Get-FileHash -Path ./dist/signed/rewst_remote_agent.exe -Algorithm SHA256 | Format-List | Out-File -FilePath ./dist/signed/rewst_agent_config.exe.sha256
-        Get-FileHash -Path ./dist/signed/rewst_remote_agent.exe -Algorithm SHA256 | Format-List | Out-File -FilePath ./dist/signed/rewst_service_manager.exe.sha256
 
 
     - name: Download all assets
@@ -184,6 +184,16 @@ jobs:
         asset_path: ./windows-latest-signed-asset/rewst_agent_config.exe
         asset_name: rewst_agent_config.win.exe
         asset_content_type: application/octet-stream
+
+    - name: Upload Checksum Files (Windows)
+      uses: actions/upload-release-asset@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        upload_url: ${{ steps.create_release.outputs.upload_url }}
+        asset_path: ./windows-latest-signed-asset/rewst_windows_service.exe.sha256
+        asset_name: rewst_windows_service.win.exe.sha256
+        asset_content_type: text/plain
 
     # Linux
     - name: Upload Release Assets - Linux (rewst_remote_agent)
@@ -246,14 +256,3 @@ jobs:
         asset_path: ./macos-latest-asset/rewst_agent_config
         asset_name: rewst_agent_config.macos.bin
         asset_content_type: application/octet-stream
-
-    - name: Upload Checksum Files (Windows)
-      if: matrix.os == 'windows-latest'
-      uses: actions/upload-release-asset@v1
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      with:
-        upload_url: ${{ steps.create_release.outputs.upload_url }}
-        asset_path: ./windows-latest-signed-asset/rewst_windows_service.exe.sha256
-        asset_name: rewst_windows_service.win.exe.sha256
-        asset_content_type: text/plain

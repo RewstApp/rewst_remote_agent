@@ -11,6 +11,7 @@ from config_module.config_io import (
     get_agent_executable_path
 )
 from service_module.signature_handling import is_signature_valid
+from __version__ import __version__
 
 
 class RewstWindowsService(win32serviceutil.ServiceFramework):
