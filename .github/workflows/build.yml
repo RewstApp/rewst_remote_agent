@@ -189,7 +189,7 @@ jobs:
         asset_name: rewst_agent_config.win.exe
         asset_content_type: application/octet-stream
 
-    - name: Upload Checksum Files (Windows)
+    - name: Upload Checksum File - Windows (rewst_windows_service)
       uses: actions/upload-release-asset@v1
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -197,6 +197,36 @@ jobs:
         upload_url: ${{ steps.create_release.outputs.upload_url }}
         asset_path: ./windows-latest-signed-asset/rewst_windows_service.exe.sha256
         asset_name: rewst_windows_service.win.exe.sha256
+        asset_content_type: text/plain
+
+    - name: Upload Checksum File - Windows (rewst_remote_agent)
+      uses: actions/upload-release-asset@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        upload_url: ${{ steps.create_release.outputs.upload_url }}
+        asset_path: ./windows-latest-signed-asset/rewst_remote_agent.exe.sha256
+        asset_name: rewst_remote_agent.win.exe.sha256
+        asset_content_type: text/plain
+
+    - name: Upload Checksum File - Windows (rewst_service_manager)
+      uses: actions/upload-release-asset@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        upload_url: ${{ steps.create_release.outputs.upload_url }}
+        asset_path: ./windows-latest-signed-asset/rewst_service_manager.exe.sha256
+        asset_name: rewst_service_manager.win.exe.sha256
+        asset_content_type: text/plain
+
+    - name: Upload Checksum File - Windows (rewst_agent_config)
+      uses: actions/upload-release-asset@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        upload_url: ${{ steps.create_release.outputs.upload_url }}
+        asset_path: ./windows-latest-signed-asset/rewst_agent_config.exe.sha256
+        asset_name: rewst_agent_config.win.exe.sha256
         asset_content_type: text/plain
 
     # Linux
