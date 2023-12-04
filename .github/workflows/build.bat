@@ -1,2 +1,11 @@
 @echo off
-pyinstaller --icon=logo-rewsty.ico --version-file=version.txt --onefile rewst_remote_agent.py config_module.py service_manager.py __version__.py
+REM Explicitly include the pywin32 module
+SET PYWIN32_INCLUDE=--hidden-import=pywin32 --hidden-import win32timezone
+
+pyinstaller %PYWIN32_INCLUDE% --name=rewst_remote_agent --icon=logo-rewsty.ico --onefile --version-file=version.txt rewst_remote_agent.py
+
+pyinstaller %PYWIN32_INCLUDE% --name=rewst_service_manager --icon=logo-rewsty.ico --onefile --version-file=version.txt rewst_service_manager.py
+
+pyinstaller %PYWIN32_INCLUDE% --name=rewst_agent_config --icon=logo-rewsty.ico --onefile --version-file=version.txt rewst_agent_config.py
+
+pyinstaller %PYWIN32_INCLUDE% --name=rewst_windows_service --icon=logo-rewsty.ico --onefile --version-file=version.txt rewst_windows_service.py
