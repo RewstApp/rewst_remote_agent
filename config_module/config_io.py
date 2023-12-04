@@ -60,6 +60,7 @@ def get_agent_executable_path(org_id):
     executable_path = f"{get_executable_folder(org_id)}{executable_name}"
     return executable_path
 
+
 def get_service_executable_path(org_id):
     os_type = platform.system().lower()
     if os_type == "windows":
@@ -69,6 +70,7 @@ def get_service_executable_path(org_id):
         logging.info(f"Windows Service executable is only necessary for Windows, not {os_type}")
         executable_path = None
     return executable_path
+
 
 def get_logging_path(org_id):
     os_type = platform.system().lower()
@@ -85,6 +87,7 @@ def get_logging_path(org_id):
         exit(1)
     logging.info(f"Logging to: {log_path}")
     return log_path
+
 
 def get_config_file_path(org_id):
     os_type = platform.system().lower()

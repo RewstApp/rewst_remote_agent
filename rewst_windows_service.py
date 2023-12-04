@@ -1,8 +1,10 @@
 import logging
+import os
 import psutil
 import servicemanager
 import subprocess
 import sys
+import time
 import win32serviceutil
 import win32service
 import win32event
@@ -35,8 +37,7 @@ class RewstWindowsService(win32serviceutil.ServiceFramework):
 
         win32serviceutil.ServiceFramework.__init__(self, args)
         self.hWaitStop = win32event.CreateEvent(None, 0, 0, None)
-        self.process = None
-        self.process_id = None
+        self.process_ids = []
 
         self.org_id = get_org_id_from_executable_name(sys.argv)
 
@@ -73,30 +74,39 @@ class RewstWindowsService(win32serviceutil.ServiceFramework):
             if is_checksum_valid(self.agent_executable_path):
                 logging.info(f"Verified that the executable {self.agent_executable_path} is valid signed.")
                 self.process = subprocess.Popen(self.agent_executable_path, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
-                self.process_id = self.process.pid
-                logging.info(f"External process started with PID {self.process_id}.")
-            else:
-                raise Exception("Agent executable is not valid.")
+
+                time.sleep(4)
+
+                process_name = os.path.basename(self.agent_executable_path)
+
+                # Find and store PIDs of all processes with the matching name
+                for proc in psutil.process_iter(['pid', 'name']):
+                    if proc.info['name'] == process_name:
+                        self.process_ids.append(proc.info['pid'])
+                        logging.info(f"Found process with PID {proc.info['pid']}.")
+                    else:
+                        raise Exception("Agent executable is not valid.")
         except Exception as e:
             logging.exception(f"Failed to start external process: {e}")
-            self.process = None
+            self.process_ids = []
 
     def stop_process(self):
-        if self.process_id:
+        for pid in self.process_ids:
             try:
-                proc = psutil.Process(self.process_id)
-                proc.terminate()  # Attempt to terminate gracefully
+                logging.info(f"Attempting to terminate process with PID {pid}")
+                proc = psutil.Process(pid)
+                proc.terminate()
                 proc.wait(timeout=15)
                 if proc.is_running():
-                    proc.kill()  # Force kill if still running
+                    logging.warning(f"Process with PID {pid} is still running. Attempting to kill.")
+                    proc.kill()
             except psutil.NoSuchProcess:
-                pass  # Process already terminated
+                logging.info(f"Process with PID {pid} does not exist or has already terminated.")
             except Exception as e:
                 logging.exception(f"Unable to terminate process ({e}).")
-            finally:
-                self.process = None
-                self.process_id = None
-                logging.info("External process stopped.")
+        self.process_ids = []
+        logging.info("All processes stopped.")
+
 
 
 def main():
