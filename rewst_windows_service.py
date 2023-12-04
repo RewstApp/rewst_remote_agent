@@ -73,13 +73,12 @@ class RewstWindowsService(win32serviceutil.ServiceFramework):
         try:
             if is_checksum_valid(self.agent_executable_path):
                 logging.info(f"Verified that the executable {self.agent_executable_path} is valid signed.")
-                #self.process = subprocess.Popen(self.agent_executable_path, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+                self.process = subprocess.Popen(self.agent_executable_path, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
 
                 time.sleep(4)
 
-                process_name = os.path.basename(self.agent_executable_path).replace('.exe','')
-
                 # Find and store PIDs of all processes with the matching name
+                process_name = os.path.basename(self.agent_executable_path).replace('.exe', '')
                 for proc in psutil.process_iter(['pid', 'name']):
                     if proc.info['name'] == process_name:
                         self.process_ids.append(proc.info['pid'])
