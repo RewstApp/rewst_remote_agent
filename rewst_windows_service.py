@@ -72,7 +72,7 @@ class RewstWindowsService(win32serviceutil.ServiceFramework):
     def start_process(self):
         try:
             if is_checksum_valid(self.agent_executable_path):
-                logging.info(f"Verified that the executable {self.agent_executable_path} is valid signed.")
+                logging.info(f"Verified that the executable {self.agent_executable_path} is valid signature.")
                 process_name = os.path.basename(self.agent_executable_path).replace('.exe', '')
                 logging.info(f"Launching process for {process_name}")
                 self.process = subprocess.Popen(self.agent_executable_path, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
@@ -98,6 +98,15 @@ class RewstWindowsService(win32serviceutil.ServiceFramework):
                 if proc.is_running():
                     logging.warning(f"Process with PID {pid} is still running. Attempting to kill.")
                     proc.kill()
+
+                # Extra kill
+                time.sleep(10)
+                process_name = os.path.basename(self.agent_executable_path).replace('.exe', '')
+                for proc in psutil.process_iter(['pid', 'name']):
+                    if proc.info['name'] == process_name:
+                        logging.info(f"Killing process {proc.info['pid']}.")
+                        proc.kill()
+                        time.sleep(3)
             except psutil.NoSuchProcess:
                 logging.info(f"Process with PID {pid} does not exist or has already terminated.")
             except Exception as e:
