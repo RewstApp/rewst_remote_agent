@@ -79,4 +79,3 @@ Get-ChildItem $appDistPath
 
 Write-Host "Signed Folder ($outputDirPath) Contents:"
 Get-ChildItem $outputDirPath
-
