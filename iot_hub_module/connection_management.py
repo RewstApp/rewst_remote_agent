@@ -230,6 +230,11 @@ async def iot_hub_connection_loop(config_data, stop_event):
         logging.info("Connecting to IoT Hub...")
         await connection_manager.connect()
 
+        # Update Device Twin reported properties to 'online'
+        logging.info("Updating device status to online...")
+        twin_patch = {"connectivity": {"status": "online"}}
+        await connection_manager.client.patch_twin_reported_properties(twin_patch)
+
         # Set Message Handler
         logging.info("Setting up message handler...")
         await connection_manager.set_message_handler()
