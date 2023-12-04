@@ -2,12 +2,17 @@ import hashlib
 import httpx
 import logging
 import os
+import re
 from __version__ import __version__
 
 
 def is_checksum_valid(executable_path):
     executable_name = os.path.basename(executable_path)
     checksum_file_name = f"{executable_name}.sha256"
+
+    # Strip out the GUID if present in the filename
+    checksum_file_name = re.sub(r'_[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$', '',
+                                checksum_file_name)
 
     github_checksum = fetch_checksum_from_github(checksum_file_name)
     local_checksum = calculate_local_file_checksum(executable_path)
