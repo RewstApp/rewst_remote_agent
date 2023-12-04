@@ -243,6 +243,11 @@ async def iot_hub_connection_loop(config_data, stop_event):
         while not stop_event.is_set():
             await asyncio.sleep(1)
 
+        # Before disconnecting, update Device Twin reported properties to 'offline'
+        logging.info("Updating device status to offline...")
+        twin_patch = {"connectivity": {"status": "offline"}}
+        await connection_manager.client.patch_twin_reported_properties(twin_patch)
+
         await connection_manager.disconnect()
 
     except Exception as e:
