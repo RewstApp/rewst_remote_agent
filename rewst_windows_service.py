@@ -46,13 +46,11 @@ class RewstWindowsService(win32serviceutil.ServiceFramework):
             logging.warning(f"Did not find guid in executable name")
             return
 
-
     def SvcStop(self):
         self.ReportServiceStatus(win32service.SERVICE_STOP_PENDING)
         self.stop_process()
         win32event.SetEvent(self.hWaitStop)
         self.ReportServiceStatus(win32service.SERVICE_STOPPED)
-
 
     def SvcDoRun(self):
         logging.info(f"Starting SvcDoRun for {self._svc_name_}")
@@ -66,8 +64,8 @@ class RewstWindowsService(win32serviceutil.ServiceFramework):
                 break
             # Check if process is still running
             if self.process.poll() is not None:
-                logging.warning("External process terminated unexpectedly.")
-                break
+                logging.warning("External process terminated unexpectedly. Restarting.")
+                self.start_process()
 
     def start_process(self):
         try:
@@ -98,6 +96,7 @@ class RewstWindowsService(win32serviceutil.ServiceFramework):
                 self.process = None
                 self.process_id = None
                 logging.info("External process stopped.")
+
 
 def main():
     logging.basicConfig(level=logging.INFO)

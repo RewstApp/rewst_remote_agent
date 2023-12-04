@@ -3,7 +3,7 @@ import win32con
 import win32security
 
 def is_signature_valid(executable_path):
-    WINTRUST_ACTION_GENERIC_VERIFY_V2 = win32api.GUID("{00AAC56B-CD44-11d0-8CC2-00C04FC295EE}")
+    WINTRUST_ACTION_GENERIC_VERIFY_V2 = "{00AAC56B-CD44-11d0-8CC2-00C04FC295EE}"
     try:
         h_file = win32api.CreateFile(executable_path, win32con.GENERIC_READ, win32con.FILE_SHARE_READ, None, win32con.OPEN_EXISTING, win32con.FILE_ATTRIBUTE_NORMAL, None)
         file_info = win32security.WINTRUST_FILE_INFO(h_file, executable_path)
