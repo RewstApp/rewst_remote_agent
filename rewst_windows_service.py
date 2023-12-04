@@ -97,6 +97,7 @@ class RewstWindowsService(win32serviceutil.ServiceFramework):
                 self.process_id = None
                 logging.info("External process stopped.")
 
+
 def main():
     logging.basicConfig(level=logging.INFO)
     logging.info("Service is starting...")
