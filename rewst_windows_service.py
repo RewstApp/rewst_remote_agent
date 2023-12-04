@@ -83,8 +83,6 @@ class RewstWindowsService(win32serviceutil.ServiceFramework):
                     if proc.info['name'] == process_name:
                         self.process_ids.append(proc.info['pid'])
                         logging.info(f"Found process with PID {proc.info['pid']}.")
-                    else:
-                        raise Exception("Agent executable is not valid.")
         except Exception as e:
             logging.exception(f"Failed to start external process: {e}")
             self.process_ids = []
