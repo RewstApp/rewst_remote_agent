@@ -15,7 +15,9 @@ def is_checksum_valid(executable_path):
                                 checksum_file_name)
 
     github_checksum = fetch_checksum_from_github(checksum_file_name)
+    logging.info(f"GH Checksum: {github_checksum}")
     local_checksum = calculate_local_file_checksum(executable_path)
+    logging.info(f"Local Checksum: {local_checksum}")
 
     if github_checksum is None or local_checksum is None:
         logging.error("Failed to get one or both of the checksums.")
