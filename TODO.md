@@ -24,4 +24,12 @@
 - [ ] Finish and test Linux Agent
 - [ ] Finish and test MacOS Agent
 - [ ] Clean up unused bits
+- [ ] Allow for flag for powershell commands to RunAsUser
 
+## Testing
+- [ ] Test limits of "Free" IoT Hub tier to see if it is enough
+
+## Rewst Workflows
+- [ ] Provisioning Agent Infrastructure
+- [ ] Generate and display Agent Installation Commands
+- [ ] App Platform Agent Status Dashboard

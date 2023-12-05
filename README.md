@@ -14,18 +14,3 @@ Goals:
     * Handle disconnects gracefully and restart
 
 
-
-Current phase: POC
-
-Plan:
-
-
-TodDo:
-- [X] Add cross-platform support
-- [X] Sign-up process
-- [X] Make it run as a service
-- [X] Actual Code Signing
-- [ ] Decrease verbosity of normal ops during setup mode
-- [ ] Self-aware version numbers
-- [ ] Full Whitepaper / Documentation
-- [ ] _Future: Watchdog service?_
