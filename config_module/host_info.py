@@ -1,8 +1,8 @@
 import platform
-import socket
 import uuid
 import psutil
 import subprocess
+import sys
 import logging
 
 
@@ -13,43 +13,44 @@ def get_mac_address():
     return mac_address.replace(':', '')
 
 
+def run_powershell_command(powershell_command):
+    """Executes a PowerShell command and returns the output."""
+    try:
+        result = subprocess.run(["powershell", "-Command", powershell_command], capture_output=True, text=True, check=True)
+        return result.stdout.strip()
+    except subprocess.CalledProcessError as e:
+        print(f"Error executing PowerShell script: {e}", file=sys.stderr)
+        return None
+
+
 def is_domain_controller():
-    if platform.system().lower() != 'windows':
-        return False
-    else:
-        domain_name = get_ad_domain_name()
-        if domain_name is None:
-            return False
-        try:
-            result = subprocess.run([f'nltest', f'/dclist:{domain_name}'], text=True, capture_output=True, check=True)
-            domain_controllers = result.stdout.split('\n')
-            local_machine = socket.gethostname()
-            return any(local_machine in dc for dc in domain_controllers)
-        except subprocess.CalledProcessError as e:
-            logging.error(f"Command failed with error: {str(e)}")
-            return False
-        except Exception as e:
-            logging.error(f"An unexpected error occurred: {str(e)}")
-            return False
+    """Checks if the current computer is a domain controller."""
+    powershell_command = """
+    try {
+        Import-Module ActiveDirectory -ErrorAction Stop
+        $dc = Get-ADDomainController -Identity $env:COMPUTERNAME
+        if ($dc) { return $true }
+        else { return $false }
+    } catch {
+        return $false
+    }
+    """
+    output = run_powershell_command(powershell_command)
+    return 'True' in output
 
 
 def get_ad_domain_name():
-    if platform.system().lower() != 'windows':
-        return None
-    else:
-        try:
-            result = subprocess.run(['dsregcmd', '/status'], text=True, capture_output=True, check=True)
-            for line in result.stdout.split('\n'):
-                if 'Domain Name' in line:
-                    return line.split(':')[1].strip()
-            logging.warning("No Domain Name found in dsregcmd. This is normal if the computer isn't domain-joined")
-            return None
-        except subprocess.CalledProcessError as e:
-            logging.error(f"Command failed with error: {str(e)}")
-            return None
-        except Exception as e:
-            logging.error(f"An unexpected error occurred: {str(e)}")
-            return None
+    """Gets the Active Directory domain name."""
+    powershell_command = """
+    try {
+        $domain = (Get-ADDomain).Name
+        if ($domain) { return $domain }
+        else { return $null }
+    } catch {
+        return $null
+    }
+    """
+    return run_powershell_command(powershell_command)
 
 
 def get_entra_domain():

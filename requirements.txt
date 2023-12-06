@@ -3,5 +3,4 @@ pyinstaller
 azure-iot-device>=2.5.1
 psutil>=5.8.0
 pywin32; platform_system == "Windows"
-#appdirs>=1.4.4
 platformdirs
