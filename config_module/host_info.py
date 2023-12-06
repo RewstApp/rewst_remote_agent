@@ -1,10 +1,15 @@
 import platform
 import uuid
 import psutil
+import socket
 import subprocess
 import sys
 import logging
-
+import __version__
+from config_io import (
+    get_service_executable_path,
+    get_agent_executable_path
+)
 
 def get_mac_address():
     # Returns the MAC address of the host without colons
@@ -88,3 +93,29 @@ def is_service_running(service_name):
         if service.name().lower() == service_name.lower():
             return True
     return False
+
+
+def build_host_tags(org_id=None):
+    # Collect host information
+    ad_domain = get_ad_domain_name()
+    if ad_domain:
+        is_dc = is_domain_controller()
+    else:
+        is_dc = False
+
+    host_info = {
+        "agent_version": (__version__.__version__ or None),
+        "agent_executable_path": get_agent_executable_path(org_id),
+        "service_executable_path": get_service_executable_path(org_id),
+        "hostname": socket.gethostname(),
+        "mac_address": get_mac_address(),
+        "operating_system": platform.platform(),
+        "cpu_model": platform.processor(),
+        "ram_gb": psutil.virtual_memory().total / (1024 ** 3),
+        "ad_domain": ad_domain,
+        "is_ad_domain_controller": is_dc,
+        "is_entra_connect_server": is_entra_connect_server(),
+        "entra_domain": get_entra_domain(),
+        "org_id": org_id
+    }
+    return host_info

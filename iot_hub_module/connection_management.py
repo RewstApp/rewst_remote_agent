@@ -16,6 +16,7 @@ from config_module.config_io import (
     get_service_executable_path,
     get_service_manager_path
 )
+from config_module.host_info import build_host_tags
 
 # Set up logging
 logging.basicConfig(level=logging.INFO)
@@ -74,7 +75,7 @@ class ConnectionManager:
                 # For other interpreters, you might want to handle encoding differently
                 decoded_commands = base64.b64decode(commands).decode('utf-8')
 
-            #logging.info(f"Decoded Commands:\n{decoded_commands}")
+            # logging.info(f"Decoded Commands:\n{decoded_commands}")
             temp_file.write(decoded_commands)
             temp_file.flush()  # Explicitly flush the file buffer
             os.fsync(temp_file.fileno())  # Ensures all data is written to disk
@@ -129,7 +130,6 @@ class ConnectionManager:
                 except Exception as e:
                     logging.error(f"Error deleting temporary file: {e}")
                     break  # If a different error occurs, break out of the loop
-
 
         if post_url and output_message_data:
             logging.info("Sending Results to Rewst via httpx.")
@@ -188,7 +188,8 @@ class ConnectionManager:
             "service_executable_path": service_executable_path,
             "agent_executable_path": agent_executable_path,
             "config_file_path": config_file_path,
-            "service_manager_path": service_manager_path
+            "service_manager_path": service_manager_path,
+            "tags": build_host_tags(org_id)
         }
 
         try:

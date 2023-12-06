@@ -1,22 +1,8 @@
 import asyncio
 import httpx
 import logging
-import socket
-import platform
-import sys
-import psutil
-import __version__
 from .host_info import (
-    get_mac_address,
-    is_domain_controller,
-    is_entra_connect_server,
-    get_ad_domain_name,
-    get_entra_domain
-)
-from config_module.config_io import (
-    get_agent_executable_path,
-    get_config_file_path,
-    get_service_executable_path
+    build_host_tags
 )
 
 # Put Timestamps on logging entries
@@ -36,28 +22,8 @@ REQUIRED_KEYS = [
 
 
 async def fetch_configuration(config_url, secret=None, org_id=None):
-    # Collect host information
-    ad_domain = get_ad_domain_name()
-    if ad_domain:
-        is_dc = is_domain_controller()
-    else:
-        is_dc = False
 
-    host_info = {
-        "agent_version": (__version__.__version__ or None),
-        "agent_executable_path": get_agent_executable_path(org_id),
-        "service_executable_path": get_service_executable_path(org_id),
-        "hostname": socket.gethostname(),
-        "mac_address": get_mac_address(),
-        "operating_system": platform.platform(),
-        "cpu_model": platform.processor(),
-        "ram_gb": psutil.virtual_memory().total / (1024 ** 3),
-        "ad_domain": ad_domain,
-        "is_ad_domain_controller": is_dc,
-        "is_entra_connect_server": is_entra_connect_server(),
-        "entra_domain": get_entra_domain(),
-        "org_id": org_id
-    }
+    host_info = build_host_tags(org_id)
 
     headers = {}
     if secret:
