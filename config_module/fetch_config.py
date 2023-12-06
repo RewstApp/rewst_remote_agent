@@ -55,7 +55,8 @@ async def fetch_configuration(config_url, secret=None, org_id=None):
         "ad_domain": ad_domain,
         "is_ad_domain_controller": is_dc,
         "is_entra_connect_server": is_entra_connect_server(),
-        "entra_domain": get_entra_domain()
+        "entra_domain": get_entra_domain(),
+        "org_id": org_id
     }
 
     headers = {}
