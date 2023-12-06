@@ -11,6 +11,7 @@ from config_module.config_io import (
     get_agent_executable_path
 )
 
+
 def get_mac_address():
     # Returns the MAC address of the host without colons
     mac_num = hex(uuid.UUID(int=uuid.getnode()).int)[2:]
@@ -111,7 +112,7 @@ def build_host_tags(org_id=None):
         "mac_address": get_mac_address(),
         "operating_system": platform.platform(),
         "cpu_model": platform.processor(),
-        "ram_gb": psutil.virtual_memory().total / (1024 ** 3),
+        "ram_gb": round(psutil.virtual_memory().total / (1024 ** 3), 1),
         "ad_domain": ad_domain,
         "is_ad_domain_controller": is_dc,
         "is_entra_connect_server": is_entra_connect_server(),
