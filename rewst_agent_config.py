@@ -175,7 +175,7 @@ def end_program(exit_level=1):
     sys.exit(exit_level)
 
 
-async def main(config_url, config_secret):
+async def main(config_url, config_secret, org_id):
 
     # Check URL and Secret for valid strings
     if not is_valid_url(config_url):
@@ -246,11 +246,12 @@ async def main(config_url, config_secret):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Rewst Agent Configuration Tool.')
-    parser.add_argument('--config-secret', help='Secret Key for Configuration Access')
+    parser.add_argument('--config-secret', help='Secret Key for configuration access')
     parser.add_argument('--config-url', help='URL to fetch the configuration from.')
     parser.add_argument('--org-id', help='Organization ID to register agent within.')
     args = parser.parse_args()  # Extract arguments from the parser
     asyncio.run(main(
         config_secret=args.config_secret,
-        config_url=args.config_url
+        config_url=args.config_url,
+        org_id=args.org_id,
     ))
