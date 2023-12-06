@@ -6,7 +6,7 @@ import subprocess
 import sys
 import logging
 import __version__
-from config_io import (
+from config_module.config_io import (
     get_service_executable_path,
     get_agent_executable_path
 )
