@@ -187,15 +187,16 @@ async def main(config_url, config_secret):
 
     try:
         # Check that arguments are provided
-        if not (config_url and config_secret):
+        if not (config_url and config_secret and org_id):
             print("Error: Missing required parameters.")
-            print("Please make sure '--config-url' and '--config-secret' are provided.")
+            print("Please make sure '--config-url', '--org-id' and '--config-secret' are provided.")
             end_program(1)
 
         # Fetch Configuration
         logging.info("Fetching configuration from Rewst...")
         url_org_id = config_url.split("/")[-1]
-        config_data = await fetch_configuration(config_url, config_secret, url_org_id)
+        #config_data = await fetch_configuration(config_url, config_secret, url_org_id)
+        config_data = await fetch_configuration(config_url, config_secret, org_id)
         if not config_data:
             logging.error("Failed to fetch configuration.")
             end_program(2)
@@ -247,6 +248,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Rewst Agent Configuration Tool.')
     parser.add_argument('--config-secret', help='Secret Key for Configuration Access')
     parser.add_argument('--config-url', help='URL to fetch the configuration from.')
+    parser.add_argument('--org-id', help='Organization ID to register agent within.')
     args = parser.parse_args()  # Extract arguments from the parser
     asyncio.run(main(
         config_secret=args.config_secret,

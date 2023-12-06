@@ -10,7 +10,7 @@
   - [ ] Consider implementing database storage for key management
 
 ## Bugs
-- [ ] Ensure agent processes exit cleanly without manual intervention
+- [x] Ensure agent processes exit cleanly without manual intervention
   - Investigate and fix the issue causing agent processes to require manual termination
 
 ## Documentation
