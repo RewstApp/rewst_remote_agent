@@ -32,12 +32,10 @@ def run_powershell_command(powershell_command):
 def is_domain_controller():
     """Checks if the current computer is a domain controller."""
     powershell_command = """
-    try {
-        Import-Module ActiveDirectory -ErrorAction Stop
-        $dc = Get-ADDomainController -Identity $env:COMPUTERNAME
-        if ($dc) { return $true }
-        else { return $false }
-    } catch {
+    $domainStatus = (Get-WmiObject Win32_ComputerSystem).DomainRole
+    if ($domainStatus -eq 4 -or $domainStatus -eq 5) {
+        return $true
+    } else {
         return $false
     }
     """
@@ -48,15 +46,10 @@ def is_domain_controller():
 def get_ad_domain_name():
     """Gets the Active Directory domain name if the PC is joined to AD."""
     powershell_command = """
-    try {
-        Add-Type -AssemblyName System.DirectoryServices.AccountManagement
-        $pc = New-Object System.DirectoryServices.AccountManagement.PrincipalContext([System.DirectoryServices.AccountManagement.ContextType]::Machine)
-        if ($pc.ConnectedServer) {
-            return $pc.ConnectedServer
-        } else {
-            return $null
-        }
-    } catch {
+    $domainInfo = (Get-WmiObject Win32_ComputerSystem).Domain
+    if ($domainInfo -and $domainInfo -ne 'WORKGROUP') {
+        return $domainInfo
+    } else {
         return $null
     }
     """
