@@ -46,12 +46,16 @@ def is_domain_controller():
 
 
 def get_ad_domain_name():
-    """Gets the Active Directory domain name."""
+    """Gets the Active Directory domain name if the PC is joined to AD."""
     powershell_command = """
     try {
-        $domain = (Get-ADDomain).Name
-        if ($domain) { return $domain }
-        else { return $null }
+        Add-Type -AssemblyName System.DirectoryServices.AccountManagement
+        $pc = New-Object System.DirectoryServices.AccountManagement.PrincipalContext([System.DirectoryServices.AccountManagement.ContextType]::Machine)
+        if ($pc.ConnectedServer) {
+            return $pc.ConnectedServer
+        } else {
+            return $null
+        }
     } catch {
         return $null
     }
