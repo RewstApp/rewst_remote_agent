@@ -24,7 +24,6 @@ logging.basicConfig(
     datefmt='%Y-%m-%d %H:%M:%S',
 )
 logging.info(f"Running on {platform.system()} {platform.release()}")
-# asyncio.get_event_loop().set_debug(True)
 
 os_type = platform.system().lower()
 
@@ -195,7 +194,6 @@ async def main(config_url, config_secret, org_id):
         # Fetch Configuration
         logging.info("Fetching configuration from Rewst...")
         url_org_id = config_url.split("/")[-1]
-        #config_data = await fetch_configuration(config_url, config_secret, url_org_id)
         config_data = await fetch_configuration(config_url, config_secret, org_id)
         if not config_data:
             logging.error("Failed to fetch configuration.")

@@ -40,6 +40,7 @@ def is_domain_controller():
     }
     """
     output = run_powershell_command(powershell_command)
+    logging.info(f"Is domain controller?: {output}")
     return 'True' in output
 
 
@@ -53,7 +54,9 @@ def get_ad_domain_name():
         return $null
     }
     """
-    return run_powershell_command(powershell_command)
+    ad_domain_name = run_powershell_command(powershell_command)
+    logging.info(f"AD domain name: {ad_domain_name}")
+    return ad_domain_name
 
 
 def get_entra_domain():
