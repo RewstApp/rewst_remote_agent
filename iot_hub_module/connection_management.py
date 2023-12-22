@@ -71,6 +71,10 @@ class ConnectionManager:
             if "powershell" in interpreter.lower():
                 # If PowerShell is used, decode the commands
                 decoded_commands = base64.b64decode(commands).decode('utf-16-le')
+                # Ensure TLS 1.2 configuration is set at the beginning of the command
+                tls_command = "[Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12"
+                if tls_command not in decoded_commands:
+                    decoded_commands = tls_command + "\n" + decoded_commands
             else:
                 # For other interpreters, you might want to handle encoding differently
                 decoded_commands = base64.b64decode(commands).decode('utf-8')
