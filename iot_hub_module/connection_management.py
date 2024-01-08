@@ -10,6 +10,9 @@ import tempfile
 import subprocess
 from azure.iot.device.aio import IoTHubDeviceClient
 
+from platformdirs import (
+    site_config_dir
+)
 from config_module.config_io import (
     get_config_file_path,
     get_agent_executable_path,
@@ -70,7 +73,12 @@ class ConnectionManager:
         script_suffix = ".ps1" if "powershell" in interpreter.lower() else ".sh"
         tmp_dir = None
         if os_type == "windows":
-            tmp_dir = os.getcwd()
+            config_dir = site_config_dir()
+            # Create a subdirectory 'scripts' within the site configuration directory
+            scripts_dir = os.path.join(config_dir, "scripts")
+            if not os.path.exists(scripts_dir):
+                os.makedirs(scripts_dir)
+            tmp_dir = site_config_dir()
         with tempfile.NamedTemporaryFile(delete=False, suffix=script_suffix,
                                          mode="w", dir=tmp_dir) as temp_file:
             if "powershell" in interpreter.lower():
