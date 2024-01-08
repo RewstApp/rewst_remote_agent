@@ -64,7 +64,6 @@ class ConnectionManager:
     async def execute_commands(self, commands, post_url=None, interpreter_override=None):
         interpreter = interpreter_override or self.get_default_interpreter()
         logging.info(f"Using interpreter: {interpreter}")
-
         output_message_data = None
 
         # Write commands to a temporary file
