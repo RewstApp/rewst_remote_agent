@@ -78,7 +78,7 @@ class ConnectionManager:
             scripts_dir = "C:\\Scripts"
             if not os.path.exists(scripts_dir):
                 os.makedirs(scripts_dir)
-            tmp_dir = site_config_dir()
+            tmp_dir = scripts_dir
         with tempfile.NamedTemporaryFile(delete=False, suffix=script_suffix,
                                          mode="w", dir=tmp_dir) as temp_file:
             if "powershell" in interpreter.lower():
