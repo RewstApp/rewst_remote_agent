@@ -75,7 +75,7 @@ class ConnectionManager:
         if os_type == "windows":
             config_dir = site_config_dir()
             scripts_dir = os.path.join(config_dir, "\\RewstRemoteAgent\\scripts")
-            scripts_dir = "C:\\Scripts"
+            # scripts_dir = "C:\\Scripts"
             if not os.path.exists(scripts_dir):
                 os.makedirs(scripts_dir)
             tmp_dir = scripts_dir
@@ -119,6 +119,21 @@ class ConnectionManager:
             stdout, stderr = process.communicate()
             exit_code = process.returncode
             logging.info(f"Command completed with exit code {exit_code}")
+
+            if exit_code != 0 or stderr:
+                # Log and print error details
+                error_message = f"Script execution failed with exit code {exit_code}. Error: {stderr}"
+                logging.error(error_message)
+                print(error_message)  # Print to console
+                output_message_data = {
+                    'output': stdout,
+                    'error': error_message
+                }
+            else:
+                output_message_data = {
+                    'output': stdout,
+                    'error': ''
+                }
 
         except subprocess.CalledProcessError as e:
             logging.error(f"Command '{shell_command}' failed with error code {e.returncode}")
