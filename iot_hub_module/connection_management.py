@@ -74,7 +74,8 @@ class ConnectionManager:
         tmp_dir = None
         if os_type == "windows":
             config_dir = site_config_dir()
-            scripts_dir = os.path.join(config_dir, "scripts")
+            scripts_dir = os.path.join(config_dir, "\\RewstRemoteAgent\\scripts")
+            scripts_dir = "C:\\Scripts"
             if not os.path.exists(scripts_dir):
                 os.makedirs(scripts_dir)
             tmp_dir = site_config_dir()
