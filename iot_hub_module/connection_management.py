@@ -21,6 +21,8 @@ from config_module.host_info import build_host_tags
 # Set up logging
 logging.basicConfig(level=logging.INFO)
 
+os_type = platform.system().lower()
+
 
 class ConnectionManager:
     def __init__(self, config_data):
@@ -66,8 +68,12 @@ class ConnectionManager:
         output_message_data = None
 
         # Write commands to a temporary file
-        with tempfile.NamedTemporaryFile(delete=False, suffix=".ps1" if "powershell" in interpreter.lower() else ".sh",
-                                         mode="w") as temp_file:
+        script_suffix = ".ps1" if "powershell" in interpreter.lower() else ".sh"
+        tmp_dir = None
+        if os_type == "windows":
+            tmp_dir = os.getcwd()
+        with tempfile.NamedTemporaryFile(delete=False, suffix=script_suffix,
+                                         mode="w", dir=tmp_dir) as temp_file:
             if "powershell" in interpreter.lower():
                 # If PowerShell is used, decode the commands
                 decoded_commands = base64.b64decode(commands).decode('utf-16-le')

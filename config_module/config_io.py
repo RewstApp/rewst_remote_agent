@@ -74,7 +74,7 @@ def get_service_executable_path(org_id):
 
 def get_logging_path(org_id):
     os_type = platform.system().lower()
-    base_dir=site_config_dir()
+    base_dir = site_config_dir()
     log_filename = "rewst_agent.log"
     if os_type == "windows":
         log_path = f"{base_dir}\\RewstRemoteAgent\\{org_id}\\logs\\{log_filename}"

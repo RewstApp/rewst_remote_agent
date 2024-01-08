@@ -1,0 +1,42 @@
+<component name="InspectionProjectProfileManager">
+  <profile version="1.0">
+    <option name="myName" value="Project Default" />
+    <inspection_tool class="PyPackageRequirementsInspection" enabled="true" level="WARNING" enabled_by_default="true">
+      <option name="ignoredPackages">
+        <value>
+          <list size="6">
+            <item index="0" class="java.lang.String" itemvalue="azure" />
+            <item index="1" class="java.lang.String" itemvalue="httpx" />
+            <item index="2" class="java.lang.String" itemvalue="pyinstaller" />
+            <item index="3" class="java.lang.String" itemvalue="platformdirs" />
+            <item index="4" class="java.lang.String" itemvalue="azure-iot-device" />
+            <item index="5" class="java.lang.String" itemvalue="psutil" />
+          </list>
+        </value>
+      </option>
+    </inspection_tool>
+    <inspection_tool class="PyPep8NamingInspection" enabled="true" level="WEAK WARNING" enabled_by_default="true">
+      <option name="ignoredErrors">
+        <list>
+          <option value="N802" />
+        </list>
+      </option>
+    </inspection_tool>
+    <inspection_tool class="PyUnresolvedReferencesInspection" enabled="true" level="WARNING" enabled_by_default="true">
+      <option name="ignoredIdentifiers">
+        <list>
+          <option value="pywin32" />
+          <option value="win32service" />
+          <option value="win32serviceutil" />
+          <option value="win32event" />
+          <option value="win32con" />
+          <option value="win32api" />
+          <option value="servicemanager.*" />
+          <option value="httpx" />
+          <option value="iot_hub_module.connection_management.azure" />
+          <option value="win32timezone" />
+        </list>
+      </option>
+    </inspection_tool>
+  </profile>
+</component>
