@@ -74,7 +74,6 @@ class ConnectionManager:
         tmp_dir = None
         if os_type == "windows":
             config_dir = site_config_dir()
-            # Create a subdirectory 'scripts' within the site configuration directory
             scripts_dir = os.path.join(config_dir, "scripts")
             if not os.path.exists(scripts_dir):
                 os.makedirs(scripts_dir)
