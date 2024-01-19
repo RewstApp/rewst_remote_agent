@@ -65,7 +65,7 @@ jobs:
     - name: Write MS Version file (Windows)
       if: matrix.os == 'windows-latest'
       shell: pwsh
-      run: .\.github\workflows\Write-VersionFile.ps1 -version "${{ needs.bump_version.outputs.new_version }}"
+      run: .\.github\workflows\Write-VersionFile.ps1
 
     - name: Install dependencies
       run: |

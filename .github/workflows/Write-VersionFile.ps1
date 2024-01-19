@@ -1,7 +1,7 @@
 # Path to the __version__.py file
 $versionFilePath = "__version__.py"
 
-Get-ChildItem
+# Get-ChildItem
 
 # Read the file content
 $fileContent = Get-Content $versionFilePath
@@ -50,6 +50,9 @@ VSVersionInfo(
   )
 "@
 
+Write-Host "Writing versionInfo: " $versionInfo
 $versionInfo | Out-File -FilePath version.txt -Encoding utf8
 
 Get-Content -Path version.txt
+
+Write-Host "Wrote File: version.txt"
