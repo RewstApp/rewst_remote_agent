@@ -37,7 +37,7 @@ jobs:
       run: |
         git config --local user.email "automated_buils@rewst.io"
         git config --local user.name "Rewst GitHub Actions"
-        git add path/to/your_package/version.py
+        git add __version.py__
         git commit -m "Update version to ${{ needs.bump_version.outputs.new_version }}"
         git push
   
