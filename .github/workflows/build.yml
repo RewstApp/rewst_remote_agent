@@ -54,18 +54,21 @@ jobs:
       with:
         python-version: ${{ matrix.python-version }}
 
+    - name: Print calculated version
+      run: echo "Calculated version is ${{ steps.tag_version.outputs.new_version }}"
+
     - name: Print new version
       run: echo "New version is ${{ needs.bump_version.outputs.new_version }}"
-
-    - name: Install dependencies
-      run: |
-        python -m pip install --upgrade pip
-        pip install -r requirements.txt
 
     - name: Write MS Version file (Windows)
       if: matrix.os == 'windows-latest'
       shell: pwsh
       run: .\.github\workflows\Write-VersionFile.ps1 -version "${{ needs.bump_version.outputs.new_version }}"
+
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
 
     - name: Install PyInstaller
       run: pip install pyinstaller
