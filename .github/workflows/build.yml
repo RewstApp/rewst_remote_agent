@@ -34,7 +34,7 @@ jobs:
     steps:
     - uses: actions/checkout@v2
     - name: Get Dir Listing
-      run: find /home
+      run: find /home/runner/*
     - name: Bump version in File
       run: echo "__version__ = '${{ needs.bump_version.outputs.new_version }}'" > /home/runner/rewst_remote_agent/rewst_remote_agent/__version__.py
 
