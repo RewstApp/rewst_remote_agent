@@ -2,6 +2,8 @@ param(
     [string]$version
 )
 
+Write-Host "Received version: $version"
+
 # Ensure the version string contains exactly three values separated by commas
 $formatted_version = "$version" -replace '\.', ',' -replace '-service-refactor', ''
 $version_parts = $formatted_version.Split(',')
