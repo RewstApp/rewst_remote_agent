@@ -10,6 +10,8 @@ if (-Not (Test-Path $versionFilePath)) {
 # Read the file content
 $fileContent = Get-Content $versionFilePath
 
+Write-Host "Version file contents: $fileContent"
+
 # Use regex to extract the version number
 $versionRegex = "__version__ = '(.*)'"
 $version = if ($fileContent -match $versionRegex) {
