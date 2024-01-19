@@ -38,7 +38,7 @@ jobs:
 
     - name: Commit updated version file
       run: |
-        git config --local user.email "automated_buils@rewst.io"
+        git config --local user.email "automated_builds@rewst.io"
         git config --local user.name "Rewst GitHub Actions"
         git add /home/runner/work/rewst_remote_agent/rewst_remote_agent/__version__.py
         git commit -m "Update version to ${{ needs.bump_version.outputs.new_version }}"
