@@ -1,8 +1,20 @@
-param(
-    [string]$version
-)
+# Path to the __version__.py file
+$versionFilePath = "__version__.py"
 
-Write-Host "Received version: $version"
+Get-ChildItem
+
+# Read the file content
+$fileContent = Get-Content $versionFilePath
+
+# Use regex to extract the version number
+$versionRegex = "__version__ = '(.*)'"
+$version = if ($fileContent -match $versionRegex) {
+    $matches[1]
+} else {
+    "Unknown"
+}
+
+Write-Host "Extracted version: $version"
 
 # Ensure the version string contains exactly three values separated by commas
 $formatted_version = "$version" -replace '\.', ',' -replace '-service-refactor', ''
