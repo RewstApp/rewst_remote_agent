@@ -33,6 +33,10 @@ jobs:
 
     steps:
     - uses: actions/checkout@v2
+      with:
+        fetch-depth: 0
+    - name: Pull latest changes
+      run: git pull origin main
     - name: Bump version in File
       run: echo "__version__ = '${{ needs.bump_version.outputs.new_version }}'" > /home/runner/work/rewst_remote_agent/rewst_remote_agent/__version__.py
 
@@ -42,7 +46,7 @@ jobs:
         git config --local user.name "Rewst GitHub Actions"
         git add /home/runner/work/rewst_remote_agent/rewst_remote_agent/__version__.py
         git commit -m "Update version to ${{ needs.bump_version.outputs.new_version }}"
-        git push
+        git push --force-with-lease origin main
       if: github.ref == 'refs/heads/main'  # Only commit version updates to the main branch
   
     - name: Set up Python ${{ matrix.python-version }}
