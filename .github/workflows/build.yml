@@ -32,6 +32,14 @@ jobs:
     - name: Bump version in File
       if:
       run: echo "__version__ = '${{ needs.bump_version.outputs.new_version }}'" > __version__.py
+
+    - name: Commit updated version file
+      run: |
+        git config --local user.email "automated_buils@rewst.io"
+        git config --local user.name "Rewst GitHub Actions"
+        git add path/to/your_package/version.py
+        git commit -m "Update version to ${{ needs.bump_version.outputs.new_version }}"
+        git push
   
     - name: Set up Python ${{ matrix.python-version }}
       uses: actions/setup-python@v2
