@@ -1,7 +1,11 @@
 # Path to the __version__.py file
 $versionFilePath = "__version__.py"
 
-# Get-ChildItem
+# Check if the file exists
+if (-Not (Test-Path $versionFilePath)) {
+    Write-Host "Version file not found: $versionFilePath"
+    exit
+}
 
 # Read the file content
 $fileContent = Get-Content $versionFilePath
@@ -17,7 +21,7 @@ $version = if ($fileContent -match $versionRegex) {
 Write-Host "Extracted version: $version"
 
 # Ensure the version string contains exactly three values separated by commas
-$formatted_version = "$version" -replace '\.', ',' -replace '-service-refactor', ''
+$formatted_version = $version -replace '\.', ',' -replace '-service-refactor', ''
 $version_parts = $formatted_version.Split(',')
 while ($version_parts.Count -lt 4) {
     $formatted_version += ',0'
@@ -52,9 +56,6 @@ VSVersionInfo(
   )
 "@
 
-Write-Host "Writing versionInfo: $versionInfo"
 $versionInfo | Out-File -FilePath version.txt -Encoding utf8
 
-Get-Content -Path version.txt
-
-Write-Host "Wrote File: version.txt"
+Write-Host "Version info written to version.txt"
