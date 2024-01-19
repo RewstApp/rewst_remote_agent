@@ -2,13 +2,18 @@ param(
     [string]$version
 )
 
+# Ensure the version string contains exactly three values separated by commas
 $formatted_version = "$version" -replace '\.', ',' -replace '-service-refactor', ''
+$version_parts = $formatted_version.Split(',')
+while ($version_parts.Count -lt 4) {
+    $formatted_version += ',0'
+}
 
 $versionInfo = @"
 VSVersionInfo(
     ffi=FixedFileInfo(
-      filevers=($formatted_version,0),
-      prodvers=($formatted_version,0),
+      filevers=($formatted_version),
+      prodvers=($formatted_version),
       mask=0x3f,
       flags=0x0,
       OS=0x4,
@@ -32,5 +37,3 @@ VSVersionInfo(
 "@
 
 $versionInfo | Out-File -FilePath version.txt -Encoding utf8
-
-Get-Content -Path version.txt
