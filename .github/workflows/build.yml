@@ -34,13 +34,13 @@ jobs:
     steps:
     - uses: actions/checkout@v2
     - name: Bump version in File
-      run: echo "__version__ = '${{ needs.bump_version.outputs.new_version }}'" > /home/runner/rewst_remote_app/rewst_remote_app/__version__.py
+      run: echo "__version__ = '${{ needs.bump_version.outputs.new_version }}'" > /home/runner/rewst_remote_agent/rewst_remote_agent/__version__.py
 
     - name: Commit updated version file
       run: |
         git config --local user.email "automated_buils@rewst.io"
         git config --local user.name "Rewst GitHub Actions"
-        git add /home/runner/rewst_remote_app/rewst_remote_app/__version__.py
+        git add /home/runner/rewst_remote_agent/rewst_remote_agent/__version__.py
         git commit -m "Update version to ${{ needs.bump_version.outputs.new_version }}"
         git push
       if: github.ref == 'refs/heads/main'  # Only commit version updates to the main branch
