@@ -1,6 +1,12 @@
 name: Build
 
-on: [push, pull_request]
+on:
+  push:
+    branches:
+      - main
+    paths-ignore:
+      - '__version__.py'  # Ignore commits that only update the version file
+  pull_request:
 
 jobs:
 
@@ -16,30 +22,28 @@ jobs:
       with:
         github_token: ${{ secrets.GITHUB_TOKEN }}
 
-
   build:
     needs: bump_version
     runs-on: ${{ matrix.os }}
+    if: "!contains(github.event.head_commit.message, 'skip ci')"
     strategy:
       matrix:
         os: [ubuntu-latest, macos-latest, windows-latest]
         python-version: ["3.12"]
 
     steps:
-
     - uses: actions/checkout@v2
-
     - name: Bump version in File
-      if:
-      run: echo "__version__ = '${{ needs.bump_version.outputs.new_version }}'" > __version__.py
+      run: echo "__version__ = '${{ needs.bump_version.outputs.new_version }}'" > /home/runner/rewst_remote_app/rewst_remote_app/__version__.py
 
     - name: Commit updated version file
       run: |
         git config --local user.email "automated_buils@rewst.io"
         git config --local user.name "Rewst GitHub Actions"
-        git add __version.py__
+        git add /home/runner/rewst_remote_app/rewst_remote_app/__version__.py
         git commit -m "Update version to ${{ needs.bump_version.outputs.new_version }}"
         git push
+      if: github.ref == 'refs/heads/main'  # Only commit version updates to the main branch
   
     - name: Set up Python ${{ matrix.python-version }}
       uses: actions/setup-python@v2
