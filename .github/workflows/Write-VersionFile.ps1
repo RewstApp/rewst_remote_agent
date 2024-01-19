@@ -23,6 +23,8 @@ while ($version_parts.Count -lt 4) {
     $formatted_version += ',0'
 }
 
+Write-Host "Formatted version: $formatted_version"
+
 $versionInfo = @"
 VSVersionInfo(
     ffi=FixedFileInfo(
@@ -50,7 +52,7 @@ VSVersionInfo(
   )
 "@
 
-Write-Host "Writing versionInfo: " $versionInfo
+Write-Host "Writing versionInfo: $versionInfo"
 $versionInfo | Out-File -FilePath version.txt -Encoding utf8
 
 Get-Content -Path version.txt
