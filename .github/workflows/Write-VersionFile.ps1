@@ -37,4 +37,5 @@ VSVersionInfo(
 "@
 
 $versionInfo | Out-File -FilePath version.txt -Encoding utf8
+
 Get-Content -Path version.txt
