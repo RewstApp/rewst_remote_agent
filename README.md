@@ -20,3 +20,21 @@ Goals:
     * Handle disconnects gracefully and restart
 
 
+## Development
+
+### Prerequisites
+
+* [Python 3.10](https://www.python.org/downloads/) or higher
+* [Poetry](https://python-poetry.org/docs/#installation)
+
+### Setup
+
+```bash
+poetry install
+```
+
+### Run
+
+```bash
+poetry run python -m rewst_remote_agent
+```

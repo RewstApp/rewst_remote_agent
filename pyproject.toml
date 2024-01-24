@@ -1,0 +1,49 @@
+[tool.poetry]
+name = "rewst-remote-agent"
+version = "0.6.62"
+description = ""
+license = "GPL-3.0-only"
+authors = ["Your Name <you@example.com>"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = ">=3.10,<3.13"
+httpx = "^0.26.0"
+pyinstaller = "^6.3.0"
+azure-iot-device = "^2.5.1"
+psutil = "^5.8.0"
+platformdirs = "^4.1.0"
+pywin32 = {version = "^306", platform = "windows"}
+python-certifi-win32 = {version = "^1.6.1", platform = "windows"}
+
+
+[tool.poetry.group.lint.dependencies]
+ruff = "^0.1.14"
+black = "^23.12.1"
+isort = "^5.13.2"
+
+[tool.isort]
+line_length = 120
+profile = "black"
+multi_line_output = 3
+force_grid_wrap = 2
+
+known_third_party = [
+    'httpx',
+]
+
+[tool.ruff]
+fix = true
+line-length = 120
+target-version = "py311"
+
+[tool.ruff.isort]
+required-imports = ["from __future__ import annotations"]
+
+[tool.ruff.flake8-tidy-imports]
+ban-relative-imports = "all"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
