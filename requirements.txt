@@ -1,7 +1,0 @@
-httpx>=0.18.2
-pyinstaller
-azure-iot-device>=2.5.1
-psutil>=5.8.0
-pywin32; platform_system == "Windows"
-python-certifi-win32; platform_system == "Windows"
-platformdirs
