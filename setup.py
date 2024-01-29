@@ -3,7 +3,7 @@ import os
 
 # Read the version from your __version__.py file
 version = {}
-with open(os.path.join("rewst_remote_agent", "__version__.py")) as f:
+with open(os.path.join("__version__.py")) as f:
     exec(f.read(), version)
 
 # Dynamically read dependencies from requirements.txt
