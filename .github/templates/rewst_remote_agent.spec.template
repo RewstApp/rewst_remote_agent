@@ -17,13 +17,13 @@ rewst_remote_agent is an RMM-agnostic remote agent that leverages Azure IoT Hub.
 %setup -q
 
 %build
-[Commands to build your project]
+python setup.py build
 
 %install
-[Commands to install your project]
+python setup.py install --root=$RPM_BUILD_ROOT
 
 %files
-[Files or directories to include in the package]
+`find $RPM_BUILD_ROOT -type f | sed "s#$RPM_BUILD_ROOT##g"`
 
 %changelog
 %autochangelog
