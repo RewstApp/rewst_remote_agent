@@ -150,7 +150,7 @@ jobs:
 
   rpmbuild:
     runs-on: ubuntu-latest
-    needs: bump_version
+    needs: update_version
     strategy:
       matrix:
         rhel-version: [8, 9]
@@ -169,7 +169,7 @@ jobs:
 
     - name: Build RPM in Docker
       run: |
-        docker run --rm -v ${{ github.workspace }}:/workspace -w /workspace almalinux:${{ matrix.centos-version }} bash -c "
+        docker run --rm -v ${{ github.workspace }}:/workspace -w /workspace almalinux:${{ matrix.rhel-version }} bash -c "
         yum install -y rpm-build
         rpmbuild -ba rewst_remote_agent.spec --define '_sourcedir /workspace' --define '_rpmdir /workspace/rpms'"
       shell: bash
