@@ -165,12 +165,12 @@ jobs:
         echo "%changelog" >> rewst_remote_agent.spec
         cat CHANGELOG.md >> rewst_remote_agent.spec
 
-    - name: Build RPM in CentOS Container
-      uses: docker://centos:${{ matrix.centos-version }}
-      with:
-        args: |
-          yum install -y rpm-build
-          rpmbuild -ba rewst_remote_agent.spec --define "_sourcedir ${{ github.workspace }}" --define "_rpmdir ${{ github.workspace }}/rpms"
+    - name: Build RPM in Docker
+      run: |
+        docker run --rm -v ${{ github.workspace }}:/workspace -w /workspace centos:${{ matrix.centos-version }} bash -c "
+        yum install -y rpm-build
+        rpmbuild -ba rewst_remote_agent.spec --define '_sourcedir /workspace' --define '_rpmdir /workspace/rpms'"
+      shell: bash
 
     - name: Archive RPM Package
       uses: actions/upload-artifact@v2
