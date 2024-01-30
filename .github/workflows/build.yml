@@ -161,8 +161,8 @@ jobs:
 
     - name: Prepare RPM Spec File
       run: |
-        echo "Setting version ${{ needs.bump_version.outputs.new_version }}"
-        sed -e "s/%VERSION%/${{ needs.bump_version.outputs.new_version }}/g" .github/templates/rewst_remote_agent.spec > rewst_remote_agent.spec
+        echo "Setting version $${{ needs.update_version.outputs.new_version }}"
+        sed -e "s/%VERSION%/${{ needs.update_version.outputs.new_version }}/g" .github/templates/rewst_remote_agent.spec > rewst_remote_agent.spec
         echo "Changelog:" > CHANGELOG.md
         git log --format='%s' -n 10 >> CHANGELOG.md
         echo "%changelog" >> rewst_remote_agent.spec
