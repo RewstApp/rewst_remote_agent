@@ -62,6 +62,13 @@ jobs:
     - name: Print new version
       run: echo "New version is ${{ needs.bump_version.outputs.new_version }}"
 
+    - name: Prepare RPM Spec File
+      run: |
+        sed -e "s/%VERSION%/${{ needs.bump_version.outputs.new_version }}/g" .github/templates/rewst_remote_agent.spec.template > rewst_remote_agent.spec
+        # Append generated changelog to spec file
+        echo "%changelog" >> rewst_remote_agent.spec
+        cat CHANGELOG.md >> rewst_remote_agent.spec
+
     - name: Write MS Version file (Windows)
       if: matrix.os == 'windows-latest'
       shell: pwsh
@@ -148,6 +155,28 @@ jobs:
           ./dist/signed/rewst_remote_agent.exe.sha256
           ./dist/signed/rewst_agent_config.exe.sha256
 
+  rpmbuild:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        centos-version: [7, 8, 9]
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v2
+
+    - name: Build RPM in CentOS Container
+      uses: docker://centos:${{ matrix.centos-version }}
+      with:
+        args: |
+          yum install -y rpm-build
+          rpmbuild -ba rewst_remote_agent.spec --define "_sourcedir ${{ github.workspace }}" --define "_rpmdir ${{ github.workspace }}/rpms"
+
+    - name: Archive RPM Package
+      uses: actions/upload-artifact@v2
+      with:
+        name: rpm-package-centos${{ matrix.centos-version }}
+        path: ./rpms/**/*.rpm
 
   release:
     needs: [ bump_version, build ]
