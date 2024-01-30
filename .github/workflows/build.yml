@@ -150,6 +150,7 @@ jobs:
 
   rpmbuild:
     runs-on: ubuntu-latest
+    needs: bump_version
     strategy:
       matrix:
         centos-version: [7, 8, 9]
@@ -158,16 +159,11 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v2
 
-    - name: Generate Changelog from Commits
-      id: generate_changelog
-      run: |
-        echo "Changelog:" > CHANGELOG.md
-        git log --format='%s' -n 10 >> CHANGELOG.md
-
     - name: Prepare RPM Spec File
       run: |
         sed -e "s/%VERSION%/${{ needs.bump_version.outputs.new_version }}/g" .github/templates/rewst_remote_agent.spec.template > rewst_remote_agent.spec
-        # Append generated changelog to spec file
+        echo "Changelog:" > CHANGELOG.md
+        git log --format='%s' -n 10 >> CHANGELOG.md
         echo "%changelog" >> rewst_remote_agent.spec
         cat CHANGELOG.md >> rewst_remote_agent.spec
 
