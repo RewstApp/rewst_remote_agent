@@ -153,7 +153,7 @@ jobs:
     needs: bump_version
     strategy:
       matrix:
-        rhel-version: [7, 8, 9]
+        rhel-version: [8, 9]
 
     steps:
     - name: Checkout code
@@ -169,7 +169,7 @@ jobs:
 
     - name: Build RPM in Docker
       run: |
-        docker run --rm -v ${{ github.workspace }}:/workspace -w /workspace rhel:${{ matrix.centos-version }} bash -c "
+        docker run --rm -v ${{ github.workspace }}:/workspace -w /workspace almalinux:${{ matrix.centos-version }} bash -c "
         yum install -y rpm-build
         rpmbuild -ba rewst_remote_agent.spec --define '_sourcedir /workspace' --define '_rpmdir /workspace/rpms'"
       shell: bash
