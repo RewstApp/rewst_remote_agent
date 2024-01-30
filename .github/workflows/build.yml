@@ -158,6 +158,12 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v2
 
+    - name: Generate Changelog from Commits
+      id: generate_changelog
+      run: |
+        echo "Changelog:" > CHANGELOG.md
+        git log --format='%s' -n 10 >> CHANGELOG.md
+
     - name: Prepare RPM Spec File
       run: |
         sed -e "s/%VERSION%/${{ needs.bump_version.outputs.new_version }}/g" .github/templates/rewst_remote_agent.spec.template > rewst_remote_agent.spec
