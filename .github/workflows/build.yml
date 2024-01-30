@@ -153,7 +153,7 @@ jobs:
     needs: update_version
     strategy:
       matrix:
-        rhel-version: ["rhel:8"]
+        rhel-version: ["almalinux:8"]
 
     steps:
     - name: Checkout code
