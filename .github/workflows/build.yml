@@ -42,7 +42,7 @@ jobs:
           git push --force-with-lease origin main
 
   build:
-    needs: update_version
+    needs: bump_version
     runs-on: ${{ matrix.os }}
     if: "!contains(github.event.head_commit.message, 'skip ci')"
     strategy:
@@ -57,7 +57,7 @@ jobs:
         python-version: ${{ matrix.python-version }}
 
     - name: Print calculated version
-      run: echo "Calculated version is ${{ steps.tag_version.outputs.new_version }}"
+      run: echo "Calculated version is ${{ steps.bump_version.outputs.new_version }}"
 
     - name: Print new version
       run: echo "New version is ${{ needs.bump_version.outputs.new_version }}"
