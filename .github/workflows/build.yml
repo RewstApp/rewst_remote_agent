@@ -42,7 +42,7 @@ jobs:
           git push --force-with-lease origin main
 
   build:
-    needs: bump_version
+    needs: update_version
     runs-on: ${{ matrix.os }}
     if: "!contains(github.event.head_commit.message, 'skip ci')"
     strategy:
@@ -55,9 +55,6 @@ jobs:
       uses: actions/setup-python@v2
       with:
         python-version: ${{ matrix.python-version }}
-
-    - name: Print calculated version
-      run: echo "Calculated version is ${{ steps.bump_version.outputs.new_version }}"
 
     - name: Print new version
       run: echo "New version is ${{ needs.bump_version.outputs.new_version }}"
@@ -149,6 +146,7 @@ jobs:
           ./dist/signed/rewst_agent_config.exe.sha256
 
   rpmbuild:
+    if: "!contains(github.event.head_commit.message, 'skip ci')"
     runs-on: ubuntu-latest
     needs: update_version
     strategy:
@@ -161,6 +159,7 @@ jobs:
 
     - name: Prepare RPM Spec File
       run: |
+        echo "Setting version ${{ needs.bump_version.outputs.new_version }}"
         sed -e "s/%VERSION%/${{ needs.bump_version.outputs.new_version }}/g" .github/templates/rewst_remote_agent.spec > rewst_remote_agent.spec
         echo "Changelog:" > CHANGELOG.md
         git log --format='%s' -n 10 >> CHANGELOG.md
