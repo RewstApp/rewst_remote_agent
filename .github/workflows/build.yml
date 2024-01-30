@@ -85,37 +85,31 @@ jobs:
         chmod +x .github/workflows/build.sh
         .github/workflows/build.sh
     
-    - name: Upload Executable (Linux)
-      if: matrix.os == 'ubuntu-latest'
-      uses: actions/upload-artifact@v2
-      with:
-        name: linux-latest-asset
-        path: |
-          ./dist/rewst_remote_agent
-          ./dist/rewst_service_manager
-          ./dist/rewst_agent_config
-
-    - name: Run build script (MacOS)
-      if: matrix.os == 'macos-latest'
-      run: |
-        chmod +x .github/workflows/build.sh
-        .github/workflows/build.sh
-      
-    - name: Upload Executable (MacOS)
-      if: matrix.os == 'macos-latest'
-      uses: actions/upload-artifact@v2
-      with:
-        name: macos-latest-asset
-        path: |
-          ./dist/rewst_remote_agent
-          ./dist/rewst_service_manager
-          ./dist/rewst_agent_config
-
-    - name: See where we are in Linux
-      if: matrix.os == 'ubuntu-latest'
-      run: |
-        find .
-        pwd
+#    - name: Upload Executable (Linux)
+#      if: matrix.os == 'ubuntu-latest'
+#      uses: actions/upload-artifact@v2
+#      with:
+#        name: linux-latest-asset
+#        path: |
+#          ./dist/rewst_remote_agent
+#          ./dist/rewst_service_manager
+#          ./dist/rewst_agent_config
+#
+#    - name: Run build script (MacOS)
+#      if: matrix.os == 'macos-latest'
+#      run: |
+#        chmod +x .github/workflows/build.sh
+#        .github/workflows/build.sh
+#
+#    - name: Upload Executable (MacOS)
+#      if: matrix.os == 'macos-latest'
+#      uses: actions/upload-artifact@v2
+#      with:
+#        name: macos-latest-asset
+#        path: |
+#          ./dist/rewst_remote_agent
+#          ./dist/rewst_service_manager
+#          ./dist/rewst_agent_config
     
     - name: Sign with SSL.com CodeSignTool
       if: matrix.os == 'windows-latest'

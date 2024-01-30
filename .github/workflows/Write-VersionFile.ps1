@@ -1,3 +1,4 @@
+Set-ExecutionPolicy RemoteSigned
 # Path to the __version__.py file
 $versionFilePath = "__version__.py"
 
