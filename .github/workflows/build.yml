@@ -62,13 +62,6 @@ jobs:
     - name: Print new version
       run: echo "New version is ${{ needs.bump_version.outputs.new_version }}"
 
-    - name: Prepare RPM Spec File
-      run: |
-        sed -e "s/%VERSION%/${{ needs.bump_version.outputs.new_version }}/g" .github/templates/rewst_remote_agent.spec.template > rewst_remote_agent.spec
-        # Append generated changelog to spec file
-        echo "%changelog" >> rewst_remote_agent.spec
-        cat CHANGELOG.md >> rewst_remote_agent.spec
-
     - name: Write MS Version file (Windows)
       if: matrix.os == 'windows-latest'
       shell: pwsh
@@ -164,6 +157,13 @@ jobs:
     steps:
     - name: Checkout code
       uses: actions/checkout@v2
+
+    - name: Prepare RPM Spec File
+      run: |
+        sed -e "s/%VERSION%/${{ needs.bump_version.outputs.new_version }}/g" .github/templates/rewst_remote_agent.spec.template > rewst_remote_agent.spec
+        # Append generated changelog to spec file
+        echo "%changelog" >> rewst_remote_agent.spec
+        cat CHANGELOG.md >> rewst_remote_agent.spec
 
     - name: Build RPM in CentOS Container
       uses: docker://centos:${{ matrix.centos-version }}
