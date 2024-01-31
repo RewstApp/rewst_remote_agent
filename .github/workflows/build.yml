@@ -49,7 +49,7 @@ jobs:
     if: "!contains(github.event.head_commit.message, 'skip ci')"
     strategy:
       matrix:
-        os: [ubuntu-latest, macos-latest, windows-latest]
+        os: [windows-latest]
         python-version: ["3.12"]
     steps:
     - uses: actions/checkout@v2
@@ -79,11 +79,11 @@ jobs:
       shell: cmd
       run: .github\workflows\build.bat
     
-    - name: Run build script (Ubuntu Linux)
-      if: matrix.os == 'ubuntu-latest'
-      run: |
-        chmod +x .github/workflows/build.sh
-        .github/workflows/build.sh
+#    - name: Run build script (Ubuntu Linux)
+#      if: matrix.os == 'ubuntu-latest'
+#      run: |
+#        chmod +x .github/workflows/build.sh
+#        .github/workflows/build.sh
     
 #    - name: Upload Executable (Linux)
 #      if: matrix.os == 'ubuntu-latest'
@@ -160,46 +160,45 @@ jobs:
         draft: false
         prerelease: false
 
-
     - name: Download all assets
       uses: actions/download-artifact@v2
 
-  rpmbuild:
-    if: "!contains(github.event.head_commit.message, 'skip ci')"
-    runs-on: ubuntu-latest
-    needs: [ update_version, release ]
-    strategy:
-      matrix:
-        rhel-version: [ "almalinux:8" ]
-
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v2
-
-      - name: Prepare RPM Spec File
-        run: |
-          echo "Setting version $${{ needs.update_version.outputs.new_version }}"
-          sed -e "s/%VERSION%/${{ needs.update_version.outputs.new_version }}/g" .github/templates/rewst_remote_agent.spec > rewst_remote_agent.spec
-          echo "Changelog:" > CHANGELOG.md
-          git log --format='%s' -n 10 >> CHANGELOG.md
-          echo "%changelog" >> rewst_remote_agent.spec
-          cat CHANGELOG.md >> rewst_remote_agent.spec
-          echo "Using RPM Spec file:"
-          cat rewst_remote_agent.spec
-
-      - name: Build RPM in Docker
-        run: |
-          docker run --rm -v ${{ github.workspace }}:/workspace -w /workspace ${{ matrix.rhel-version }} bash -c "
-          yum install -y rpm-build
-          ls -l
-          rpmbuild -ba rewst_remote_agent.spec --define '_sourcedir .' --define '_rpmdir ./rpms'"
-        shell: bash
-
-      - name: Archive RPM Package
-        uses: actions/upload-artifact@v2
-        with:
-          name: rpm-package-rhel{{ matrix.rhel-version }}
-          path: ./rpms/**/*.rpm
+#  rpmbuild:
+#    if: "!contains(github.event.head_commit.message, 'skip ci')"
+#    runs-on: ubuntu-latest
+#    needs: [ update_version, release ]
+#    strategy:
+#      matrix:
+#        rhel-version: [ "almalinux:8" ]
+#
+#    steps:
+#      - name: Checkout code
+#        uses: actions/checkout@v2
+#
+#      - name: Prepare RPM Spec File
+#        run: |
+#          echo "Setting version $${{ needs.update_version.outputs.new_version }}"
+#          sed -e "s/%VERSION%/${{ needs.update_version.outputs.new_version }}/g" .github/templates/rewst_remote_agent.spec > rewst_remote_agent.spec
+#          echo "Changelog:" > CHANGELOG.md
+#          git log --format='%s' -n 10 >> CHANGELOG.md
+#          echo "%changelog" >> rewst_remote_agent.spec
+#          cat CHANGELOG.md >> rewst_remote_agent.spec
+#          echo "Using RPM Spec file:"
+#          cat rewst_remote_agent.spec
+#
+#      - name: Build RPM in Docker
+#        run: |
+#          docker run --rm -v ${{ github.workspace }}:/workspace -w /workspace ${{ matrix.rhel-version }} bash -c "
+#          yum install -y rpm-build python3-devel
+#          ls -l
+#          rpmbuild -ba rewst_remote_agent.spec --define '_sourcedir .' --define '_rpmdir ./rpms'"
+#        shell: bash
+#
+#      - name: Archive RPM Package
+#        uses: actions/upload-artifact@v2
+#        with:
+#          name: rpm-package-rhel{{ matrix.rhel-version }}
+#          path: ./rpms/**/*.rpm
 
   os-releases:
     needs: [ release ]
@@ -287,63 +286,83 @@ jobs:
         asset_content_type: text/plain
 
     # Linux
-    - name: Upload Release Assets - Linux (rewst_remote_agent)
-      uses: actions/upload-release-asset@v1
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      with:
-        upload_url: ${{ steps.create_release.outputs.upload_url }} 
-        asset_path: ./linux-latest-asset/rewst_remote_agent
-        asset_name: rewst_remote_agent.linux.bin
-        asset_content_type: application/octet-stream
-  
-    - name: Upload Release Assets - Linux (rewst_service_manager)
-      uses: actions/upload-release-asset@v1
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      with:
-        upload_url: ${{ steps.create_release.outputs.upload_url }}
-        asset_path: ./linux-latest-asset/rewst_service_manager
-        asset_name: rewst_service_manager.linux.bin
-        asset_content_type: application/octet-stream
-
-    - name: Upload Release Assets - Linux (rewst_agent_config)
-      uses: actions/upload-release-asset@v1
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      with:
-        upload_url: ${{ steps.create_release.outputs.upload_url }}
-        asset_path: ./linux-latest-asset/rewst_agent_config
-        asset_name: rewst_agent_config.linux.bin
-        asset_content_type: application/octet-stream
+#    - name: Upload Release Assets - Linux (rewst_remote_agent)
+#      uses: actions/upload-release-asset@v1
+#      env:
+#        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+#      with:
+#        upload_url: ${{ steps.create_release.outputs.upload_url }}
+#        asset_path: ./linux-latest-asset/rewst_remote_agent
+#        asset_name: rewst_remote_agent.linux.bin
+#        asset_content_type: application/octet-stream
+#
+#    - name: Upload Release Assets - Linux (rewst_service_manager)
+#      uses: actions/upload-release-asset@v1
+#      env:
+#        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+#      with:
+#        upload_url: ${{ steps.create_release.outputs.upload_url }}
+#        asset_path: ./linux-latest-asset/rewst_service_manager
+#        asset_name: rewst_service_manager.linux.bin
+#        asset_content_type: application/octet-stream
+#
+#    - name: Upload Release Assets - Linux (rewst_agent_config)
+#      uses: actions/upload-release-asset@v1
+#      env:
+#        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+#      with:
+#        upload_url: ${{ steps.create_release.outputs.upload_url }}
+#        asset_path: ./linux-latest-asset/rewst_agent_config
+#        asset_name: rewst_agent_config.linux.bin
+#        asset_content_type: application/octet-stream
   
     # MacOS
-    - name: Upload Release Assets - MacOS (rewst_remote_agent)
-      uses: actions/upload-release-asset@v1
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      with:
-        upload_url: ${{ steps.create_release.outputs.upload_url }} 
-        asset_path: ./macos-latest-asset/rewst_remote_agent
-        asset_name: rewst_remote_agent.macos.bin
-        asset_content_type: application/octet-stream
-    
-    - name: Upload Release Assets - MacOS (rewst_service_manager)
-      uses: actions/upload-release-asset@v1
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      with:
-        upload_url: ${{ steps.create_release.outputs.upload_url }}
-        asset_path: ./macos-latest-asset/rewst_service_manager
-        asset_name: rewst_service_manager.macos.bin
-        asset_content_type: application/octet-stream
-  
-    - name: Upload Release Assets - MacOS (rewst_agent_config)
-      uses: actions/upload-release-asset@v1
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      with:
-        upload_url: ${{ steps.create_release.outputs.upload_url }}
-        asset_path: ./macos-latest-asset/rewst_agent_config
-        asset_name: rewst_agent_config.macos.bin
-        asset_content_type: application/octet-stream
+#    - name: Upload Release Assets - MacOS (rewst_remote_agent)
+#      uses: actions/upload-release-asset@v1
+#      env:
+#        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+#      with:
+#        upload_url: ${{ steps.create_release.outputs.upload_url }}
+#        asset_path: ./macos-latest-asset/rewst_remote_agent
+#        asset_name: rewst_remote_agent.macos.bin
+#        asset_content_type: application/octet-stream
+#
+#    - name: Upload Release Assets - MacOS (rewst_service_manager)
+#      uses: actions/upload-release-asset@v1
+#      env:
+#        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+#      with:
+#        upload_url: ${{ steps.create_release.outputs.upload_url }}
+#        asset_path: ./macos-latest-asset/rewst_service_manager
+#        asset_name: rewst_service_manager.macos.bin
+#        asset_content_type: application/octet-stream
+#
+#    - name: Upload Release Assets - MacOS (rewst_agent_config)
+#      uses: actions/upload-release-asset@v1
+#      env:
+#        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+#      with:
+#        upload_url: ${{ steps.create_release.outputs.upload_url }}
+#        asset_path: ./macos-latest-asset/rewst_agent_config
+#        asset_name: rewst_agent_config.macos.bin
+#        asset_content_type: application/octet-stream
+
+  delete_release_on_fail:
+    runs-on: ubuntu-latest
+    if: failure()  # This job runs only if previous jobs fail
+    needs: [ update_version, build, rpmbuild ]
+    steps:
+      - name: Delete Release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          OWNER: tim@rewst.io
+          REPO: rewst_remote_agent
+          TAG_NAME: v${{ needs.update_version.outputs.new_version }}
+        run: |
+          # Get Release ID
+          release_id=$(curl -s -H "Authorization: token $GITHUB_TOKEN" \
+            https://api.github.com/repos/$OWNER/$REPO/releases/tags/$TAG_NAME | jq -r '.id')
+          
+          # Delete Release
+          curl -X DELETE -H "Authorization: token $GITHUB_TOKEN" \
+            https://api.github.com/repos/$OWNER/$REPO/releases/$release_id

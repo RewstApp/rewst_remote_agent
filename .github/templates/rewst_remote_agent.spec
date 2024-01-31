@@ -5,6 +5,9 @@ Summary:        An RMM-agnostic remote agent using the Azure IoT Hub
 
 License:        GPLv3
 URL:            https://github.com/rewstapp/rewst_remote_agent
+Source0:        v0.6.91.tar.gz
+
+BuildArch:      noarch
 
 BuildRequires:  python3-devel
 Requires:       python3
@@ -24,5 +27,4 @@ python setup.py install --root=$RPM_BUILD_ROOT
 %files
 `find $RPM_BUILD_ROOT -type f | sed "s#$RPM_BUILD_ROOT##g"`
 
-%changelog
-%autochangelog
+

@@ -22,7 +22,7 @@
   - Videos!
 
 ## Improvements
-- [ ] Implement online status tracking in IoT Hub
+- [x] Implement online status tracking in IoT Hub
   - Develop a mechanism to track and report the online status of agents
 - [ ] Periodic refresh agent info tags
 - [ ] Finish and test Linux Operation

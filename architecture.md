@@ -15,14 +15,14 @@
     - [x] `config_io.py`: load and save configuration files
     - [x] `fetch_config.py`: fetch configuration data from Rewst or Saved Locations
     - [x] `host_info.py`: Collects information about the host to sync with IoT Hub
-  - [ ] `rewst_agent_config.py`: 
+  - [x] `rewst_agent_config.py`: 
     - Script for initial setup.
     - Downloads the main application and service manager executables.
     - Writes the configuration file based on provided `--config-url` and `--config-secret`.
-  - [ ] `rewst_remote_agent.py`:
+  - [x] `rewst_remote_agent.py`:
     - Main application script.
     - Handles messages from IoT Hub during normal operations.
-  - [ ] `rewst_service_manager.py`:
+  - [x] `rewst_service_manager.py`:
     - Script for managing the service.
     - Ensures the main application is always running via operating system services.
 
