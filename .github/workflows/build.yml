@@ -350,7 +350,7 @@ jobs:
   delete_release_on_fail:
     runs-on: ubuntu-latest
     if: failure()  # This job runs only if previous jobs fail
-    needs: [ update_version, build, rpmbuild ]
+    needs: [ update_version, build ]
     steps:
       - name: Delete Release
         env:
