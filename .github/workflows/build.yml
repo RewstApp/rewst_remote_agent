@@ -30,7 +30,7 @@ jobs:
     outputs:
       new_version: ${{ needs.bump_version.outputs.new_version }}
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
         with:
           fetch-depth: 0
       - name: Update version file
@@ -52,9 +52,9 @@ jobs:
         os: [windows-latest]
         python-version: ["3.12"]
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v4
     - name: Set up Python ${{ matrix.python-version }}
-      uses: actions/setup-python@v2
+      uses: actions/setup-python@v5
       with:
         python-version: ${{ matrix.python-version }}
 
@@ -146,8 +146,7 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v4
 
     - name: Create Release
       id: create_release
@@ -173,7 +172,7 @@ jobs:
 #
 #    steps:
 #      - name: Checkout code
-#        uses: actions/checkout@v2
+#        uses: actions/checkout@v4
 #
 #      - name: Prepare RPM Spec File
 #        run: |
@@ -200,11 +199,8 @@ jobs:
 #          name: rpm-package-rhel{{ matrix.rhel-version }}
 #          path: ./rpms/**/*.rpm
 
-  os-releases:
-    needs: [ release ]
-    runs-on: ubuntu-latest
-    steps:
-    # Windows
+
+    # Windows Files
     - name: Upload Release Assets - Windows (rewst_windows_service)
       uses: actions/upload-release-asset@v1
       env:
