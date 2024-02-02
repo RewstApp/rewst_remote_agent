@@ -15,6 +15,8 @@ logging.basicConfig(
     datefmt='%Y-%m-%d %H:%M:%S',
 )
 
+os_type = platform.system().lower()
+
 
 def get_executable_folder(org_id):
     os_type = platform.system().lower()
@@ -32,13 +34,12 @@ def get_executable_folder(org_id):
 
 
 def get_service_manager_path(org_id):
-    os_type = platform.system().lower()
     if os_type == "windows":
-        executable_name = f"rewst_service_manager.win.exe"
+        executable_name = f"rewst_service_manager.win_{org_id}.exe"
     elif os_type == "linux":
-        executable_name = f"rewst_service_manager.linux.bin"
+        executable_name = f"rewst_service_manager.linux_{org_id}.bin"
     elif os_type == "darwin":
-        executable_name = f"rewst_service_manager.macos.bin"
+        executable_name = f"rewst_service_manager.macos_{org_id}.bin"
     else:
         logging.error(f"Unsupported OS type: {os_type}. Send this output to Rewst for investigation!")
         exit(1)
@@ -47,7 +48,6 @@ def get_service_manager_path(org_id):
 
 
 def get_agent_executable_path(org_id):
-    os_type = platform.system().lower()
     if os_type == "windows":
         executable_name = f"rewst_remote_agent_{org_id}.win.exe"
     elif os_type == "linux":
@@ -62,7 +62,6 @@ def get_agent_executable_path(org_id):
 
 
 def get_service_executable_path(org_id):
-    os_type = platform.system().lower()
     if os_type == "windows":
         executable_name = f"rewst_windows_service_{org_id}.win.exe"
         executable_path = f"{get_executable_folder(org_id)}{executable_name}"
@@ -73,7 +72,6 @@ def get_service_executable_path(org_id):
 
 
 def get_logging_path(org_id):
-    os_type = platform.system().lower()
     base_dir = site_config_dir()
     log_filename = "rewst_agent.log"
     if os_type == "windows":
@@ -90,7 +88,6 @@ def get_logging_path(org_id):
 
 
 def get_config_file_path(org_id):
-    os_type = platform.system().lower()
     base_dir = site_config_dir()
     logging.info(f"Returning {os_type} config file path.")
     if os_type == "windows":
