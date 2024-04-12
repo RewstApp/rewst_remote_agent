@@ -2,6 +2,8 @@ Set-ExecutionPolicy RemoteSigned
 # Path to the __version__.py file
 $versionFilePath = "__version__.py"
 
+$version = $version -replace "-[^.]*", ""
+
 # Check if the file exists
 if (-Not (Test-Path $versionFilePath)) {
     Write-Host "Version file not found: $versionFilePath"
