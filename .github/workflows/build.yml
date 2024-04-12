@@ -8,6 +8,7 @@ on:
       - '__version__.py'  # Ignore commits that only update the version file
   pull_request:
 
+
 jobs:
 
   bump_version:
@@ -18,7 +19,7 @@ jobs:
     steps:
     - name: Bump version and push tag
       id: tag_version
-      uses: mathieudutour/github-tag-action@v6.1
+      uses: mathieudutour/github-tag-action@v6.2
       with:
         github_token: ${{ secrets.GITHUB_TOKEN }}
     - name: Print version output
@@ -78,13 +79,13 @@ jobs:
       if: matrix.os == 'windows-latest'
       shell: cmd
       run: .github\workflows\build.bat
-    
+
 #    - name: Run build script (Ubuntu Linux)
 #      if: matrix.os == 'ubuntu-latest'
 #      run: |
 #        chmod +x .github/workflows/build.sh
 #        .github/workflows/build.sh
-    
+
 #    - name: Upload Executable (Linux)
 #      if: matrix.os == 'ubuntu-latest'
 #      uses: actions/upload-artifact@v2
@@ -110,7 +111,7 @@ jobs:
 #          ./dist/rewst_remote_agent
 #          ./dist/rewst_service_manager
 #          ./dist/rewst_agent_config
-    
+
     - name: Sign with SSL.com CodeSignTool
       if: matrix.os == 'windows-latest'
       shell: pwsh
@@ -206,7 +207,7 @@ jobs:
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
-        upload_url: ${{ steps.create_release.outputs.upload_url }} 
+        upload_url: ${{ steps.create_release.outputs.upload_url }}
         asset_path: ./windows-latest-signed-asset/rewst_windows_service.exe
         asset_name: rewst_windows_service.win.exe
         asset_content_type: application/octet-stream
@@ -226,7 +227,7 @@ jobs:
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
-        upload_url: ${{ steps.create_release.outputs.upload_url }} 
+        upload_url: ${{ steps.create_release.outputs.upload_url }}
         asset_path: ./windows-latest-signed-asset/rewst_service_manager.exe
         asset_name: rewst_service_manager.win.exe
         asset_content_type: application/octet-stream
@@ -236,7 +237,7 @@ jobs:
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
-        upload_url: ${{ steps.create_release.outputs.upload_url }} 
+        upload_url: ${{ steps.create_release.outputs.upload_url }}
         asset_path: ./windows-latest-signed-asset/rewst_agent_config.exe
         asset_name: rewst_agent_config.win.exe
         asset_content_type: application/octet-stream
@@ -311,7 +312,7 @@ jobs:
 #        asset_path: ./linux-latest-asset/rewst_agent_config
 #        asset_name: rewst_agent_config.linux.bin
 #        asset_content_type: application/octet-stream
-  
+
     # MacOS
 #    - name: Upload Release Assets - MacOS (rewst_remote_agent)
 #      uses: actions/upload-release-asset@v1
