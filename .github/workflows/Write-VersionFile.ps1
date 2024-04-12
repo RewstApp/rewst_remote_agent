@@ -1,15 +1,45 @@
-param(
-    [string]$version
-)
+Set-ExecutionPolicy RemoteSigned
+# Path to the __version__.py file
+$versionFilePath = "__version__.py"
 
 $version = $version -replace "-[^.]*", ""
-$formatted_version = "$version" -replace '\.', ',' -replace '-service-refactor', ''
+
+# Check if the file exists
+if (-Not (Test-Path $versionFilePath)) {
+    Write-Host "Version file not found: $versionFilePath"
+    exit
+}
+
+# Read the file content
+$fileContent = Get-Content $versionFilePath
+
+Write-Host "Version file contents: $fileContent"
+
+# Use regex to extract the version number
+$versionRegex = "__version__ = '(.*)'"
+$version = if ($fileContent -match $versionRegex) {
+    $matches[1]
+} else {
+    "Unknown"
+}
+
+Write-Host "Extracted version: $version"
+
+# Ensure the version string contains exactly three values separated by commas
+$formatted_version = $version -replace '\.', ',' -replace '-service-refactor', ''
+$version_parts = $formatted_version.Split(',')
+while ($version_parts.Count -lt 4) {
+    $formatted_version += ',0'
+    $version_parts += 1
+}
+
+Write-Host "Formatted version: $formatted_version"
 
 $versionInfo = @"
 VSVersionInfo(
     ffi=FixedFileInfo(
-      filevers=($formatted_version,0),
-      prodvers=($formatted_version,0),
+      filevers=($formatted_version),
+      prodvers=($formatted_version),
       mask=0x3f,
       flags=0x0,
       OS=0x4,
@@ -34,4 +64,4 @@ VSVersionInfo(
 
 $versionInfo | Out-File -FilePath version.txt -Encoding utf8
 
-Get-Content -Path version.txt
+Write-Host "Version info written to version.txt"

@@ -1,1 +1,0 @@
-iwr ((irm https://api.github.com/repos/RewstApp/rewst_remote_agent/releases/latest).assets|?{$_.name -eq "rewst_remote_agent.win.exe"}|select -exp browser_download_url) -OutFile rewst_remote_agent.win.exe; & .\rewst_remote_agent.win.exe --config-url "{{ CTX.config_url }}" --config-secret "{{ CTX.config_secret }}" --install-service

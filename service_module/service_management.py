@@ -36,7 +36,7 @@ def is_service_installed(org_id=None):
             return True  # Service is installed
         except Exception as e:
             logging.exception(f"Error returning service information: {e}")
-        return False  # Service is not installed
+            return False  # Service is not installed
     elif os_type == "linux":
         service_path = f"/etc/systemd/system/{service_name}.service"
         logging.info(f"Service {service_name} is installed.")

@@ -36,6 +36,7 @@ class RewstWindowsService(win32serviceutil.ServiceFramework):
         _svc_display_name = self.get_service_display_name()
 
         win32serviceutil.ServiceFramework.__init__(self, args)
+        self.process = None
         self.hWaitStop = win32event.CreateEvent(None, 0, 0, None)
         self.process_ids = []
 
@@ -65,7 +66,7 @@ class RewstWindowsService(win32serviceutil.ServiceFramework):
                 logging.info("Stop signal received.")
                 break
             # Check if process is still running
-            if self.process.poll() is not None:
+            if self.process and self.process.poll() is not None:
                 logging.warning("External process terminated unexpectedly. Restarting.")
                 self.start_process()
 
