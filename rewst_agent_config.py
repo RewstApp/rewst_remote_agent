@@ -1,3 +1,4 @@
+import __version__
 import argparse
 import asyncio
 import logging
@@ -23,9 +24,18 @@ logging.basicConfig(
     format='%(asctime)s %(levelname)s: %(message)s',
     datefmt='%Y-%m-%d %H:%M:%S',
 )
-logging.info(f"Running on {platform.system()} {platform.release()}")
+
 
 os_type = platform.system().lower()
+
+
+def output_environment_info():
+    # Output OS Info
+    logging.info(f"Running on {platform.system()} {platform.release()}")
+
+    # Output current application version
+    version_string = f"v{__version__.__version__}"
+    logging.info("Rewst Agent Configuration Tool " + version_string)
 
 
 def is_valid_url(url):
@@ -175,6 +185,8 @@ def end_program(exit_level=1):
 
 
 async def main(config_url, config_secret, org_id):
+
+    output_environment_info()
 
     # Check URL and Secret for valid strings
     if not is_valid_url(config_url):
