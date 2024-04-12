@@ -1,8 +1,12 @@
 param(
     [string]$version
 )
+Write-Host "Version: " $version
 
 $formatted_version = "$version" -replace '\.', ',' -replace '-back_to_last_working', ''
+
+Write-Host "formatted_Version: " $formatted_version
+
 
 $versionInfo = @"
 VSVersionInfo(
