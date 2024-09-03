@@ -161,7 +161,7 @@ jobs:
         prerelease: false
 
     - name: Download all assets
-      uses: actions/download-artifact@v2
+      uses: actions/download-artifact@v4.1.7
 
 #  rpmbuild:
 #    if: "!contains(github.event.head_commit.message, 'skip ci')"
