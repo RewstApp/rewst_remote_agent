@@ -1,14 +1,26 @@
+""" Module to setup logging for IoT Hub."""
+
 import logging
 import logging.handlers
 import platform
 import sys
 
 
-def setup_logging(app_name):
-    logger = logging.getLogger(app_name)
-    logger.setLevel(logging.INFO)  # Set logging level to INFO or DEBUG as needed
+def setup_logging(app_name: str) -> logging.Logger:
+    """Setup logger settings for the application.
 
-    formatter = logging.Formatter('%(asctime)s %(levelname)s: %(message)s', datefmt='%Y-%m-%d %H:%M:%S')
+    Args:
+        app_name (str): Application name.
+
+    Returns:
+        logging.Logger: Instance of the logger created for the application.
+    """
+    logger = logging.getLogger(app_name)
+    # Set logging level to INFO or DEBUG as needed
+    logger.setLevel(logging.INFO)
+
+    formatter = logging.Formatter(
+        '%(asctime)s %(levelname)s: %(message)s', datefmt='%Y-%m-%d %H:%M:%S')
 
     # Check if the operating system is Windows
     if platform.system().lower() == 'windows':
@@ -33,9 +45,21 @@ def setup_logging(app_name):
     return logger
 
 
-def log_error(logger, error_message):
+def log_error(logger: logging.Logger, error_message: str) -> None:
+    """Log an error message to the logger.
+
+    Args:
+        logger (logging.Logger): Logger instance.
+        error_message (str): Error message to log.
+    """
     logger.error(error_message)
 
 
-def log_info(logger, info_message):
+def log_info(logger: logging.Logger, info_message: str) -> None:
+    """Log an information message to the logger.
+
+    Args:
+        logger (logging.Logger): Logger instance.
+        info_message (str): Information message to log.
+    """
     logger.info(info_message)
