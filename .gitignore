@@ -1,6 +1,14 @@
+# Cache files
 __pycache__
 
-/env
+# Temporary directories
 /build
 /dist
 /*.egg-info
+/install
+
+# Test files
+test.log
+
+# Coverage files 
+.coverage
