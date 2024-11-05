@@ -1,12 +1,15 @@
+"""Module for testing the fetch_config.py module"""
+
 import unittest
-import httpx
 from unittest import mock
+import httpx
 from config_module.fetch_config import (
     fetch_configuration,
-)  # Adjust to actual import path
+)
 
 
 class TestFetchConfig(unittest.IsolatedAsyncioTestCase):
+    """Test class for fetch_config.py module"""
 
     async def test_fetch_configuration_successful(self):
         """Test a successful configuration fetch with all required keys."""
@@ -39,15 +42,20 @@ class TestFetchConfig(unittest.IsolatedAsyncioTestCase):
         }
 
         with mock.patch("httpx.AsyncClient.post", return_value=mock_response):
-            result = await fetch_configuration("http://test_url", secret="test_secret", retry_intervals=[(0, 1)])
+            result = await fetch_configuration(
+                "http://test_url", secret="test_secret", retry_intervals=((0, 1))
+            )
             self.assertIsNone(result)
 
     async def test_fetch_configuration_retry_on_timeout(self):
         """Test that fetch_configuration retries on timeout."""
         with mock.patch(
-            "httpx.AsyncClient.post", side_effect=httpx.TimeoutException("Request timeout")
+            "httpx.AsyncClient.post",
+            side_effect=httpx.TimeoutException("Request timeout"),
         ), mock.patch("asyncio.sleep", return_value=None) as mock_sleep:
-            result = await fetch_configuration("http://test_url", secret="test_secret", retry_intervals=[(10, 2)])
+            result = await fetch_configuration(
+                "http://test_url", secret="test_secret", retry_intervals=((10, 2))
+            )
             self.assertIsNone(result)
             self.assertTrue(mock_sleep.called)
 
@@ -56,7 +64,9 @@ class TestFetchConfig(unittest.IsolatedAsyncioTestCase):
         with mock.patch(
             "httpx.AsyncClient.post", side_effect=httpx.RequestError("Network error")
         ), mock.patch("asyncio.sleep", return_value=None) as mock_sleep:
-            result = await fetch_configuration("http://test_url", secret="test_secret", retry_intervals=[(10, 2)])
+            result = await fetch_configuration(
+                "http://test_url", secret="test_secret", retry_intervals=((10, 2))
+            )
             self.assertIsNone(result)
             self.assertTrue(mock_sleep.called)
 
@@ -68,7 +78,9 @@ class TestFetchConfig(unittest.IsolatedAsyncioTestCase):
         with mock.patch(
             "httpx.AsyncClient.post", return_value=mock_response
         ), mock.patch("asyncio.sleep", return_value=None) as mock_sleep:
-            result = await fetch_configuration("http://test_url", secret="test_secret", retry_intervals=[(10, 2)])
+            result = await fetch_configuration(
+                "http://test_url", secret="test_secret", retry_intervals=[(10, 2)]
+            )
             self.assertIsNone(result)
             self.assertTrue(mock_sleep.called)
 
@@ -80,8 +92,7 @@ class TestFetchConfig(unittest.IsolatedAsyncioTestCase):
         with mock.patch("httpx.AsyncClient.post", return_value=mock_response):
             with self.assertLogs(level="ERROR") as log:
                 result = await fetch_configuration(
-                    "http://test_url", secret="test_secret",
-                    retry_intervals=[(10, 2)]
+                    "http://test_url", secret="test_secret", retry_intervals=[(10, 2)]
                 )
                 self.assertIsNone(result)
                 self.assertIn("Not authorized", log.output[0])
@@ -94,7 +105,9 @@ class TestFetchConfig(unittest.IsolatedAsyncioTestCase):
         with mock.patch(
             "httpx.AsyncClient.post", return_value=mock_response
         ), mock.patch("asyncio.sleep", return_value=None) as mock_sleep:
-            result = await fetch_configuration("http://test_url", secret="test_secret", retry_intervals=[(10, 3)])
+            result = await fetch_configuration(
+                "http://test_url", secret="test_secret", retry_intervals=((10, 3))
+            )
             self.assertIsNone(result)
             self.assertGreaterEqual(
                 mock_sleep.call_count, 3
