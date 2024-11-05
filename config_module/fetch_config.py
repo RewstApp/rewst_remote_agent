@@ -1,6 +1,6 @@
 """ Module for fetching configuration """
 
-from typing import Dict, Any
+from typing import Dict, Any, List, Tuple
 
 import logging
 import asyncio
@@ -24,7 +24,14 @@ REQUIRED_KEYS = [
 
 
 async def fetch_configuration(
-    config_url: str, secret: str = None, org_id: str = None
+    config_url: str,
+    secret: str = None,
+    org_id: str = None,
+    retry_intervals: Tuple[Tuple[int, int | float]] = (
+        (5, 12),
+        (60, 60),
+        (300, float("inf")),
+    ),
 ) -> Dict[str, Any] | None:
     """
     Fetch configuration from configuration link.
@@ -33,7 +40,9 @@ async def fetch_configuration(
         config_url (str): Configuration url.
         secret (str, optional): Client secret with the Rewst platform. Defaults to None.
         org_id (str, optional): Organization identifier in Rewst platform. Defaults to None.
-
+        retry_intervals (Tuple[Tuple[int, int | float]], optional): List of tuples of intervals
+            and maximum retries to do in case the response is an error. Defaults to
+            ((5, 12), (60, 60), (300, float("inf"))).
     Returns:
         Dict[str, Any]|None: Configuration data if successful, otherwise None.
     """
@@ -46,11 +55,6 @@ async def fetch_configuration(
 
     logging.debug(f"Sending host information to {config_url}: {str(host_info)}")
 
-    retry_intervals = [
-        (5, 12),
-        (60, 60),
-        (300, float("inf")),
-    ]  # (interval, max_retries) for each phase
     for interval, max_retries in retry_intervals:
         retries = 0
         while retries < max_retries:
@@ -69,12 +73,14 @@ async def fetch_configuration(
                     logging.warning(
                         f"Attempt {retries}: Request timed out. Retrying..."
                     )
+                    await asyncio.sleep(interval)
                     continue  # Skip the rest of the loop and retry
 
                 except httpx.RequestError as e:
                     logging.warning(
                         f"Attempt {retries}: Network error: {e}. Retrying..."
                     )
+                    await asyncio.sleep(interval)
                     continue
 
                 if response.status_code == 303:
