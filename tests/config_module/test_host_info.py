@@ -23,7 +23,7 @@ class TestHostInfo(unittest.TestCase):
         mock_getnode.return_value = 123456789012345
         mac_address = get_mac_address()
         # Expected MAC address format
-        self.assertEqual(mac_address, "0015cd5b9d7b")
+        self.assertEqual(mac_address, "7048860ddf79")
 
     @patch("config_module.host_info.subprocess.run")
     def test_run_powershell_command_success(self, mock_subprocess):
@@ -76,11 +76,14 @@ class TestHostInfo(unittest.TestCase):
         domain_name = get_entra_domain()
         self.assertIsNone(domain_name)
 
-    @patch("config_module.host_info.psutil")
+    @patch("psutil.win_service_iter")
     @patch("config_module.host_info.platform.system", return_value="Windows")
-    def test_is_entra_connect_server_true(self, mock_platform, mock_psutil):
+    def test_is_entra_connect_server_true(self, mock_platform, mock_service_iter):
         # Mock service names to simulate a running Entra Connect service
-        mock_psutil.win_service_iter.return_value = [MagicMock(name="ADSync")]
+        mock_service = MagicMock()
+        mock_service.name.return_value = "ADSync"
+        mock_service_iter.return_value = [mock_service]
+
         result = is_entra_connect_server()
         self.assertTrue(result)
 
@@ -90,11 +93,14 @@ class TestHostInfo(unittest.TestCase):
         result = is_entra_connect_server()
         self.assertFalse(result)
 
-    @patch("config_module.host_info.psutil")
+    @patch("psutil.win_service_iter")
     @patch("config_module.host_info.platform.system", return_value="Windows")
-    def test_is_service_running_true(self, mock_platform, mock_psutil):
+    def test_is_service_running_true(self, mock_platform, mock_service_iter):
         # Simulate a running service
-        mock_psutil.win_service_iter.return_value = [MagicMock(name="ADSync")]
+        mock_service = MagicMock()
+        mock_service.name.return_value = "ADSync"
+        mock_service_iter.return_value = [mock_service]
+
         result = is_service_running("ADSync")
         self.assertTrue(result)
 
