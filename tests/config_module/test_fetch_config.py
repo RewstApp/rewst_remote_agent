@@ -43,7 +43,7 @@ class TestFetchConfig(unittest.IsolatedAsyncioTestCase):
 
         with mock.patch("httpx.AsyncClient.post", return_value=mock_response):
             result = await fetch_configuration(
-                "http://test_url", secret="test_secret", retry_intervals=((0, 1))
+                "http://test_url", secret="test_secret", retry_intervals=((0, 1),)
             )
             self.assertIsNone(result)
 
@@ -54,7 +54,7 @@ class TestFetchConfig(unittest.IsolatedAsyncioTestCase):
             side_effect=httpx.TimeoutException("Request timeout"),
         ), mock.patch("asyncio.sleep", return_value=None) as mock_sleep:
             result = await fetch_configuration(
-                "http://test_url", secret="test_secret", retry_intervals=((10, 2))
+                "http://test_url", secret="test_secret", retry_intervals=((10, 2),)
             )
             self.assertIsNone(result)
             self.assertTrue(mock_sleep.called)
@@ -65,7 +65,7 @@ class TestFetchConfig(unittest.IsolatedAsyncioTestCase):
             "httpx.AsyncClient.post", side_effect=httpx.RequestError("Network error")
         ), mock.patch("asyncio.sleep", return_value=None) as mock_sleep:
             result = await fetch_configuration(
-                "http://test_url", secret="test_secret", retry_intervals=((10, 2))
+                "http://test_url", secret="test_secret", retry_intervals=((10, 2),)
             )
             self.assertIsNone(result)
             self.assertTrue(mock_sleep.called)
@@ -106,7 +106,7 @@ class TestFetchConfig(unittest.IsolatedAsyncioTestCase):
             "httpx.AsyncClient.post", return_value=mock_response
         ), mock.patch("asyncio.sleep", return_value=None) as mock_sleep:
             result = await fetch_configuration(
-                "http://test_url", secret="test_secret", retry_intervals=((10, 3))
+                "http://test_url", secret="test_secret", retry_intervals=((10, 3),)
             )
             self.assertIsNone(result)
             self.assertGreaterEqual(
