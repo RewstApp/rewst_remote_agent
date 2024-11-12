@@ -1,4 +1,4 @@
-name: Python Unit Tests
+name: Unit Tests
 
 on:
   push:
@@ -24,4 +24,4 @@ jobs:
 
       - name: Run tests
         run: |
-          python -m unittest discover -s tests
+          python -m unittest
