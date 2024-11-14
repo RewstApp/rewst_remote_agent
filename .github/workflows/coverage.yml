@@ -1,0 +1,61 @@
+---
+    name: Code Coverage
+    
+    on:
+      pull_request:
+      push:
+    
+    jobs:
+      coverage:
+        name: Calculate code coverage
+        runs-on: windows-latest
+    
+        steps:
+          - name: Checkout Code
+            uses: actions/checkout@v3
+
+          - name: Set up Python
+            uses: actions/setup-python@v4
+            with:
+              python-version: '3.12'
+         
+          - name: Install dependencies
+            run: |
+              python -m pip install --upgrade pip
+              pip install -r requirements.txt
+          
+          - name: Run tests using coverage.py module
+            run: |
+              coverage run -m unittest
+          
+          - name: Generate xml report
+            run: | 
+              coverage xml
+    
+          - name: Produce the coverage report
+            uses: insightsengineering/coverage-action@v2
+            with:
+              # Path to the Cobertura XML report.
+              path: ./coverage.xml
+              # Minimum total coverage, if you want to the
+              # workflow to enforce it as a standard.
+              # This has no effect if the `fail` arg is set to `false`.
+              threshold: 80
+              # Fail the workflow if the minimum code coverage
+              # reuqirements are not satisfied.
+              fail: true
+              # Publish the rendered output as a PR comment
+              publish: true
+              # Create a coverage diff report.
+              diff: true
+              # Branch to diff against.
+              # Compare the current coverage to the coverage
+              # determined on this branch.
+              diff-branch: main
+              # This is where the coverage reports for the
+              # `diff-branch` are stored.
+              # Branch is created if it doesn't already exist'.
+              diff-storage: _xml_coverage_reports
+              # A custom title that can be added to the code
+              # coverage summary in the PR comment.
+              coverage-summary-title: "Code Coverage Summary"
