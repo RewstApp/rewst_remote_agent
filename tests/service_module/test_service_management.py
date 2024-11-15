@@ -4,6 +4,7 @@ Tests for service management module
 
 from unittest.mock import patch, MagicMock
 import unittest
+import subprocess
 import pywintypes
 
 from service_module.service_management import (
@@ -12,10 +13,13 @@ from service_module.service_management import (
     is_service_running,
     restart_service,
     stop_service,
+    start_service,
+    check_service_status,
 )
 
 ORG_ID = "rewst-staff"
 SERVICE_NAME = "rewst-service"
+
 
 class TestServiceManagement(unittest.TestCase):
     """
@@ -49,7 +53,7 @@ class TestServiceManagement(unittest.TestCase):
         "service_module.service_management.get_agent_executable_path",
         return_value="/path/to/agent",
     )
-    def test_is_service_running_not_running(
+    def test_is_service_running_given_not_running(
         self, mock_get_agent_executable_path: MagicMock, mock_process_iter: MagicMock
     ) -> None:
         """
@@ -77,6 +81,22 @@ class TestServiceManagement(unittest.TestCase):
         restart_service(ORG_ID)
         mock_start.assert_called_once_with(ORG_ID)
         mock_stop.assert_called_once_with(ORG_ID)
+
+    @patch("builtins.print")
+    @patch("service_module.service_management.get_service_name")
+    @patch("service_module.service_management.os_type", "nil")
+    def test_check_service_status_given_unsupported(
+        self, mock_get_service_name: MagicMock, mock_print: MagicMock
+    ):
+        """
+        Test check_service_status() given unsupported os.
+
+        Args:
+            mock_get_service_name (MagicMock): Mock instance for get_service_name().
+        """        
+        check_service_status(ORG_ID)
+        mock_get_service_name.assert_called_once_with(ORG_ID)
+        mock_print.assert_called_once_with("Unsupported OS type: nil")
 
 
 @patch("service_module.service_management.os_type", "windows")
@@ -133,7 +153,7 @@ class TestServiceManagementWindows(unittest.TestCase):
     )
     @patch("win32serviceutil.QueryServiceStatus", return_value=True)
     @patch("win32serviceutil.StopService", side_effect=pywintypes.error)
-    def test_stop_service_failed(
+    def test_stop_service_given_failed(
         self,
         mock_stop: MagicMock,
         mock_query_service_status: MagicMock,
@@ -203,6 +223,102 @@ class TestServiceManagementWindows(unittest.TestCase):
         mock_query_service_status.assert_called_once()
         mock_get_service_name.assert_called_once()
 
+    @patch(
+        "service_module.service_management.get_service_name",
+        return_value=SERVICE_NAME,
+    )
+    @patch("win32serviceutil.StartService")
+    def test_start_service(
+        self, mock_start_service: MagicMock, mock_get_service_name: MagicMock
+    ) -> None:
+        """
+        Test start_service().
+
+        Args:
+            mock_start_service (MagicMock): Mock instance for win32serviceutil.StartService().
+            mock_get_service_name (MagicMock): Mock instance for get_service_name().
+        """
+        with self.assertLogs(level="INFO"):
+            start_service(ORG_ID)
+        mock_get_service_name.assert_called_once_with(ORG_ID)
+        mock_start_service.assert_called_once_with(SERVICE_NAME)
+
+    @patch("builtins.print")
+    @patch(
+        "service_module.service_management.get_service_name", return_value=SERVICE_NAME
+    )
+    @patch("subprocess.run")
+    def test_check_service_status(
+        self,
+        mock_run: MagicMock,
+        mock_get_service_name: MagicMock,
+        mock_print: MagicMock,
+    ) -> None:
+        """
+        Test check_service_status().
+
+        Args:
+            mock_run (MagicMock): Mock instance for subprocess.run().
+            mock_get_service_name (MagicMock): Mock instance for get_service_name().
+            mock_print (MagicMock): Mock instance for print().
+        """
+        # Setup the return value of subproces.run()
+        mock_run.return_value = MagicMock()
+        mock_run.return_value.stdout.strip.return_value = "Ok"
+
+        check_service_status(ORG_ID)
+        mock_run.assert_called_once()
+        mock_get_service_name.assert_called_once_with(ORG_ID)
+        mock_print.assert_called_once_with("Service status: Ok")
+
+    @patch("builtins.print")
+    @patch(
+        "service_module.service_management.get_service_name", return_value=SERVICE_NAME
+    )
+    @patch("win32serviceutil.QueryServiceStatus", return_value=[0, "Ok"])
+    def test_check_service_status(
+        self,
+        mock_query: MagicMock,
+        mock_get_service_name: MagicMock,
+        mock_print: MagicMock,
+    ) -> None:
+        """
+        Test check_service_status().
+
+        Args:
+            mock_query (MagicMock): Mock instance for win32serviceutil.QueryServiceStatus().
+            mock_get_service_name (MagicMock): Mock instance for get_service_name().
+            mock_print (MagicMock): Mock instance for print().
+        """
+        check_service_status(ORG_ID)
+        mock_query.assert_called_once_with(SERVICE_NAME)
+        mock_get_service_name.assert_called_once_with(ORG_ID)
+        mock_print.assert_called_once_with("Service status: Ok")
+
+    @patch("builtins.print")
+    @patch(
+        "service_module.service_management.get_service_name", return_value=SERVICE_NAME
+    )
+    @patch("win32serviceutil.QueryServiceStatus", side_effect=Exception("Failed"))
+    def test_check_service_status_given_failed(
+        self,
+        mock_query: MagicMock,
+        mock_get_service_name: MagicMock,
+        mock_print: MagicMock,
+    ) -> None:
+        """
+        Test check_service_status() given it failed.
+
+        Args:
+            mock_query (MagicMock): Mock instance for win32serviceutil.QueryServiceStatus().
+            mock_get_service_name (MagicMock): Mock instance for get_service_name().
+            mock_print (MagicMock): Mock instance for print().
+        """
+        check_service_status(ORG_ID)
+        mock_query.assert_called_once_with(SERVICE_NAME)
+        mock_get_service_name.assert_called_once_with(ORG_ID)
+        mock_print.assert_called_once_with("Error: Failed")
+
 
 @patch("service_module.service_management.os_type", "linux")
 class TestServiceManagementLinux(unittest.TestCase):
@@ -216,6 +332,25 @@ class TestServiceManagementLinux(unittest.TestCase):
         """
         service_name = get_service_name(SERVICE_NAME)
         self.assertEqual(service_name, f"RewstRemoteAgent_{SERVICE_NAME}")
+
+    @patch(
+        "service_module.service_management.get_service_name",
+        return_value=SERVICE_NAME,
+    )
+    @patch("subprocess.run")
+    def test_stop_service(
+        self, mock_run: MagicMock, mock_get_service_name: MagicMock
+    ) -> None:
+        """
+        Test stop_service().
+
+        Args:
+            mock_run (MagicMock): Mock instance for subprocess.run().
+            mock_get_service_name (MagicMock): Mock instance for get_service_name().
+        """
+        stop_service(ORG_ID)
+        mock_get_service_name.assert_called_once_with(ORG_ID)
+        mock_run.assert_called_once_with(f"systemctl stop {SERVICE_NAME}")
 
     @patch("os.path.exists", return_value=True)
     def test_is_service_installed_given_installed(self, mock_exists: MagicMock) -> None:
@@ -233,6 +368,123 @@ class TestServiceManagementLinux(unittest.TestCase):
             f"/etc/systemd/system/RewstRemoteAgent_{SERVICE_NAME}.service"
         )
 
+    @patch("os.path.exists", return_value=False)
+    def test_is_service_installed_given_not_installed(
+        self, mock_exists: MagicMock
+    ) -> None:
+        """
+        Test is_service_installed() given the service is not installed.
+
+        Args:
+            mock_exists (MagicMock): Mock instance for exists().
+        """
+
+        with self.assertLogs(level="INFO"):
+            result = is_service_installed(SERVICE_NAME)
+        self.assertFalse(result)
+        mock_exists.assert_called_once_with(
+            f"/etc/systemd/system/RewstRemoteAgent_{SERVICE_NAME}.service"
+        )
+
+    @patch(
+        "service_module.service_management.get_service_name",
+        return_value=SERVICE_NAME,
+    )
+    @patch("subprocess.run")
+    def test_start_service(
+        self, mock_run: MagicMock, mock_get_service_name: MagicMock
+    ) -> None:
+        """
+        Test start_service().
+
+        Args:
+            mock_run (MagicMock): Mock instance for subprocess.run().
+            mock_get_service_name (MagicMock): Mock instance for get_service_name().
+        """
+        with self.assertLogs(level="INFO"):
+            start_service(ORG_ID)
+        mock_get_service_name.assert_called_once_with(ORG_ID)
+        mock_run.assert_called_once_with(f"systemctl start {SERVICE_NAME}")
+
+    @patch("builtins.print")
+    @patch(
+        "service_module.service_management.get_service_name", return_value=SERVICE_NAME
+    )
+    @patch("subprocess.run")
+    def test_check_service_status(
+        self,
+        mock_run: MagicMock,
+        mock_get_service_name: MagicMock,
+        mock_print: MagicMock,
+    ) -> None:
+        """
+        Test check_service_status().
+
+        Args:
+            mock_run (MagicMock): Mock instance for subprocess.run().
+            mock_get_service_name (MagicMock): Mock instance for get_service_name().
+            mock_print (MagicMock): Mock instance for print().
+        """
+        # Setup the return value of subproces.run()
+        mock_run.return_value = MagicMock()
+        mock_run.return_value.stdout.strip.return_value = "Ok"
+
+        check_service_status(ORG_ID)
+        mock_run.assert_called_once()
+        mock_get_service_name.assert_called_once_with(ORG_ID)
+        mock_print.assert_called_once_with("Service status: Ok")
+
+    @patch("builtins.print")
+    @patch(
+        "service_module.service_management.get_service_name", return_value=SERVICE_NAME
+    )
+    @patch(
+        "subprocess.run",
+        side_effect=subprocess.CalledProcessError(returncode=1, cmd=1, output="Failed"),
+    )
+    def test_check_service_status_given_called_process_error(
+        self,
+        mock_run: MagicMock,
+        mock_get_service_name: MagicMock,
+        mock_print: MagicMock,
+    ) -> None:
+        """
+        Test check_service_status() given the subprocess.CalledProcessError() is raised.
+
+        Args:
+            mock_run (MagicMock): Mock instance for subprocess.run().
+            mock_get_service_name (MagicMock): Mock instance for get_service_name().
+            mock_print (MagicMock): Mock instance for print().
+        """
+        check_service_status(ORG_ID)
+        mock_run.assert_called_once()
+        mock_get_service_name.assert_called_once_with(ORG_ID)
+        mock_print.assert_called_once_with("Error: Failed")
+
+    @patch("builtins.print")
+    @patch(
+        "service_module.service_management.get_service_name", return_value=SERVICE_NAME
+    )
+    @patch("subprocess.run", side_effect=Exception("Failed"))
+    def test_check_service_status_given_exception(
+        self,
+        mock_run: MagicMock,
+        mock_get_service_name: MagicMock,
+        mock_print: MagicMock,
+    ) -> None:
+        """
+        Test check_service_status() given the Exception() is raised.
+
+        Args:
+            mock_run (MagicMock): Mock instance for subprocess.run().
+            mock_get_service_name (MagicMock): Mock instance for get_service_name().
+            mock_print (MagicMock): Mock instance for print().
+        """
+        check_service_status(ORG_ID)
+        mock_run.assert_called_once()
+        mock_get_service_name.assert_called_once_with(ORG_ID)
+        mock_print.assert_called_once_with("Error: Failed")
+
 
 @patch("service_module.service_management.os_type", "darwin")
 class TestServiceManagementDarwin(unittest.TestCase):
@@ -247,11 +499,28 @@ class TestServiceManagementDarwin(unittest.TestCase):
         service_name = get_service_name(SERVICE_NAME)
         self.assertEqual(service_name, f"RewstRemoteAgent_{SERVICE_NAME}")
 
+    @patch(
+        "service_module.service_management.get_service_name",
+        return_value=SERVICE_NAME,
+    )
+    @patch("subprocess.run")
+    def test_stop_service(
+        self, mock_run: MagicMock, mock_get_service_name: MagicMock
+    ) -> None:
+        """
+        Test stop_service().
+
+        Args:
+            mock_run (MagicMock): Mock instance for subprocess.run().
+            mock_get_service_name (MagicMock): Mock instance for get_service_name().
+        """
+        stop_service(ORG_ID)
+        mock_get_service_name.assert_called_once_with(ORG_ID)
+        mock_run.assert_called_once_with(f"launchctl stop {SERVICE_NAME}")
+
     @patch("os.path.expanduser", new=lambda path: path)
     @patch("os.path.exists", return_value=True)
-    def test_is_service_installed(
-        self, mock_exists: MagicMock
-    ) -> None:
+    def test_is_service_installed(self, mock_exists: MagicMock) -> None:
         """
         Test is_service_installed() given the service is installed.
 
@@ -266,6 +535,108 @@ class TestServiceManagementDarwin(unittest.TestCase):
         mock_exists.assert_called_once_with(
             f"~/Library/LaunchAgents/RewstRemoteAgent_{ORG_ID}.plist"
         )
+
+    @patch(
+        "service_module.service_management.get_service_name",
+        return_value=SERVICE_NAME,
+    )
+    @patch("subprocess.run")
+    def test_start_service(
+        self, mock_run: MagicMock, mock_get_service_name: MagicMock
+    ) -> None:
+        """
+        Test start_service().
+
+        Args:
+            mock_run (MagicMock): Mock instance for subprocess.run().
+            mock_get_service_name (MagicMock): Mock instance for get_service_name().
+        """
+        with self.assertLogs(level="INFO"):
+            start_service(ORG_ID)
+        mock_get_service_name.assert_called_once_with(ORG_ID)
+        mock_run.assert_called_once_with(f"launchctl start {SERVICE_NAME}")
+
+    @patch("builtins.print")
+    @patch(
+        "service_module.service_management.get_service_name", return_value=SERVICE_NAME
+    )
+    @patch("subprocess.run")
+    def test_check_service_status(
+        self,
+        mock_run: MagicMock,
+        mock_get_service_name: MagicMock,
+        mock_print: MagicMock,
+    ) -> None:
+        """
+        Test check_service_status().
+
+        Args:
+            mock_run (MagicMock): Mock instance for subprocess.run().
+            mock_get_service_name (MagicMock): Mock instance for get_service_name().
+            mock_print (MagicMock): Mock instance for print().
+        """
+        test_cases = ((SERVICE_NAME, "Running"), ("", "Not Running"))
+
+        for stdout, message in test_cases:
+            with self.subTest(stdout=stdout, message=message):
+                # Setup the return value of subproces.run()
+                mock_run.return_value = MagicMock(stdout=stdout)
+
+                check_service_status(ORG_ID)
+                mock_run.assert_called()
+                mock_get_service_name.assert_called_with(ORG_ID)
+                mock_print.assert_called_with(f"Service status: {message}")
+
+    @patch("builtins.print")
+    @patch(
+        "service_module.service_management.get_service_name", return_value=SERVICE_NAME
+    )
+    @patch(
+        "subprocess.run",
+        side_effect=subprocess.CalledProcessError(returncode=1, cmd=1, output="Failed"),
+    )
+    def test_check_service_status_given_called_process_error(
+        self,
+        mock_run: MagicMock,
+        mock_get_service_name: MagicMock,
+        mock_print: MagicMock,
+    ) -> None:
+        """
+        Test check_service_status() given the subprocess.CalledProcessError() is raised.
+
+        Args:
+            mock_run (MagicMock): Mock instance for subprocess.run().
+            mock_get_service_name (MagicMock): Mock instance for get_service_name().
+            mock_print (MagicMock): Mock instance for print().
+        """
+        check_service_status(ORG_ID)
+        mock_run.assert_called_once()
+        mock_get_service_name.assert_called_once_with(ORG_ID)
+        mock_print.assert_called_once_with("Error: Failed")
+
+    @patch("builtins.print")
+    @patch(
+        "service_module.service_management.get_service_name", return_value=SERVICE_NAME
+    )
+    @patch("subprocess.run", side_effect=Exception("Failed"))
+    def test_check_service_status_given_exception(
+        self,
+        mock_run: MagicMock,
+        mock_get_service_name: MagicMock,
+        mock_print: MagicMock,
+    ) -> None:
+        """
+        Test check_service_status() given the Exception() is raised.
+
+        Args:
+            mock_run (MagicMock): Mock instance for subprocess.run().
+            mock_get_service_name (MagicMock): Mock instance for get_service_name().
+            mock_print (MagicMock): Mock instance for print().
+        """
+        check_service_status(ORG_ID)
+        mock_run.assert_called_once()
+        mock_get_service_name.assert_called_once_with(ORG_ID)
+        mock_print.assert_called_once_with("Error: Failed")
 
 
 if __name__ == "__main__":
