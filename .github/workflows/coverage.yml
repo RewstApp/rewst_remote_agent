@@ -23,24 +23,18 @@
             run: |
               python -m pip install --upgrade pip
               pip install -r requirements.txt
+              pip install coverage-lcov
           
           - name: Run tests using coverage.py module
             run: |
               coverage run -m unittest
           
-          - name: Generate xml report
-            run: | 
-              coverage xml
+          - name: Generate lcov file
+            run: |
+              coverage-lcov
     
           - name: Code Coverage Summary Report
-            uses: irongut/CodeCoverageSummary@v1.2.0
+            uses: VGVentures/very-good-coverage@v1.1.1
             with:
-              filename: coverage.xml
-              badge: true
-              fail_below_min: true
-              format: markdown
-              hide_branch_rate: false
-              hide_complexity: true
-              indicators: true
-              output: both
-              thresholds: '60 80'
+              path: lcov.info
+              min_coverage: 80

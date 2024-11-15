@@ -13,3 +13,4 @@ test.log
 # Coverage files 
 .coverage
 coverage.xml
+lcov.info
