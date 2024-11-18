@@ -14,3 +14,7 @@ test.log
 .coverage
 coverage.xml
 lcov.info
+
+# Build files
+*.spec
+version.txt
