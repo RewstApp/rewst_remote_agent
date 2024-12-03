@@ -70,7 +70,7 @@ def is_service_installed(org_id: str = None) -> bool:
         return os.path.exists(plist_path)
 
 
-def is_service_running(org_id: str = None) -> bool:
+def is_service_running(org_id: str = None) -> bool|str:
     """
     Checks whether the agent service for an organization is running or not.
 
@@ -78,7 +78,7 @@ def is_service_running(org_id: str = None) -> bool:
         org_id (str, optional): Organization identifier in Rewst platform. Defaults to None.
 
     Returns:
-        bool: True if running, otherwise False.
+        bool|str: Executable name as string if running, otherwise False.
     """
     executable_path = get_agent_executable_path(org_id)
     executable_name = os.path.basename(executable_path)
