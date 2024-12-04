@@ -27,7 +27,7 @@
           
           - name: Run tests using coverage.py module
             run: |
-              coverage run pytest
+              pytest --cov=.
           
           - name: Generate lcov file
             run: |
