@@ -7,7 +7,6 @@ import uuid
 import asyncio
 import subprocess
 import json
-from typing import Coroutine
 from base64 import b64encode
 import httpx
 import pytest
@@ -174,6 +173,9 @@ async def test_execute_commands(mocker: MockerFixture, platform: str) -> None:
     mocker.patch("os.path.exists", return_value=False)
     mocker.patch("os.makedirs")
 
+    mocker.patch("os.fsync")
+    mocker.patch("tempfile.NamedTemporaryFile")
+
     # Set process.communicate output
     mocked_process = mocker.PropertyMock()
     mocked_process.communicate.return_value = ("", "")
@@ -185,16 +187,13 @@ async def test_execute_commands(mocker: MockerFixture, platform: str) -> None:
     test_command_b64 = b64encode(test_command.encode("utf-16-le"))
     assert await conn.execute_commands(test_command_b64) == {
         "output": "",
-        "error" : "Script execution failed with exit code 1. Error: "
+        "error": "Script execution failed with exit code 1. Error: ",
     }
 
     # Set process.communicate as success
     mocked_process.communicate.return_value = ("", None)
     mocked_process.returncode = 0
-    assert await conn.execute_commands(test_command_b64) == {
-        "output": "",
-        "error": ""
-    }
+    assert await conn.execute_commands(test_command_b64) == {"output": "", "error": ""}
 
     # Raise error on process
     mocker.patch(
@@ -202,20 +201,20 @@ async def test_execute_commands(mocker: MockerFixture, platform: str) -> None:
     )
     assert await conn.execute_commands(test_command_b64) == {
         "output": "",
-        "error": "Command failed with error code 0: "
+        "error": "Command failed with error code 0: ",
     }
 
     mocker.patch("subprocess.Popen", side_effect=Exception)
     assert await conn.execute_commands(test_command_b64) == {
         "output": "",
-        "error": "An unexpected error occurred: "
+        "error": "An unexpected error occurred: ",
     }
 
     # Send post url
     mocker.patch("httpx.AsyncClient")
     assert await conn.execute_commands(test_command_b64, "URL") == {
         "output": "",
-        "error": "An unexpected error occurred: "
+        "error": "An unexpected error occurred: ",
     }
 
     # Trigger waiting for file to be deleted
@@ -223,28 +222,27 @@ async def test_execute_commands(mocker: MockerFixture, platform: str) -> None:
     mocked_remove = mocker.patch("os.remove")
     assert await conn.execute_commands(test_command_b64) == {
         "output": "",
-        "error": "An unexpected error occurred: "
+        "error": "An unexpected error occurred: ",
     }
 
     mocker.patch("os.path.exists", return_value=True)
     mocked_remove.side_effect = Exception
     assert await conn.execute_commands(test_command_b64) == {
         "output": "",
-        "error": "An unexpected error occurred: "
+        "error": "An unexpected error occurred: ",
     }
 
     mocker.patch("os.path.exists", return_value=True)
     mocked_remove.side_effect = PermissionError
 
-    async def toggle(time: float) -> Coroutine[None, None, None]:
+    async def toggle(time: float) -> None:
         await asyncio.sleep(time)
         mocked_remove.side_effect = Exception
 
-    result, _ = await asyncio.gather(conn.execute_commands(test_command_b64), toggle(1.0))
-    assert result == {
-        "output": "",
-        "error": "An unexpected error occurred: "
-    }
+    result, _ = await asyncio.gather(
+        conn.execute_commands(test_command_b64), toggle(1.0)
+    )
+    assert result == {"output": "", "error": "An unexpected error occurred: "}
 
 
 @pytest.mark.asyncio
@@ -411,9 +409,7 @@ async def test_iot_hub_connection_loop(mocker: MockerFixture, platform: str) -> 
 
     stop_event = asyncio.Event()
 
-    async def delayed_set(
-        event: asyncio.Event, time: float
-    ) -> Coroutine[None, None, None]:
+    async def delayed_set(event: asyncio.Event, time: float) -> None:
         await asyncio.sleep(time)
         event.set()
 
@@ -429,12 +425,11 @@ async def test_iot_hub_connection_loop(mocker: MockerFixture, platform: str) -> 
     assert await iot_hub_connection_loop(CONFIG_DATA, mocked_event) is None
 
     # Trigger signal
-    async def trigger_signal(time: float) -> Coroutine[None, None, None]:
+    async def trigger_signal(time: float) -> None:
         await asyncio.sleep(time)
         signal.raise_signal(signal.SIGINT)
-    
+
     result, _ = await asyncio.gather(
-        iot_hub_connection_loop(CONFIG_DATA, stop_event),
-        trigger_signal(0.5)
+        iot_hub_connection_loop(CONFIG_DATA, stop_event), trigger_signal(0.5)
     )
     assert result is None

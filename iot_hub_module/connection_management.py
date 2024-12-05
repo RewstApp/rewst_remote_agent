@@ -224,7 +224,7 @@ class ConnectionManager:
 
         return output_message_data
 
-    async def handle_message(self, message: Message):
+    async def handle_message(self, message: Message) -> None:
         """Handle incoming message event from the IoT Hub.
 
         Args:
@@ -315,7 +315,7 @@ class ConnectionManager:
             return '/bin/bash'
 
 
-async def iot_hub_connection_loop(config_data: Dict[str, Any], stop_event: asyncio.Event = asyncio.Event()):
+async def iot_hub_connection_loop(config_data: Dict[str, Any], stop_event: asyncio.Event = asyncio.Event()) -> None:
     """Connect to the IoT Hub and wait for a stop event to close the loop.
 
     Args:
