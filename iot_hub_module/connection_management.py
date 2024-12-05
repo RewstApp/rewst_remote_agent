@@ -98,13 +98,11 @@ class ConnectionManager:
         """
         Sets the event handler for income messages from the Iot Hub.
         """
-        try:
-            self.client.on_message_received = self.handle_message
-        except Exception as e:
-            logging.exception(f"Exception in handling message: {e}")
+        self.client.on_message_received = self.handle_message
 
-    async def execute_commands(self, commands: str, post_url: str = None, interpreter_override: str = None) -> Dict[str, str]:
-        """Execute commands on the machine using the specified interpreter and send back result via post_url.
+    async def execute_commands(self, commands: bytes, post_url: str = None, interpreter_override: str = None) -> Dict[str, str]:
+        """
+        Execute commands on the machine using the specified interpreter and send back result via post_url.
 
         Args:
             commands (str): Base64 encoded list of commands.
@@ -317,15 +315,13 @@ class ConnectionManager:
             return '/bin/bash'
 
 
-async def iot_hub_connection_loop(config_data: Dict[str, Any], stop_event: asyncio.Event):
+async def iot_hub_connection_loop(config_data: Dict[str, Any], stop_event: asyncio.Event = asyncio.Event()):
     """Connect to the IoT Hub and wait for a stop event to close the loop.
 
     Args:
         config_data (Dict[str, Any]): Configuration data of the agent service.
         stop_event (asyncio.Event): Stop event instance.
-    """    
-    stop_event = asyncio.Event()
-
+    """
     def signal_handler(signum, frame):
         logging.info(f"Received signal {
                      signum}. Initiating graceful shutdown.")
