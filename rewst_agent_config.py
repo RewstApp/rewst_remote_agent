@@ -325,7 +325,10 @@ async def main(config_url: str, config_secret: str, org_id: str) -> None:
         logging.exception(f"An error occurred: {e}")
 
 
-if __name__ == "__main__":
+def start() -> None:
+    """
+    Parse the arguments and run the main function.
+    """
     parser = argparse.ArgumentParser(description="Rewst Agent Configuration Tool.")
     parser.add_argument("--config-secret", help="Secret Key for configuration access")
     parser.add_argument("--config-url", help="URL to fetch the configuration from.")
@@ -338,3 +341,6 @@ if __name__ == "__main__":
             org_id=args.org_id,
         )
     )
+
+if __name__ == "__main__":
+    start()
