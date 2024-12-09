@@ -3,7 +3,7 @@ name: Build
 on:
   push:
     branches:
-      - main
+      - prod
     paths-ignore:
       - '__version__.py'  # Ignore commits that only update the version file
 
