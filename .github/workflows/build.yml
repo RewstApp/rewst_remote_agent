@@ -6,8 +6,6 @@ on:
       - main
     paths-ignore:
       - '__version__.py'  # Ignore commits that only update the version file
-  pull_request:
-
 
 jobs:
 
