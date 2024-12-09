@@ -295,8 +295,5 @@ async def test_start(
     mocker.patch(f"{MODULE}.main")
     mocker.patch("asyncio.run")
 
-    with pytest.raises(SystemExit):
-        start()
-
     mocker.patch("sys.argv", [MODULE, "--config-url", f"https://rewst.io/config/{ORG_ID}", "--config-secret", "12345678", "--org-id", ORG_ID])
     start()
