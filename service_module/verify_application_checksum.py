@@ -1,12 +1,26 @@
+""" Module for verifying the checksum of the application binary. """
+
+from typing import AnyStr, Any
+
 import hashlib
-import httpx
 import logging
 import os
 import re
+import httpx
+
 from __version__ import __version__
 
 
-def is_checksum_valid(executable_path):
+def is_checksum_valid(executable_path: os.PathLike[AnyStr]) -> bool:
+    """
+    Validates the checksum of an executable.
+
+    Args:
+        executable_path (os.PathLike[AnyStr]): The pathname of the executable.
+
+    Returns:
+        bool: True if checksum is valid, otherwise False.
+    """
     executable_name = os.path.basename(executable_path)
     checksum_file_name = f"{executable_name}.sha256"
 
@@ -26,10 +40,18 @@ def is_checksum_valid(executable_path):
     return github_checksum == local_checksum
 
 
-def get_release_info_by_tag(repo, tag):
+def get_release_info_by_tag(repo: str, tag: str) -> Any:
     """
     Fetch release information from the GitHub repository for a specific tag.
+
+    Args:
+        repo (str): Name of the repository.
+        tag (str): Tag of the repository.
+
+    Returns:
+        Any: Release details in JSON format.
     """
+
     url = f"https://api.github.com/repos/{repo}/releases/tags/{tag}"
     with httpx.Client() as client:
         response = client.get(url)
@@ -37,14 +59,23 @@ def get_release_info_by_tag(repo, tag):
         return response.json()
 
 
-def fetch_checksum_from_github(checksum_file_name):
+def fetch_checksum_from_github(checksum_file_name: str) -> str | None:
     """
-    Fetch the checksum from GitHub for a given file.
+    Fetch the checksum from GitHub for a given file. 
+    Returns None if checksum file does not exist.
+
+    Args:
+        checksum_file_name (str): Checksum file name.
+
+    Returns:
+        str|None: Checksum of the file if specified, otherwise None.
     """
+
     repo = "rewstapp/rewst_remote_agent"
     version_tag = f"v{__version__}"
 
-    checksum_file_url = get_checksum_file_url(repo, version_tag, checksum_file_name)
+    checksum_file_url = get_checksum_file_url(
+        repo, version_tag, checksum_file_name)
 
     if not checksum_file_url:
         logging.error(f"Checksum file URL not found for {checksum_file_name}")
@@ -65,10 +96,20 @@ def fetch_checksum_from_github(checksum_file_name):
         return None
 
 
-def get_checksum_file_url(repo, tag, file_name):
+def get_checksum_file_url(repo: str, tag: str, file_name: str) -> str | None:
     """
     Get the URL of the checksum file for a specific file in a specific release.
+    Returns None if URL is not specified in the asset list.
+
+    Args:
+        repo (str): Name of the repository.
+        tag (str): Tag of the repoistory.
+        file_name (str): File name of the executable.
+
+    Returns:
+        str|None: Download URL if specified in the assets, otherwise None.
     """
+
     release_info = get_release_info_by_tag(repo, tag)
     for asset in release_info.get("assets", []):
         if asset["name"] == file_name:
@@ -76,7 +117,17 @@ def get_checksum_file_url(repo, tag, file_name):
     return None
 
 
-def calculate_local_file_checksum(file_path):
+def calculate_local_file_checksum(file_path: str) -> str | None:
+    """
+    Calculate the checksum of a local file path.
+    Returns None on error.
+
+    Args:
+        file_path (str): File path of a local file.
+
+    Returns:
+        str|None: Checksum of the file or None if failed.
+    """
     sha256_hash = hashlib.sha256()
     try:
         with open(file_path, "rb") as f:

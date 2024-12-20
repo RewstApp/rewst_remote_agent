@@ -1,5 +1,7 @@
 # rewst_remote_agent
 
+[![Unit Tests](https://github.com/RewstApp/rewst_remote_agent/actions/workflows/unit-tests.yml/badge.svg)](https://github.com/RewstApp/rewst_remote_agent/actions/workflows/unit-tests.yml) [![Code Coverage](https://github.com/RewstApp/rewst_remote_agent/actions/workflows/coverage.yml/badge.svg)](https://github.com/RewstApp/rewst_remote_agent/actions/workflows/coverage.yml)
+
 An RMM-agnostic remote agent using the Azure IoT Hub
 
 Goals:

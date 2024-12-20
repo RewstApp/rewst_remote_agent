@@ -1,3 +1,5 @@
+""" Module for managing the remote agent service """
+
 import argparse
 import logging
 import platform
@@ -12,7 +14,6 @@ from service_module.service_management import (
     restart_service,
     check_service_status,
     is_service_installed
-
 )
 
 os_type = platform.system().lower()
@@ -24,11 +25,14 @@ logging.basicConfig(
     datefmt='%Y-%m-%d %H:%M:%S',
 )
 
+# Import windows service for windows os type platform
 if os_type == "windows":
     from rewst_windows_service import RewstWindowsService
 
-
-def main():
+def main() -> None:
+    """
+    Main entry point of the program
+    """
     parser = argparse.ArgumentParser(description='Rewst Service Manager.')
     parser.add_argument('--org-id', required=True, help='Organization ID')
     parser.add_argument('--config-file', help='Path to the configuration file')

@@ -1,3 +1,5 @@
+""" Module for executing the remote agent """
+
 import asyncio
 import logging
 import logging.handlers
@@ -8,11 +10,9 @@ from __version__ import __version__
 from config_module.config_io import (
     load_configuration,
     get_org_id_from_executable_name,
-    setup_file_logging
+    setup_file_logging,
 )
-from iot_hub_module.connection_management import (
-        iot_hub_connection_loop
-    )
+from iot_hub_module.connection_management import iot_hub_connection_loop
 
 os_type = platform.system().lower()
 
@@ -20,16 +20,26 @@ stop_event = asyncio.Event()
 
 
 class ConfigurationError(Exception):
+    """ Configuration error class """
     pass
 
 
-def signal_handler():
+def signal_handler() -> None:
+    """
+    Signal handler used in the application.
+    """    
     logging.info("Shutting down gracefully.")
     stop_event.set()
 
 
 # Main function
-async def main():
+async def main() -> None:
+    """
+    Main entry point of the program
+
+    Raises:
+        ConfigurationError: if the configuration failed.
+    """
 
     logging.info(f"Version: {__version__}")
     logging.info(f"Running on {os_type}")
@@ -41,7 +51,7 @@ async def main():
         if config_file:
             logging.info(f"Using config file {config_file}.")
             config_data = load_configuration(None, config_file)
-            org_id = config_data['rewst_org_id']
+            org_id = config_data["rewst_org_id"]
 
         else:
             org_id = get_org_id_from_executable_name(sys.argv)

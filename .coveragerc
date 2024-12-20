@@ -1,0 +1,8 @@
+[run]
+omit =
+    # Tests
+    tests/*
+
+    # Built-in files
+    __init__.py
+    __version__.py
