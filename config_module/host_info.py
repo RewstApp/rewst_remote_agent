@@ -23,6 +23,12 @@ def get_mac_address() -> str:
     Returns:
         str: MAC address in hexadecimal format iwhtout the columns.
     """
+    # Use the psutil for hardware mac address
+    for _, addrs in psutil.net_if_addrs().items():
+        for addr in addrs:
+            if addr.family == psutil.AF_LINK:
+                return str(addr.address).lower().replace("-", "")
+
     # Returns the MAC address of the host without colons
     mac_num = hex(uuid.UUID(int=uuid.getnode()).int)[2:]
     mac_address = ":".join(mac_num[i : i + 2] for i in range(0, 11, 2))

@@ -1,6 +1,6 @@
 """ Module for fetching configuration """
 
-from typing import Dict, Any, List, Tuple
+from typing import Dict, Any, Tuple
 
 import logging
 import asyncio
@@ -53,7 +53,7 @@ async def fetch_configuration(
     if secret:
         headers["x-rewst-secret"] = secret
 
-    logging.debug(f"Sending host information to {config_url}: {str(host_info)}")
+    logging.info("Sending host information to %s: %s", config_url, host_info)
 
     for interval, max_retries in retry_intervals:
         retries = 0
@@ -71,14 +71,14 @@ async def fetch_configuration(
                     )
                 except httpx.TimeoutException:
                     logging.warning(
-                        f"Attempt {retries}: Request timed out. Retrying..."
+                        "Attempt %d: Request timed out. Retrying...", retries
                     )
                     await asyncio.sleep(interval)
                     continue  # Skip the rest of the loop and retry
 
                 except httpx.RequestError as e:
                     logging.warning(
-                        f"Attempt {retries}: Network error: {e}. Retrying..."
+                        "Attempt %d: Network error: %s. Retrying...", retries, e
                     )
                     await asyncio.sleep(interval)
                     continue
@@ -90,22 +90,29 @@ async def fetch_configuration(
                 elif response.status_code == 200:
                     data = response.json()
                     config_data = data.get("configuration")
+                    logging.info(config_data)
+
                     if config_data and all(key in config_data for key in REQUIRED_KEYS):
                         return config_data
-                    else:
-                        logging.warning(
-                            f"Attempt {retries}: Missing required keys in configuration data. Retrying..."
-                        )
-                elif response.status_code == 400 or response.status_code == 401:
+
+                    logging.warning(
+                        "Attempt %d: Missing required keys in configuration data. Retrying...",
+                        retries,
+                    )
+                elif response.status_code in (400, 401):
                     logging.error(
-                        f"Attempt {retries}: Not authorized. Check your config secret."
+                        "Attempt %d: Not authorized. Check your config secret.", retries
                     )
                 else:
                     logging.warning(
-                        f"Attempt {retries}: Received status code {response.status_code}. Retrying..."
+                        "Attempt %d: Received status code %d. Retrying...",
+                        retries,
+                        response.status_code,
                     )
 
-            logging.info(f"Attempt {retries}: Waiting {interval}s before retrying...")
+            logging.info(
+                "Attempt %d: Waiting %ds before retrying...", retries, interval
+            )
             await asyncio.sleep(interval)
 
     logging.info("This process will end when the service is installed.")

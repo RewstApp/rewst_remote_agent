@@ -15,6 +15,7 @@ import httpx
 
 from azure.iot.device.aio import IoTHubDeviceClient
 from azure.iot.device.iothub.models import Message
+from azure.iot.device.exceptions import ConnectionFailedError, ConnectionDroppedError
 
 from platformdirs import (
     site_config_dir
@@ -26,7 +27,6 @@ from config_module.config_io import (
     get_service_manager_path
 )
 from config_module.host_info import build_host_tags
-import service_module.service_management
 
 # Set up logging
 logging.basicConfig(level=logging.INFO)
@@ -65,14 +65,28 @@ class ConnectionManager:
         )
         return conn_str
 
+    async def connect_using_websockets(self) -> None:
+        """
+        Modify the connection to use websockets and reconnect
+        """
+        try:
+            logging.info("Connecting over websockets...")
+            self.client = IoTHubDeviceClient.create_from_connection_string(
+                self.connection_string, websockets=True)
+            await self.client.connect()
+        except Exception as e:
+            logging.exception("Exception in connection to the IoT Hub: %s", e)
+
     async def connect(self) -> None:
         """
         Connect the agent service to the IoT Hub.
         """
         try:
             await self.client.connect()
+        except (ConnectionFailedError, ConnectionDroppedError):
+            await self.connect_using_websockets()
         except Exception as e:
-            logging.exception(f"Exception in connection to the IoT Hub: {e}")
+            logging.exception("Exception in connection to the IoT Hub: %s", e)
 
     async def disconnect(self) -> None:
         """
@@ -82,7 +96,7 @@ class ConnectionManager:
             await self.client.disconnect()
         except Exception as e:
             logging.exception(
-                f"Exception in disconnecting from the IoT Hub: {e}")
+                "Exception in disconnecting from the IoT Hub: %s", e)
 
     async def send_message(self, message_data: Dict[str, Any]) -> None:
         """
@@ -113,7 +127,7 @@ class ConnectionManager:
             Dict[str, str]: Output message in JSON format sent to the post_url.
         """
         interpreter = interpreter_override or self.get_default_interpreter()
-        logging.info(f"Using interpreter: {interpreter}")
+        logging.info("Using interpreter: %s", interpreter)
         output_message_data = None
 
         # Write commands to a temporary file
@@ -147,7 +161,7 @@ class ConnectionManager:
             os.fsync(temp_file.fileno())  # Ensures all data is written to disk
             temp_file_path = temp_file.name
 
-        logging.info(f"Wrote commands to temp file {temp_file_path}")
+        logging.info("Wrote commands to temp file %s", temp_file_path)
 
         # Construct the shell command to execute the temp file
         if "powershell" in interpreter.lower() or "pwsh" in interpreter.lower():
@@ -157,7 +171,7 @@ class ConnectionManager:
 
         try:
             # Execute the command
-            logging.info(f"Running process via commandline: {shell_command}")
+            logging.info("Running process via commandline: %s", shell_command)
             process = subprocess.Popen(
                 shell_command,
                 stdout=subprocess.PIPE,
@@ -167,7 +181,7 @@ class ConnectionManager:
             )
             stdout, stderr = process.communicate()
             exit_code = process.returncode
-            logging.info(f"Command completed with exit code {exit_code}")
+            logging.info("Command completed with exit code %d", exit_code)
 
             if exit_code != 0 or stderr:
                 # Log and print error details
@@ -187,15 +201,15 @@ class ConnectionManager:
 
         except subprocess.CalledProcessError as e:
             logging.error(
-                f"Command '{shell_command}' failed with error code {e.returncode}")
-            logging.error(f"Error output: {e.output}")
+                "Command '%s' failed with error code %d", shell_command, e.returncode)
+            logging.error("Error output: %s", e.output)
             output_message_data = {
                 'output': '',
                 'error': f"Command failed with error code {e.returncode}: {e.output}"
             }
 
         except Exception as e:
-            logging.error(f"An unexpected error occurred: {e}")
+            logging.error("An unexpected error occurred: %s", e)
             output_message_data = {
                 'output': '',
                 'error': f"An unexpected error occurred: {e}"
@@ -211,16 +225,16 @@ class ConnectionManager:
                 except PermissionError:
                     await asyncio.sleep(1)
                 except Exception as e:
-                    logging.error(f"Error deleting temporary file: {e}")
+                    logging.error("Error deleting temporary file: %s", e)
                     break  # If a different error occurs, break out of the loop
 
         if post_url and output_message_data:
             logging.info("Sending Results to Rewst via httpx.")
             async with httpx.AsyncClient() as client:
                 response = await client.post(post_url, json=output_message_data)
-            logging.info(f"POST request status: {response.status_code}")
+            logging.info("POST request status: %d", response.status_code)
             if response.status_code != 200:
-                logging.error(f"Error response: {response.text}")
+                logging.error("Error response: %s", response.text)
 
         return output_message_data
 
@@ -243,7 +257,7 @@ class ConnectionManager:
                 rewst_engine_host = self.config_data["rewst_engine_host"]
                 post_url = f"https://{
                     rewst_engine_host}/webhooks/custom/action/{post_path}"
-                logging.info(f"Will POST results to {post_url}")
+                logging.info("Will POST results to %s", post_url)
             else:
                 post_url = None
 
@@ -252,7 +266,7 @@ class ConnectionManager:
                 try:
                     await self.execute_commands(commands, post_url, interpreter_override)
                 except Exception as e:
-                    logging.exception(f"Exception running commands: {e}")
+                    logging.exception("Exception running commands: %s", e)
 
             if get_installation_info:
                 logging.info("Received request for installation paths")
@@ -260,11 +274,11 @@ class ConnectionManager:
                     await self.get_installation(post_url)
                 except Exception as e:
                     logging.exception(
-                        f"Exception getting installation info: {e}")
+                        "Exception getting installation info: %s", e)
         except json.JSONDecodeError as e:
-            logging.error(f"Error decoding message data as JSON: {e}")
+            logging.error("Error decoding message data as JSON: %s", e)
         except Exception as e:
-            logging.exception(f"An unexpected error occurred: {e}")
+            logging.exception("An unexpected error occurred: %s", e)
 
     async def get_installation(self, post_url: str) -> None:
         """Send installation data of the service to the Rewst platform. The post_url
@@ -295,11 +309,9 @@ class ConnectionManager:
         except httpx.RequestError as e:
             logging.error(f"Request to {post_url} failed: {e}")
         except httpx.HTTPStatusError as e:
-            logging.error(f"Error response {e.response.status_code} while posting to {
-                          post_url}: {e.response.text}")
+            logging.error(f"Error response {e.response.status_code} while posting to {post_url}: {e.response.text}")
         except Exception as e:
-            logging.error(f"An unexpected error occurred while posting to {
-                          post_url}: {e}")
+            logging.error(f"An unexpected error occurred while posting to {post_url}: {e}")
 
     def get_default_interpreter(self) -> str:
         """Get the default interpreter depending on the platform's OS type.
@@ -323,8 +335,7 @@ async def iot_hub_connection_loop(config_data: Dict[str, Any], stop_event: async
         stop_event (asyncio.Event): Stop event instance.
     """
     def signal_handler(signum, frame):
-        logging.info(f"Received signal {
-                     signum}. Initiating graceful shutdown.")
+        logging.info(f"Received signal {signum}. Initiating graceful shutdown.")
         stop_event.set()
 
     signal.signal(signal.SIGTERM, signal_handler)

@@ -17,8 +17,10 @@ from config_module.host_info import (
 class TestHostInfo(unittest.TestCase):
     """Test class for host_info unit tests"""    
 
+    @patch("psutil.net_if_addrs")
     @patch("uuid.getnode")
-    def test_get_mac_address(self, mock_getnode):
+    def test_get_mac_address(self, mock_getnode, mock_net):
+        mock_net.items.return_value = []
         # Mocking the UUID return value to a fixed value for testing
         mock_getnode.return_value = 123456789012345
         mac_address = get_mac_address()
