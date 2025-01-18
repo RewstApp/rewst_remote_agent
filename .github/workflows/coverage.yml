@@ -18,30 +18,16 @@ jobs:
           python-version: "3.12"
 
       - name: Install Poetry
-        uses: snok/install-poetry@v1
-        with:
-          virtualenvs-create: true
-          virtualenvs-in-project: true
-
-      - name: Load cached venv
-        id: cached-poetry-dependencies
-        uses: actions/cache@v4
-        with:
-          path: .venv
-          key: venv-${{ runner.os }}-${{ steps.setup-python.outputs.python-version }}-${{ hashFiles('**/poetry.lock') }}
+        run: pip install poetry
 
       - name: Install dependencies
         run: poetry install --no-interaction
 
       - name: Run tests using coverage.py module
-        run: |
-          source $VENV
-          pytest --cov=.
+        run: poetry run pytest --cov=.
 
       - name: Generate lcov file
-        run: |
-          source $VENV 
-          coverage-lcov
+        run: poetry run coverage-lcov
 
       - name: Code Coverage Summary Report
         uses: VGVentures/very-good-coverage@v1.1.1
