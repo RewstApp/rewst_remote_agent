@@ -1,7 +1,7 @@
 {
     "recommendations": [
         "markis.code-coverage",
-        "ms-python.black-formatter",
+        "ms-python.autopep8",
         "ms-python.pylint",
         "njpwerner.autodocstring",
         "ms-python.debugpy"
