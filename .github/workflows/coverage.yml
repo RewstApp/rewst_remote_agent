@@ -23,14 +23,25 @@ jobs:
           virtualenvs-create: true
           virtualenvs-in-project: true
 
+      - name: Load cached venv
+        id: cached-poetry-dependencies
+        uses: actions/cache@v4
+        with:
+          path: .venv
+          key: venv-${{ runner.os }}-${{ steps.setup-python.outputs.python-version }}-${{ hashFiles('**/poetry.lock') }}
+
       - name: Install dependencies
         run: poetry install --no-interaction
 
       - name: Run tests using coverage.py module
-        run: poetry run pytest --cov=.
+        run: |
+          source $VENV
+          pytest --cov=.
 
       - name: Generate lcov file
-        run: poetry run coverage-lcov
+        run: |
+          source $VENV 
+          coverage-lcov
 
       - name: Code Coverage Summary Report
         uses: VGVentures/very-good-coverage@v1.1.1
