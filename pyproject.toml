@@ -1,6 +1,6 @@
 [project]
 name = "rewst_remote_agent"
-version = "0.6.102"
+version = "0.7.0"
 description = "An RMM-agnostic remote agent using the Azure IoT Hub"
 authors = [
     {name = "tim-at-rewst", email = "tim@rewst.io"}
@@ -27,3 +27,12 @@ pytest-mock = "^3.14.0"
 coverage-lcov = "^0.3.0"
 pytest-cov = "^6.0.0"
 pyinstaller = "^6.11.1"
+commitizen = "^4.1.0"
+
+[tool.commitizen]
+name = "cz_conventional_commits"
+tag_format = "v$version"
+version_scheme = "pep440"
+version_provider = "pep621"
+update_changelog_on_bump = true
+major_version_zero = true
