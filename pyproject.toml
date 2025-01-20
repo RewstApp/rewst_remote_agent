@@ -1,12 +1,12 @@
 [project]
 name = "rewst_remote_agent"
-version = "0.6.101"
+version = "0.6.102"
 description = "An RMM-agnostic remote agent using the Azure IoT Hub"
 authors = [
     {name = "tim-at-rewst", email = "tim@rewst.io"}
 ]
 readme = "README.md"
-requires-python = ">=3.12,<4"
+requires-python = ">=3.12,<3.14"
 dependencies = [
     "psutil (>=6.1.1,<7.0.0)",
     "platformdirs (>=4.3.6,<5.0.0)",
@@ -26,4 +26,4 @@ pytest-asyncio = "^0.25.2"
 pytest-mock = "^3.14.0"
 coverage-lcov = "^0.3.0"
 pytest-cov = "^6.0.0"
-
+pyinstaller = "^6.11.1"
