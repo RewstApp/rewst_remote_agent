@@ -33,21 +33,21 @@ jobs:
       
       - name: Generate checksums
         run: |
-          Get-FileHash -Path ./dist/signed/rewst_remote_agent.exe -Algorithm SHA256 | Format-List | Out-File -FilePath ./dist/signed/rewst_remote_agent.exe.sha256
-          Get-FileHash -Path ./dist/signed/rewst_service_manager.exe -Algorithm SHA256 | Format-List | Out-File -FilePath ./dist/signed/rewst_service_manager.exe.sha256
-          Get-FileHash -Path ./dist/signed/rewst_agent_config.exe -Algorithm SHA256 | Format-List | Out-File -FilePath ./dist/signed/rewst_agent_config.exe.sha256
-          Get-FileHash -Path ./dist/signed/rewst_windows_service.exe -Algorithm SHA256 | Format-List | Out-File -FilePath ./dist/signed/rewst_windows_service.exe.sha256
+          Get-FileHash -Path ./dist/rewst_remote_agent.exe -Algorithm SHA256 | Format-List | Out-File -FilePath ./dist/rewst_remote_agent.exe.sha256
+          Get-FileHash -Path ./dist/rewst_service_manager.exe -Algorithm SHA256 | Format-List | Out-File -FilePath ./dist/rewst_service_manager.exe.sha256
+          Get-FileHash -Path ./dist/rewst_agent_config.exe -Algorithm SHA256 | Format-List | Out-File -FilePath ./dist/rewst_agent_config.exe.sha256
+          Get-FileHash -Path ./dist/rewst_windows_service.exe -Algorithm SHA256 | Format-List | Out-File -FilePath ./dist/rewst_windows_service.exe.sha256
 
       - name: Upload assets
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v4
         with:
-          name: windows-latest-signed-assets
+          name: windows-compiled-assets
           path: |
-            ./dist/signed/rewst_windows_service.exe
-            ./dist/signed/rewst_service_manager.exe
-            ./dist/signed/rewst_remote_agent.exe
-            ./dist/signed/rewst_agent_config.exe
-            ./dist/signed/rewst_windows_service.exe.sha256
-            ./dist/signed/rewst_service_manager.exe.sha256
-            ./dist/signed/rewst_remote_agent.exe.sha256
-            ./dist/signed/rewst_agent_config.exe.sha256
+            ./dist/rewst_windows_service.exe
+            ./dist/rewst_service_manager.exe
+            ./dist/rewst_remote_agent.exe
+            ./dist/rewst_agent_config.exe
+            ./dist/rewst_windows_service.exe.sha256
+            ./dist/rewst_service_manager.exe.sha256
+            ./dist/rewst_remote_agent.exe.sha256
+            ./dist/rewst_agent_config.exe.sha256
