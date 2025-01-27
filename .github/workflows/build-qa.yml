@@ -41,7 +41,7 @@ jobs:
       - name: Upload assets
         uses: actions/upload-artifact@v4
         with:
-          name: windows-latest-assets
+          name: windows-compiled-assets
           path: |
             ./dist/rewst_windows_service.exe
             ./dist/rewst_service_manager.exe
