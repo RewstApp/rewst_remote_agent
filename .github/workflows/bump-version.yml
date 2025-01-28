@@ -3,6 +3,10 @@ name: Bump Version
 on:
   pull_request:
     branches: main
+    types:
+      - synchronize
+      - opened
+      - reopened
 
 jobs:
   bump-version:
