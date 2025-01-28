@@ -3,7 +3,7 @@ name: Build Staging
 on:
   push:
     branches:
-      - chore/sc-36908/update-build-process-to-not-sign-on-testing # TODO: REPLACE WITH staging
+      - staging
 
 jobs:
   build:
