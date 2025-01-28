@@ -1,8 +1,6 @@
 name: Code Coverage
 
 on:
-  push:
-
   workflow_run:
     workflows: ["Unit Tests"]
     types: [completed]
