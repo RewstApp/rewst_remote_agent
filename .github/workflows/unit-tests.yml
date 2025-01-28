@@ -1,11 +1,8 @@
 name: Unit Tests
 
 on: 
-  push:
-    branches-ignore:
-      - qa
-      - staging
-      - prod
+  pull_request:
+    branches: main
 
 jobs:
   unit-tests:

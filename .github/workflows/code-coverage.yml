@@ -1,11 +1,8 @@
 name: Code Coverage
 
 on:
-  push:
-    branches-ignore:
-      - qa
-      - staging
-      - prod
+  pull_request:
+    branches: main
 
 jobs:
   code-coverage:
