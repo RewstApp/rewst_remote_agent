@@ -3,7 +3,7 @@ name: Old Build
 on:
   push:
     branches:
-      - prod
+      - prod.old
     paths-ignore:
       - '__version__.py'  # Ignore commits that only update the version file
 
