@@ -1,12 +1,8 @@
 name: Bump Version
 
 on:
-  pull_request:
+  push:
     branches: main
-    types:
-      - synchronize
-      - opened
-      - reopened
 
 jobs:
   bump-version:
@@ -16,7 +12,7 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
         with:
-          ref: ${{ github.head_ref }}
+          ref: main
 
       - name: Setup python
         uses: actions/setup-python@v4
@@ -37,6 +33,7 @@ jobs:
       - name: Bump version and push
         run: |
             poetry run cz bump --yes
-            git push origin ${{ github.head_ref }}
+            git push origin main
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        
