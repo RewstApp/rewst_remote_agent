@@ -33,6 +33,7 @@ jobs:
 
       - name: Bump version and push
         run: |
-            poetry run cz bump --yes --dry-run
+            poetry run cz bump --yes
+            git push --force-with-lease origin main --tags
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
