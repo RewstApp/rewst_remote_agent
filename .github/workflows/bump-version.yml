@@ -10,7 +10,9 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
+        with:
+          ref: main
 
       - name: Setup python
         uses: actions/setup-python@v4
@@ -31,6 +33,7 @@ jobs:
       - name: Bump version and push
         run: |
             poetry run cz bump --yes
-            git push
+            git push origin main
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        
