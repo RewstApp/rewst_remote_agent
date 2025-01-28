@@ -1,6 +1,6 @@
 [project]
 name = "rewst_remote_agent"
-version = "0.6.101"
+version = "0.7.0"
 description = "An RMM-agnostic remote agent using the Azure IoT Hub"
 authors = [
     {name = "tim-at-rewst", email = "tim@rewst.io"}
