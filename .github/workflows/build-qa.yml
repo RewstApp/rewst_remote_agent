@@ -26,11 +26,11 @@ jobs:
 
       - name: Build binaries
         run: |
-          poetry run python ./scripts/windows_version_file.py > ./build/version.txt
-          poetry run pyinstaller --icon=assets/logo-rewsty.ico --onefile rewst_remote_agent.py    --version-file=./build/version.txt
-          poetry run pyinstaller --icon=assets/logo-rewsty.ico --onefile rewst_service_manager.py --version-file=./build/version.txt
-          poetry run pyinstaller --icon=assets/logo-rewsty.ico --onefile rewst_agent_config.py    --version-file=./build/version.txt
-          poetry run pyinstaller --icon=assets/logo-rewsty.ico --onefile rewst_windows_service.py --version-file=./build/version.txt
+          poetry run python ./scripts/windows_version_file.py > ./version.txt
+          poetry run pyinstaller --icon=assets/logo-rewsty.ico --onefile rewst_remote_agent.py    --version-file=./version.txt
+          poetry run pyinstaller --icon=assets/logo-rewsty.ico --onefile rewst_service_manager.py --version-file=./version.txt
+          poetry run pyinstaller --icon=assets/logo-rewsty.ico --onefile rewst_agent_config.py    --version-file=./version.txt
+          poetry run pyinstaller --icon=assets/logo-rewsty.ico --onefile rewst_windows_service.py --version-file=./version.txt
       
       - name: Generate checksums
         run: |
