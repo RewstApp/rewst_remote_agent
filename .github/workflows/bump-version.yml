@@ -29,6 +29,8 @@ jobs:
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
 
       - name: Bump version
-        run: poetry run cz bump --yes
+        run: |
+            poetry run cz bump --yes
+            git push
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
