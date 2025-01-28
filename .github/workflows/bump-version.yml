@@ -13,6 +13,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           ref: main
+          fetch-depth: 0
 
       - name: Setup python
         uses: actions/setup-python@v4
@@ -29,9 +30,9 @@ jobs:
         run: |
           git config --global user.name "github-actions[bot]"
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
+
       - name: Bump version and push
         run: |
-            poetry run cz bump --yes
-            git push origin main --force-lease --tags
+            poetry run cz bump --yes --dry-run
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
