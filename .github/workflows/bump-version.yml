@@ -37,7 +37,7 @@ jobs:
       - name: Create branch for bump
         run: |
             git checkout -b "bump/v$VERSION"
-            git push
+            git push --set-upstream origin "bump/v$VERSION"
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
