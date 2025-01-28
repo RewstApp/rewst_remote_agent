@@ -51,6 +51,6 @@ jobs:
       - name: Create pull request and approve
         run: |
             gh pr create -B main -H "bump/v$VERSION" --title "Merge bump/v$VERSION into main" --body 'Created by Github action'
-            gh pr merge --merge
+            gh pr merge --merge --admin
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
