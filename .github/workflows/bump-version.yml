@@ -6,6 +6,9 @@ on:
     types: 
       - closed
 
+permissions:
+  contents: write
+
 jobs:
   bump-version:
     runs-on: ubuntu-latest
