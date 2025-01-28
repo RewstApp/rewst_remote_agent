@@ -44,7 +44,7 @@ jobs:
       - name: Bump version and push
         run: |
             poetry run cz bump --yes
-            git push --tags
+            git push
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
