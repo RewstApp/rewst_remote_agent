@@ -2,8 +2,7 @@ name: Build Staging
 
 on:
   push:
-    branches:
-      - staging
+    branches: staging
 
 jobs:
   build:
