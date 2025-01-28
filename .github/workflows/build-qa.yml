@@ -7,8 +7,7 @@ on:
 
   workflow_run:
     workflows: ["Code Coverage"]
-      types:
-        - success
+    types: [completed]
 
 jobs:
   build:
