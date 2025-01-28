@@ -1,0 +1,34 @@
+name: Code Coverage
+
+on: push
+
+jobs:
+  coverage:
+    name: Measure code coverage
+    runs-on: windows-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v3
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.12"
+
+      - name: Install Poetry
+        run: pip install poetry
+
+      - name: Install dependencies
+        run: poetry install --no-interaction
+
+      - name: Run tests using coverage.py module
+        run: poetry run pytest --cov=.
+
+      - name: Generate lcov file
+        run: poetry run coverage-lcov
+
+      - name: Code Coverage Summary Report
+        uses: VGVentures/very-good-coverage@v1.1.1
+        with:
+          path: lcov.info
+          min_coverage: 90
