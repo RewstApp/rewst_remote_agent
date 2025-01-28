@@ -23,18 +23,12 @@ jobs:
       - name: Install dependencies
         run: poetry install --no-interaction
 
-      - name: Bump version
-        run: |
-          poetry run cz bump --yes
-          echo "VERSION=$(poetry version -s)" >> $GITHUB_ENV
-
-      - name: Commit and Push Changes
+      - name: Configure git
         run: |
           git config --global user.name "github-actions[bot]"
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
-          git add pyproject.toml
-          git commit -m "chore: bump version to ${{ env.VERSION }}"
-          git tag -a "v${{ env.VERSION }}" -m "Release v${{ env.VERSION }}"
-          git push origin main --tags
+
+      - name: Bump version
+        run: poetry run cz bump --yes
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
