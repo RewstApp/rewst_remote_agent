@@ -3,6 +3,9 @@ omit =
     # Tests
     tests/*
 
+    # Scripts
+    scripts/*
+
     # Built-in files
     __init__.py
     __version__.py
