@@ -31,9 +31,26 @@ jobs:
           git config --global user.name "github-actions[bot]"
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
 
+      - name: Save current version
+        run: echo "VERSION=$(poetry version --short)" >> $GITHUB_ENV
+
+      - name: Create branch for bump
+        run: |
+            git checkout -b "bump/v$VERSION"
+            git push
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
       - name: Bump version and push
         run: |
             poetry run cz bump --yes
-            git push --force-with-lease origin main --tags
+            git push --tags
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Create pull request and approve
+        run: |
+            gh pr create -B main -H "bump/v$VERSION" --title "Merge bump/v$VERSION into main" --body 'Created by Github action'
+            gh pr merge --merge
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
