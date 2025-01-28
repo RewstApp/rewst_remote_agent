@@ -5,6 +5,11 @@ on:
     branches:
       - qa
 
+  workflow_run:
+    workflows: ["Code Coverage"]
+      types:
+        - success
+
 jobs:
   build:
     runs-on: windows-latest

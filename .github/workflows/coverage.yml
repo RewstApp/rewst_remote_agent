@@ -3,6 +3,11 @@ name: Code Coverage
 on:
   push:
 
+  workflow_run:
+    workflows: ["Unit Tests"]
+      types:
+        - success
+
 jobs:
   coverage:
     name: Measure code coverage
