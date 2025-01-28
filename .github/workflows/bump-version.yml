@@ -28,7 +28,7 @@ jobs:
           git config --global user.name "github-actions[bot]"
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
 
-      - name: Bump version
+      - name: Bump version and push
         run: |
             poetry run cz bump --yes
             git push

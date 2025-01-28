@@ -1,6 +1,11 @@
 name: Build
 
-on: push
+on: 
+  push:
+    branches:
+      - qa
+      - staging
+      - prod
 
 jobs:
   build:
@@ -8,15 +13,15 @@ jobs:
     if: github.ref == 'refs/heads/qa' || github.ref == 'refs/heads/staging' || github.ref == 'refs/heads/prod'
 
     steps:
-      - name: Check out code
+      - name: Checkout code
         uses: actions/checkout@v3
 
-      - name: Set up Python
+      - name: Setup python
         uses: actions/setup-python@v4
         with:
           python-version: "3.12"
 
-      - name: Install Poetry
+      - name: Install poetry
         run: pip install poetry
 
       - name: Install dependencies
@@ -46,7 +51,7 @@ jobs:
     needs: [build]
 
     steps:
-      - name: Check out code
+      - name: Checkout code
         uses: actions/checkout@v3
 
       - name: Download compiled assets
