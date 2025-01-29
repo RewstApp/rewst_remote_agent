@@ -16,6 +16,8 @@ jobs:
 
     steps:
       - run: echo "Merged pull request detected"
+      - run: echo "Running with GITHUB_REF=$GITHUB_REF"
+      - run: echo "Running with GITHUB_HEAD_REF=$GITHUB_HEAD_REF"
 
   bump-version:
     runs-on: ubuntu-latest
