@@ -53,18 +53,12 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-  skip-bump:
-    runs-on: ubuntu-latest
-    needs: check-if-merged
-
-    steps:
-      - run: echo "Skipped bump version"
-
   build:
     runs-on: windows-latest
-    needs:
-      - bump-version
-      - skip-bump
+    needs: bump-version
+    if: |
+      always() &&
+      (needs.bump-version.result == 'success' || needs.bump-version.result == 'skipped')
 
     steps:
       - name: Checkout code
