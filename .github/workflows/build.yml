@@ -178,6 +178,6 @@ jobs:
 
       - name: Create release and upload files
         run: |
-          gh release create ${{ env.VERSION }} --generate-notes --pre-release ./dist/*
+          gh release create ${{ env.VERSION }} --generate-notes --prerelease ./dist/*
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
