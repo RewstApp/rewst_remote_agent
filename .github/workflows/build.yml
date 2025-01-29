@@ -97,7 +97,7 @@ jobs:
             ./dist/rewst_remote_agent.exe
             ./dist/rewst_agent_config.exe
 
-  sign:
+  sign-and-release:
     runs-on: windows-latest
     needs: build
     if: |
@@ -142,42 +142,16 @@ jobs:
             ./dist/signed/rewst_remote_agent.exe.sha256
             ./dist/signed/rewst_agent_config.exe.sha256
 
-  release:
-    runs-on: ubuntu-latest
-    needs: sign
-    if: |
-      always() &&
-      needs.sign.result == 'success' &&
-      github.ref == 'refs/heads/main'
-    env: 
-      VERSION: '' # Set default VERSION value
-
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-        with:
-          ref: ${{ github.ref }}
-
-      - name: Setup python
-        uses: actions/setup-python@v4
-        with:
-          python-version: "3.12"
-  
-      - name: Install poetry
-        run: pip install poetry
-      
       - name: Extract version
-        shell: bash
-        run: echo "VERSION=v$(poetry version --short)" >> $GITHUB_ENV
-      
-      - name: Download all assets
-        uses: actions/download-artifact@v4
-        with:
-          name: windows-signed-assets
-          path: ./dist
+        if: github.ref == 'refs/heads/main'
+        id: extract_version
+        run: echo "version=v$(poetry version --short)" >> $GITHUB_OUTPUT
 
       - name: Create release and upload files
+        if: github.ref == 'refs/heads/main'
         run: |
-          gh release create ${{ env.VERSION }} --generate-notes --prerelease ./dist/*
+          gh release create ${{ env.VERSION }} --generate-notes --prerelease ./dist/signed/*
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          VERSION: ${{ steps.extract_version.outputs.version }}
+
