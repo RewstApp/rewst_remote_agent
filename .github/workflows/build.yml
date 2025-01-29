@@ -14,6 +14,9 @@ jobs:
     runs-on: ubuntu-latest
     if: github.event.pull_request.merged == true
 
+    steps:
+      - run: echo "Merged pull request detected"
+
   bump-version:
     runs-on: ubuntu-latest
     needs: check-if-merged
@@ -53,6 +56,9 @@ jobs:
   skip-bump:
     runs-on: ubuntu-latest
     needs: check-if-merged
+
+    steps:
+      - run: echo "Skipped bump version"
 
   build:
     runs-on: windows-latest
