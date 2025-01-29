@@ -155,11 +155,11 @@ jobs:
         shell: bash
         id: extract_version
         run: echo "version=v$(poetry version --short)" >> $GITHUB_OUTPUT
-          
+
       - name: Create release and upload files
         if: github.ref == 'refs/heads/main'
         run: |
-          gh release create ${{ env.VERSION }} --generate-notes --prerelease ./dist/signed/*
+          gh release create ${{ env.VERSION }} --generate-notes ./dist/signed/**
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           VERSION: ${{ steps.extract_version.outputs.version }}
