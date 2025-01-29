@@ -159,7 +159,7 @@ jobs:
       - name: Create release and upload files
         if: github.ref == 'refs/heads/main'
         run: |
-          gh release create ${{ env.VERSION }} --generate-notes ./dist/signed/**
+          gh release create ${{ env.VERSION }} --generate-notes (get-item ./dist/signed/*)
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           VERSION: ${{ steps.extract_version.outputs.version }}
