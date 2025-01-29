@@ -1,6 +1,6 @@
 name: Build
 
-on: 
+on:
   pull_request:
     branches:
       - qa
@@ -28,7 +28,7 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
         with:
-          ref: main
+          ref: ${{ github.ref }}
           fetch-depth: 0
 
       - name: Setup python
@@ -49,9 +49,9 @@ jobs:
 
       - name: Bump version and push
         run: |
-            poetry run cz bump --yes
-            git push --force
-            git push --tags
+          poetry run cz bump --yes
+          git push --force
+          git push --tags
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
@@ -65,7 +65,7 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-        with: 
+        with:
           ref: ${{ github.ref }}
 
       - name: Setup python
@@ -107,7 +107,9 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.ref }}
 
       - name: Download compiled assets
         uses: actions/download-artifact@v4
@@ -139,3 +141,86 @@ jobs:
             ./dist/signed/rewst_service_manager.exe.sha256
             ./dist/signed/rewst_remote_agent.exe.sha256
             ./dist/signed/rewst_agent_config.exe.sha256
+
+  release:
+    runs-on: ubuntu-latest
+    needs: sign
+    if: |
+      always() &&
+      needs.sign.result == 'success' &&
+      github.ref == 'refs/heads/main'
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.ref }}
+
+      - name: Setup python
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.12"
+  
+      - name: Install poetry
+        run: pip install poetry
+      
+      - name: Extract version
+        shell: bash
+        run: echo "VERSION=v$(poetry version --short)" >> $GITHUB_ENV
+
+      - name: Create release
+        id: create_release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: $VERSION
+          release_name: Release $VERSION
+          draft: false
+          prerelease: false
+      
+      - name: Download all assets
+        uses: actions/download-artifact@v2
+        with:
+          name: windows-signed-assets
+          path: ./dist
+
+      - name: Upload assets (rewst_windows_service)
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ./dist/rewst_windows_service.exe
+          asset_name: rewst_windows_service.win.exe
+          asset_content_type: application/octet-stream
+
+      - name: Upload assets (rewst_remote_agent)
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ./dist/rewst_remote_agent.exe
+          asset_name: rewst_remote_agent.win.exe
+          asset_content_type: application/octet-stream
+
+      - name: Upload assets (rewst_service_manager)
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ./dist/rewst_service_manager.exe
+          asset_name: rewst_service_manager.win.exe
+          asset_content_type: application/octet-stream
+
+      - name: Upload assets (rewst_remote_agent)
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ./dist/rewst_remote_agent.exe
+          asset_name: rewst_remote_agent.win.exe
+          asset_content_type: application/octet-stream
