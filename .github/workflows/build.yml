@@ -42,6 +42,7 @@ jobs:
           poetry run cz bump --yes
           git push --force
           git push --tags
+          poetry install
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
