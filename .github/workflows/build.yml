@@ -33,14 +33,14 @@ jobs:
 
       - name: Configure git
         run: |
-          git config --global user.name "github-actions[bot]"
-          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          git config --global user.name "Rewst GitHub Actions"
+          git config --global user.email "automated_builds@rewst.io"
 
       - name: Bump version and push
         if: github.ref == 'refs/heads/main'
         run: |
           poetry run cz bump --yes
-          git push --force
+          git push --force-with-lease
           git push --tags
           poetry install
         env:
