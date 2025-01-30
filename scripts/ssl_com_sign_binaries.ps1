@@ -59,8 +59,8 @@ foreach ($inputFile in $inputFiles) {
 
 
     ## UnComment these to do fake sign
-    Write-Host "Faking it: Signed to $outputDirPath\$inputFile"
-    Copy-Item $appDistPath\$inputFile $outputDirPath
+    # Write-Host "Faking it: Signed to $outputDirPath\$inputFile"
+    # Copy-Item $appDistPath\$inputFile $outputDirPath
 
     
 }
