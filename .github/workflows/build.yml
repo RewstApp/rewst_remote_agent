@@ -101,6 +101,7 @@ jobs:
         if: github.ref == 'refs/heads/main'
         run: |
           Get-Item ./dist/signed/*.exe | Rename-Item -NewName { $_.Name -replace '.exe','.win.exe' }
+          Get-Item ./dist/signed/*.exe.sha256 | Rename-Item -NewName { $_.Name -replace '.exe.sha256','.win.exe.sha256' }
           gh release create ${{ env.VERSION }} --generate-notes (Get-Item ./dist/signed/*)
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
