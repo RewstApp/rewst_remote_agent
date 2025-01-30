@@ -1,9 +1,0 @@
-{
-    "recommendations": [
-        "markis.code-coverage",
-        "ms-python.black-formatter",
-        "ms-python.pylint",
-        "njpwerner.autodocstring",
-        "ms-python.debugpy"
-    ]
-}
