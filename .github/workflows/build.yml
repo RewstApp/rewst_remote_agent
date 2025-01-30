@@ -1,26 +1,50 @@
 name: Build
 
-on: push
+on:
+  pull_request:
+    branches:
+      - qa
+      - staging
+      - main
+    types:
+      - closed
 
 jobs:
   build:
     runs-on: windows-latest
-    if: github.ref == 'refs/heads/qa' || github.ref == 'refs/heads/staging' || github.ref == 'refs/heads/prod'
-
+    if: github.event.pull_request.merged == true
     steps:
-      - name: Check out code
-        uses: actions/checkout@v3
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.ref }}
+          fetch-depth: 0
 
-      - name: Set up Python
+      - name: Setup python
         uses: actions/setup-python@v4
         with:
           python-version: "3.12"
 
-      - name: Install Poetry
+      - name: Install poetry
         run: pip install poetry
 
       - name: Install dependencies
         run: poetry install --no-interaction
+
+      - name: Configure git
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+
+      - name: Bump version and push
+        if: github.ref == 'refs/heads/main'
+        run: |
+          poetry run cz bump --yes
+          git push --force
+          git push --tags
+          poetry install
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Build binaries
         run: |
@@ -40,26 +64,12 @@ jobs:
             ./dist/rewst_remote_agent.exe
             ./dist/rewst_agent_config.exe
 
-  sign:
-    runs-on: windows-latest
-    if: github.ref == 'refs/heads/staging' || github.ref == 'refs/heads/prod'
-    needs: [build]
-
-    steps:
-      - name: Check out code
-        uses: actions/checkout@v3
-
-      - name: Download compiled assets
-        uses: actions/download-artifact@v4
-        with:
-          name: windows-compiled-assets
-          path: ./dist
-
       - name: Sign binaries
-        shell: pwsh
+        if: (github.ref == 'refs/heads/staging' || github.ref == 'refs/heads/main')
         run: ./scripts/ssl_com_sign_binaries.ps1 -username '${{ secrets.SSL_COM_USERNAME }}' -password '${{ secrets.SSL_COM_PASSWORD }}' -credentialId '${{ secrets.SSL_COM_CREDENTIAL_ID }}' -totpSecret '${{ secrets.SSL_COM_OTP }}'
 
       - name: Generate checksums
+        if: (github.ref == 'refs/heads/staging' || github.ref == 'refs/heads/main')
         run: |
           Get-FileHash -Path ./dist/signed/rewst_remote_agent.exe    -Algorithm SHA256 | Format-List | Out-File -FilePath ./dist/signed/rewst_remote_agent.exe.sha256
           Get-FileHash -Path ./dist/signed/rewst_service_manager.exe -Algorithm SHA256 | Format-List | Out-File -FilePath ./dist/signed/rewst_service_manager.exe.sha256
@@ -67,6 +77,7 @@ jobs:
           Get-FileHash -Path ./dist/signed/rewst_windows_service.exe -Algorithm SHA256 | Format-List | Out-File -FilePath ./dist/signed/rewst_windows_service.exe.sha256
 
       - name: Upload assets
+        if: (github.ref == 'refs/heads/staging' || github.ref == 'refs/heads/main')
         uses: actions/upload-artifact@v4
         with:
           name: windows-signed-assets
@@ -79,3 +90,20 @@ jobs:
             ./dist/signed/rewst_service_manager.exe.sha256
             ./dist/signed/rewst_remote_agent.exe.sha256
             ./dist/signed/rewst_agent_config.exe.sha256
+
+      - name: Extract version
+        if: github.ref == 'refs/heads/main'
+        shell: bash
+        id: extract_version
+        run: echo "version=v$(poetry version --short)" >> $GITHUB_OUTPUT
+
+      - name: Create release and upload files
+        if: github.ref == 'refs/heads/main'
+        run: |
+          Get-Item ./dist/signed/*.exe | Rename-Item -NewName { $_.Name -replace '.exe','.win.exe' }
+          Get-Item ./dist/signed/*.exe.sha256 | Rename-Item -NewName { $_.Name -replace '.exe.sha256','.win.exe.sha256' }
+          gh release create ${{ env.VERSION }} --generate-notes (Get-Item ./dist/signed/*)
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          VERSION: ${{ steps.extract_version.outputs.version }}
+
