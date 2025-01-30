@@ -46,10 +46,10 @@ jobs:
       - name: Build binaries
         run: |
           poetry run python ./scripts/windows_version_file.py > ./version.txt
-          poetry run pyinstaller --icon=assets/logo-rewsty.ico --hiddenimport pywin32 --onefile rewst_remote_agent.py    --version-file=./version.txt
-          poetry run pyinstaller --icon=assets/logo-rewsty.ico --hiddenimport pywin32 --onefile rewst_service_manager.py --version-file=./version.txt
-          poetry run pyinstaller --icon=assets/logo-rewsty.ico --hiddenimport pywin32 --onefile rewst_agent_config.py    --version-file=./version.txt
-          poetry run pyinstaller --icon=assets/logo-rewsty.ico --hiddenimport pywin32 --onefile rewst_windows_service.py --version-file=./version.txt
+          poetry run pyinstaller --icon=assets/logo-rewsty.ico --hidden-import win32timezone --onefile rewst_remote_agent.py    --version-file=./version.txt
+          poetry run pyinstaller --icon=assets/logo-rewsty.ico --hidden-import win32timezone --onefile rewst_service_manager.py --version-file=./version.txt
+          poetry run pyinstaller --icon=assets/logo-rewsty.ico --hidden-import win32timezone --onefile rewst_agent_config.py    --version-file=./version.txt
+          poetry run pyinstaller --icon=assets/logo-rewsty.ico --hidden-import win32timezone --onefile rewst_windows_service.py --version-file=./version.txt
 
       - name: Upload assets
         uses: actions/upload-artifact@v4
