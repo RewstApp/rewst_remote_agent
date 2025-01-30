@@ -34,14 +34,12 @@ jobs:
       - name: Bump version and push
         if: github.ref == 'refs/heads/main'
         run: |
-          git config user.name "Rewst GitHub Actions"
-          git config user.email "mikhael.lataza@rewst.io"
+          git config --local user.email "automated_builds@rewst.io"
+          git config --local user.name "Rewst GitHub Actions"
           poetry run cz bump --yes
           git push
           git push --tags
           poetry install
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Build binaries
         run: |
