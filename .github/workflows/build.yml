@@ -100,7 +100,8 @@ jobs:
       - name: Create release and upload files
         if: github.ref == 'refs/heads/main'
         run: |
-          gh release create ${{ env.VERSION }} --generate-notes (get-item ./dist/signed/*)
+          Get-Item ./dist/signed/*.exe | Rename-Item -NewName { $_.Name -replace '.exe','.win.exe' }
+          gh release create ${{ env.VERSION }} --generate-notes (Get-Item ./dist/signed/*)
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           VERSION: ${{ steps.extract_version.outputs.version }}
