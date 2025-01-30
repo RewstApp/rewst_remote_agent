@@ -97,39 +97,12 @@ jobs:
             ./dist/rewst_remote_agent.exe
             ./dist/rewst_agent_config.exe
 
-  sign-and-release:
-    runs-on: windows-latest
-    needs: build
-    if: |
-      always() &&
-      needs.build.result == 'success' &&
-      (github.ref == 'refs/heads/staging' || github.ref == 'refs/heads/main')
-
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-        with:
-          ref: ${{ github.ref }}
-
-      - name: Setup python
-        uses: actions/setup-python@v4
-        with:
-          python-version: "3.12"
-  
-      - name: Install poetry
-        run: pip install poetry
-
-      - name: Download compiled assets
-        uses: actions/download-artifact@v4
-        with:
-          name: windows-compiled-assets
-          path: ./dist
-
       - name: Sign binaries
-        shell: pwsh
+        if: (github.ref == 'refs/heads/staging' || github.ref == 'refs/heads/main')
         run: ./scripts/ssl_com_sign_binaries.ps1 -username '${{ secrets.SSL_COM_USERNAME }}' -password '${{ secrets.SSL_COM_PASSWORD }}' -credentialId '${{ secrets.SSL_COM_CREDENTIAL_ID }}' -totpSecret '${{ secrets.SSL_COM_OTP }}'
 
       - name: Generate checksums
+        if: (github.ref == 'refs/heads/staging' || github.ref == 'refs/heads/main')
         run: |
           Get-FileHash -Path ./dist/signed/rewst_remote_agent.exe    -Algorithm SHA256 | Format-List | Out-File -FilePath ./dist/signed/rewst_remote_agent.exe.sha256
           Get-FileHash -Path ./dist/signed/rewst_service_manager.exe -Algorithm SHA256 | Format-List | Out-File -FilePath ./dist/signed/rewst_service_manager.exe.sha256
@@ -137,6 +110,7 @@ jobs:
           Get-FileHash -Path ./dist/signed/rewst_windows_service.exe -Algorithm SHA256 | Format-List | Out-File -FilePath ./dist/signed/rewst_windows_service.exe.sha256
 
       - name: Upload assets
+        if: (github.ref == 'refs/heads/staging' || github.ref == 'refs/heads/main')
         uses: actions/upload-artifact@v4
         with:
           name: windows-signed-assets
