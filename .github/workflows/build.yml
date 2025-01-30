@@ -31,14 +31,11 @@ jobs:
       - name: Install dependencies
         run: poetry install --no-interaction
 
-      - name: Configure git
-        run: |
-          git config --global user.name "Rewst GitHub Actions"
-          git config --global user.email "automated_builds@rewst.io"
-
       - name: Bump version and push
         if: github.ref == 'refs/heads/main'
         run: |
+          git config --local user.name "Rewst GitHub Actions"
+          git config --local user.email "automated_builds@rewst.io"
           poetry run cz bump --yes
           git push --force-with-lease
           git push --tags
