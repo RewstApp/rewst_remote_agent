@@ -10,20 +10,9 @@ on:
       - closed
 
 jobs:
-  check-if-merged:
-    runs-on: ubuntu-latest
+  build:
+    runs-on: windows-latest
     if: github.event.pull_request.merged == true
-
-    steps:
-      - run: echo "Merged pull request detected"
-      - run: echo "Running with GITHUB_REF=$GITHUB_REF"
-      - run: echo "Running with GITHUB_HEAD_REF=$GITHUB_HEAD_REF"
-
-  bump-version:
-    runs-on: ubuntu-latest
-    needs: check-if-merged
-    if: github.ref == 'refs/heads/main'
-
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -48,36 +37,13 @@ jobs:
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
 
       - name: Bump version and push
+        if: github.ref == 'refs/heads/main'
         run: |
           poetry run cz bump --yes
           git push --force
           git push --tags
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-  build:
-    runs-on: windows-latest
-    needs: bump-version
-    if: |
-      always() &&
-      (needs.bump-version.result == 'success' || needs.bump-version.result == 'skipped')
-
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-        with:
-          ref: ${{ github.ref }}
-
-      - name: Setup python
-        uses: actions/setup-python@v4
-        with:
-          python-version: "3.12"
-
-      - name: Install poetry
-        run: pip install poetry
-
-      - name: Install dependencies
-        run: poetry install --no-interaction
 
       - name: Build binaries
         run: |
