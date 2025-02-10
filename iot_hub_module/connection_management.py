@@ -234,7 +234,10 @@ class ConnectionManager:
                 response = await client.post(post_url, json=output_message_data)
             logging.info("POST request status: %d", response.status_code)
             if response.status_code != 200:
-                logging.error("Error response: %s", response.text)
+                if response.status_code == 400 and ("fulfilled" in response.text.lower()):
+                    logging.info("Webhook POST fulfilled by Script")
+                else:
+                    logging.error("Error response: %s", response.text)
 
         return output_message_data
 
