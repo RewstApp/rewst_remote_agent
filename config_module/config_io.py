@@ -263,19 +263,17 @@ def setup_file_logging(org_id: str = None) -> bool:
     print(f"Configuring logging to file: {log_file_path}")  # Debug print
     try:
         os.makedirs(os.path.dirname(log_file_path), exist_ok=True)
-        handlers = [
-            RotatingFileHandler(log_file_path, maxBytes=10485760, backupCount=3)
-        ]
-        logging.basicConfig(
-            level=logging.INFO,
-            format="%(asctime)s %(levelname)s: %(message)s",
-            datefmt="%Y-%m-%d %H:%M:%S",
-            handlers=handlers,
-        )
-        for handler in logging.root.handlers[:]:
-            logging.root.removeHandler(handler)
-        logging.root.handlers = handlers
+
+        file_handler = RotatingFileHandler(log_file_path, maxBytes=10485760, backupCount=3)
+        file_handler.setFormatter(logging.Formatter(
+            fmt="%(asctime)s %(levelname)s: %(message)s",
+            datefmt="%Y-%m-%d %H:%M:%S"
+        ))
+        file_handler.setLevel(logging.INFO)
+
+        logging.getLogger().addHandler(file_handler)
         logging.info("File Logging initialized.")
+        
         return True
     except Exception as e:
         print(f"Exception setting up file logging: {e}")  # Debug print
