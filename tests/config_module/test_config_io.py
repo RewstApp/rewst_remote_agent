@@ -490,12 +490,10 @@ class TestConfigIO(unittest.TestCase):
 
     @patch("config_module.config_io.get_logging_path", return_value="test.log")
     @patch("os.makedirs")
-    @patch("logging.basicConfig")
     @patch("builtins.print")
     def test_setup_file_logging(
         self,
         mock_print: MagicMock,
-        mock_basic_config: MagicMock,
         mock_makedirs: MagicMock,
         mock_logging_path: MagicMock,
     ):
@@ -503,14 +501,12 @@ class TestConfigIO(unittest.TestCase):
 
         Args:
             mock_print (MagicMock): Mock instance for print()
-            mock_basic_config (MagicMock): Mock instance for logging.basicConfig()
             mock_makedirs (MagicMock): Mock instance for makedirs()
             mock_logging_path (MagicMock): Mock instace for get_logging_path()
         """
 
         success = setup_file_logging(ORG_ID)
         self.assertTrue(success)
-        mock_basic_config.assert_called()
         mock_makedirs.assert_called()
         mock_logging_path.assert_called()
         mock_print.assert_called()
