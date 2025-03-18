@@ -139,18 +139,16 @@ async def test_set_message_handler(mocker: MockerFixture, platform: str) -> None
     """
     mocker.patch(f"{MODULE}.os_type", platform.lower())
     mocker.patch("platform.system", return_value=platform)
-    mocked_client = mocker.PropertyMock()
+    mocked_client = mocker.AsyncMock()
     mocker.patch(
         f"{MODULE}.IoTHubDeviceClient.create_from_connection_string",
         return_value=mocked_client,
     )
+    mocked_client.receive_message.side_effect = Exception
 
     conn = ConnectionManager(CONFIG_DATA)
 
     assert await conn.set_message_handler() is None
-
-    # pylint: disable=w0143
-    assert mocked_client.on_message_received == conn.handle_message
 
 
 @pytest.mark.asyncio
@@ -406,6 +404,7 @@ async def test_iot_hub_connection_loop(mocker: MockerFixture, platform: str) -> 
         f"{MODULE}.IoTHubDeviceClient.create_from_connection_string",
         return_value=mocked_client,
     )
+    mocked_client.receive_message.side_effect = Exception
 
     stop_event = asyncio.Event()
 
