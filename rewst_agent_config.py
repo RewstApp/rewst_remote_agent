@@ -18,7 +18,14 @@ from config_module.config_io import (
 )
 from config_module.fetch_config import fetch_configuration
 from iot_hub_module.connection_management import ConnectionManager
-from service_module.service_management import is_service_running
+from service_module.service_management import (
+    uninstall_service, 
+    stop_service, 
+    is_service_installed, 
+    is_service_running, 
+    get_service_name
+)
+from rewst_windows_service import RewstWindowsService
 
 # Configure logging
 logging.basicConfig(
@@ -138,14 +145,16 @@ async def wait_for_files(org_id: str, timeout: int = 3600) -> bool:
 
     if os_type == "windows":
         service_executable_path = get_service_executable_path(org_id)
-        logging.info(f"Awaiting Service Executable File: {service_executable_path} ...")
+        logging.info(
+            f"Awaiting Service Executable File: {service_executable_path} ...")
         file_paths.append(service_executable_path)
 
     start_time = asyncio.get_running_loop().time()
 
     while True:
         # Check if all files exist
-        all_files_exist = all(os.path.exists(file_path) for file_path in file_paths)
+        all_files_exist = all(os.path.exists(file_path)
+                              for file_path in file_paths)
         if all_files_exist:
             await asyncio.sleep(5)
             logging.info("All files have been written.")
@@ -186,7 +195,8 @@ async def install_and_start_service(org_id: str) -> bool:
         if process.returncode == 0:
             logging.info("Service installed successfully.")
         else:
-            logging.error(f"Failed to install the service: {stderr.decode().strip()}")
+            logging.error(
+                f"Failed to install the service: {stderr.decode().strip()}")
             return False
     except Exception as e:
         logging.error(f"Failed to install the service: {e}")
@@ -239,7 +249,8 @@ def end_program(exit_level: int = 1) -> None:
     Args:
         exit_level (int, optional): Exit level specified. Defaults to 1.
     """
-    logging.info(f"Agent configuration is exiting with exit level {exit_level}.")
+    logging.info(
+        f"Agent configuration is exiting with exit level {exit_level}.")
     sys.exit(exit_level)
 
 
@@ -260,7 +271,8 @@ async def main(config_url: str, config_secret: str, org_id: str) -> None:
         logging.error("The config URL provided is not valid.")
         end_program(1)
     if not is_base64(config_secret):
-        logging.error("The config secret provided is not a valid base64 string.")
+        logging.error(
+            "The config secret provided is not a valid base64 string.")
         end_program(1)
 
     try:
@@ -279,6 +291,23 @@ async def main(config_url: str, config_secret: str, org_id: str) -> None:
         if not config_data:
             logging.error("Failed to fetch configuration.")
             end_program(2)
+
+        # Stop and uninstall service if it is installed
+        if os_type == "windows":
+            RewstWindowsService.set_service_name(org_id)
+
+        if is_service_installed(org_id):
+            service_name = get_service_name(org_id)
+
+            if is_service_running(org_id):
+                logging.info("Service %s is running", service_name)
+
+                logging.info("Stopping service %s...", service_name)
+                stop_service(org_id)
+                logging.info("Service %s stopped.", service_name)
+
+            uninstall_service(org_id, False)
+            logging.info("Service %s uninstalled.", service_name)
 
         # Save Configuration to JSON file
         logging.info("Saving configuration to file...")
@@ -329,10 +358,14 @@ def start() -> None:
     """
     Parse the arguments and run the main function.
     """
-    parser = argparse.ArgumentParser(description="Rewst Agent Configuration Tool.")
-    parser.add_argument("--config-secret", help="Secret Key for configuration access")
-    parser.add_argument("--config-url", help="URL to fetch the configuration from.")
-    parser.add_argument("--org-id", help="Organization ID to register agent within.")
+    parser = argparse.ArgumentParser(
+        description="Rewst Agent Configuration Tool.")
+    parser.add_argument("--config-secret",
+                        help="Secret Key for configuration access")
+    parser.add_argument(
+        "--config-url", help="URL to fetch the configuration from.")
+    parser.add_argument(
+        "--org-id", help="Organization ID to register agent within.")
     args = parser.parse_args()  # Extract arguments from the parser
     asyncio.run(
         main(
@@ -341,6 +374,7 @@ def start() -> None:
             org_id=args.org_id,
         )
     )
+
 
 if __name__ == "__main__":
     start()
