@@ -33,9 +33,12 @@ def signal_handler() -> None:
 
 
 # Main function
-async def main() -> None:
+async def main(use_signals: bool = True) -> None:
     """
     Main entry point of the program
+
+    Args:
+        use_signals (bool): Use signal handlers 
 
     Raises:
         ConfigurationError: if the configuration failed.
@@ -87,7 +90,7 @@ async def main() -> None:
         for sig in (signal.SIGTERM, signal.SIGINT):
             loop.add_signal_handler(sig, signal_handler)
 
-    await iot_hub_connection_loop(config_data, stop_event)
+    await iot_hub_connection_loop(config_data, stop_event, use_signals)
 
 
 # Entry point

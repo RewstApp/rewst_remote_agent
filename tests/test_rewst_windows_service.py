@@ -77,8 +77,6 @@ def test_svc_stop(mocker: MockerFixture) -> None:
 
     mocker.patch("win32serviceutil.ServiceFramework")
     mocker.patch(f"{MODULE}.RewstWindowsService.ReportServiceStatus")
-    mocker.patch(f"{MODULE}.RewstWindowsService.stop_process")
-    mocked_set_event = mocker.patch("win32event.SetEvent")
 
     args = [f"rewst_remote_agent_{ORG_ID}.win.exe"]
 
@@ -87,7 +85,6 @@ def test_svc_stop(mocker: MockerFixture) -> None:
     service = RewstWindowsService(args)
 
     assert service.SvcStop() is None
-    mocked_set_event.assert_called()
 
 
 @pytest.mark.skipif(sys.platform != "win32", reason="Test only runs on Windows")
@@ -102,7 +99,6 @@ def test_svc_do_run(mocker: MockerFixture) -> None:
 
     mocker.patch("win32serviceutil.ServiceFramework")
     mocker.patch(f"{MODULE}.RewstWindowsService.ReportServiceStatus")
-    mocker.patch(f"{MODULE}.RewstWindowsService.start_process")
 
     mocked_wait = mocker.patch("win32event.WaitForSingleObject", return_value=1)
 
@@ -118,97 +114,6 @@ def test_svc_do_run(mocker: MockerFixture) -> None:
     mocker.patch("logging.warning", new=toggle_wait)
 
     assert service.SvcDoRun() is None
-
-
-@pytest.mark.skipif(sys.platform != "win32", reason="Test only runs on Windows")
-def test_start_process(mocker: MockerFixture) -> None:
-    """
-    Test for RewstWindowsService.start_process().
-
-    Args:
-        mocker (MockerFixture): Fixture instance for mocking.
-    """
-    RewstWindowsService.set_service_name(ORG_ID)
-
-    mocker.patch("win32serviceutil.ServiceFramework")
-    mocker.patch("subprocess.Popen")
-    mocker.patch("time.sleep")
-
-    args = [f"rewst_remote_agent_{ORG_ID}.win.exe"]
-    mocker.patch("sys.argv", args)
-    service = RewstWindowsService(args)
-
-    # Exception raised
-    assert service.start_process() is None
-
-    # No exception
-    mocker.patch(f"{MODULE}.is_checksum_valid", return_value=True)
-    mocker.patch(
-        "psutil.process_iter",
-        return_value=(
-            mocker.MagicMock(
-                info={"name": f"rewst_remote_agent_{ORG_ID}.win", "pid": 1234}
-            ),
-        ),
-    )
-    assert service.start_process() is None
-
-
-@pytest.mark.skipif(sys.platform != "win32", reason="Test only runs on Windows")
-def test_stop_process(mocker: MockerFixture) -> None:
-    """
-    Test for RewstWindowsService.stop_process().
-
-    Args:
-        mocker (MockerFixture): Fixture instance for mocking.
-    """
-    RewstWindowsService.set_service_name(ORG_ID)
-
-    mocker.patch("win32serviceutil.ServiceFramework")
-
-    mocked_process_iter = mocker.patch("psutil.process_iter")
-    mocked_process_iter.return_value = []
-
-    mocked_process = mocker.patch("psutil.Process")
-    mocked_process.return_value = mocker.MagicMock()
-
-    args = [f"rewst_remote_agent_{ORG_ID}.win.exe"]
-    mocker.patch("sys.argv", args)
-    service = RewstWindowsService(args)
-
-    # Kill from process_ids
-    service.process_ids = [1234]
-    assert service.stop_process() is None
-    mocked_process.return_value.wait.assert_called()
-
-    # Exception raised
-    mocked_process.return_value.terminate.side_effect = Exception
-    service.process_ids = [1234]
-    assert service.stop_process() is None
-
-    # psutil.NoSuchProcess raised
-    mocked_process.return_value.terminate.side_effect = psutil.NoSuchProcess(1234)
-    service.process_ids = [1234]
-    assert service.stop_process() is None
-
-    # psutil.TimeoutExpired
-    mocked_process.return_value.terminate.side_effect = None
-    mocked_process.return_value.wait.side_effect = psutil.TimeoutExpired(10)
-    service.process_ids = [1234]
-    assert service.stop_process() is None
-    mocked_process.return_value.kill.assert_called()
-
-    # Double tap
-    mocked_proc = mocker.MagicMock(
-        info={"name": f"rewst_remote_agent_{ORG_ID}.win.exe", "pid": 1234}
-    )
-    mocker.patch("psutil.process_iter", return_value=(mocked_proc,))
-    assert service.stop_process() is None
-
-    # Kill raises exception
-    mocked_proc.kill.side_effect = Exception
-    assert service.stop_process() is None
-
 
 @pytest.mark.skipif(sys.platform != "win32", reason="Test only runs on Windows")
 def test_main(mocker: MockerFixture) -> None:

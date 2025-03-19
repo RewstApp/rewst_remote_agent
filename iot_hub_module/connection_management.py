@@ -341,19 +341,21 @@ class ConnectionManager:
                 
 
 
-async def iot_hub_connection_loop(config_data: Dict[str, Any], stop_event: asyncio.Event = asyncio.Event()) -> None:
+async def iot_hub_connection_loop(config_data: Dict[str, Any], stop_event: asyncio.Event = asyncio.Event(), use_signals: bool = True) -> None:
     """Connect to the IoT Hub and wait for a stop event to close the loop.
 
     Args:
         config_data (Dict[str, Any]): Configuration data of the agent service.
         stop_event (asyncio.Event): Stop event instance.
+        use_signals (bool): Use signal handlers to monitor the stop event.s
     """
-    def signal_handler(signum, frame):
-        logging.info(f"Received signal {signum}. Initiating graceful shutdown.")
-        stop_event.set()
+    if use_signals:
+        def signal_handler(signum, frame):
+            logging.info(f"Received signal {signum}. Initiating graceful shutdown.")
+            stop_event.set()
 
-    signal.signal(signal.SIGTERM, signal_handler)
-    signal.signal(signal.SIGINT, signal_handler)
+        signal.signal(signal.SIGTERM, signal_handler)
+        signal.signal(signal.SIGINT, signal_handler)
 
     try:
         # Instantiate ConnectionManager
