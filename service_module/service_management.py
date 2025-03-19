@@ -80,7 +80,7 @@ def is_service_running(org_id: str = None) -> bool|str:
     Returns:
         bool|str: Executable name as string if running, otherwise False.
     """
-    executable_path = get_agent_executable_path(org_id)
+    executable_path = get_service_executable_path(org_id) if os_type == "windows" else get_agent_executable_path(org_id)
     executable_name = os.path.basename(executable_path)
     for proc in psutil.process_iter(["pid", "name"]):
         if proc.info["name"] == executable_name:
@@ -154,21 +154,23 @@ def install_service(org_id: str) -> None:
             subprocess.run(f"launchctl load {service_name}")
 
 
-def uninstall_service(org_id: str) -> None:
+def uninstall_service(org_id: str, try_stop: bool = True) -> None:
     """
     Uninstalls an agent service for an organization.
 
     Args:
         org_id (str): Organization identifier in Rewst platform.
+        try_stop (bool): Try to stop the service before uninstalling.
     """
 
     service_name = get_service_name(org_id)
     logging.info(f"Uninstalling service {service_name}.")
 
-    try:
-        stop_service(org_id)
-    except Exception as e:
-        logging.warning(f"Unable to stop service: {e}")
+    if try_stop:
+        try:
+            stop_service(org_id)
+        except Exception as e:
+            logging.warning(f"Unable to stop service: {e}")
 
     if os_type == "windows":
         try:
