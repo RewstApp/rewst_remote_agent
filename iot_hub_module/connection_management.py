@@ -112,7 +112,7 @@ class ConnectionManager:
         """
         Sets the event handler for income messages from the Iot Hub.
         """
-        asyncio.create_task(self.message_listener())
+        self.client.on_message_received = self.handle_message
 
     async def execute_commands(self, commands: bytes, post_url: str = None, interpreter_override: str = None) -> Dict[str, str]:
         """
@@ -328,18 +328,6 @@ class ConnectionManager:
             return '/bin/zsh'
         else:
             return '/bin/bash'
-        
-    async def message_listener(self) -> None:
-        """Continously listen for incoming message"""
-        while True:
-            try:
-                message = await self.client.receive_message()
-                await self.handle_message(message)
-            except Exception as e:
-                logging.exception("Exception in message listener: %s", e)
-                return
-                
-
 
 async def iot_hub_connection_loop(config_data: Dict[str, Any], stop_event: asyncio.Event = asyncio.Event(), use_signals: bool = True) -> None:
     """Connect to the IoT Hub and wait for a stop event to close the loop.

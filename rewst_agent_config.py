@@ -147,7 +147,7 @@ async def wait_for_files(org_id: str, timeout: int = 3600) -> bool:
         # Check if all files exist
         all_files_exist = all(os.path.exists(file_path) for file_path in file_paths)
         if all_files_exist:
-            await asyncio.sleep(20)
+            await asyncio.sleep(5)
             logging.info("All files have been written.")
             return True
 
