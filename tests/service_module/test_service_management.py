@@ -67,7 +67,8 @@ def test_is_service_installed(mocker: MockerFixture, platform: str) -> None:
     if platform != "Windows":
         mocker.patch("os.path.exists", return_value=False)
     else:
-        mocker.patch("win32serviceutil.QueryServiceStatus", side_effect=Exception)
+        mocker.patch("win32serviceutil.QueryServiceStatus",
+                     side_effect=Exception)
 
     assert is_service_installed(ORG_ID) is False
 
@@ -93,7 +94,7 @@ def test_is_service_running(mocker: MockerFixture, platform: str) -> None:
         if platform == "Windows"
         else "macos.bin" if platform == "Darwin" else "linux.bin"
     )
-    executable_name = f"rewst_remote_agent_{ORG_ID}.{extension}"
+    executable_name = f"rewst_windows_service_{ORG_ID}.{extension}" if platform == "Windows" else f"rewst_remote_agent_{ORG_ID}.{extension}"
     mocker.patch(
         "psutil.process_iter",
         return_value=[mocker.MagicMock(info={"name": executable_name})],
@@ -157,7 +158,8 @@ def test_uninstall_service(
 
     # Failed to remove service for Windows
     if platform == "Windows":
-        mocker.patch("win32serviceutil.RemoveService", side_effect=Exception("ERROR"))
+        mocker.patch("win32serviceutil.RemoveService",
+                     side_effect=Exception("ERROR"))
 
         with caplog.at_level(logging.WARNING):
             assert uninstall_service(ORG_ID) is None
@@ -192,7 +194,8 @@ def test_check_service_status(mocker: MockerFixture, platform: str) -> None:
     if platform == "Windows":
         mocker.patch("win32serviceutil.QueryServiceStatus")
     else:
-        mocker.patch("subprocess.run", return_value=mocker.MagicMock(stdout=""))
+        mocker.patch("subprocess.run",
+                     return_value=mocker.MagicMock(stdout=""))
 
     assert check_service_status(ORG_ID) is None
 
@@ -201,7 +204,8 @@ def test_check_service_status(mocker: MockerFixture, platform: str) -> None:
     # Failed to check status
     mocked_print = mocker.patch(f"{MODULE}.print")
     if platform == "Windows":
-        mocker.patch("win32serviceutil.QueryServiceStatus", side_effect=Exception)
+        mocker.patch("win32serviceutil.QueryServiceStatus",
+                     side_effect=Exception)
     else:
         mocker.patch("subprocess.run", side_effect=Exception)
 
@@ -212,16 +216,19 @@ def test_check_service_status(mocker: MockerFixture, platform: str) -> None:
     # Failed to check status (subprocess.CalledProcessError)
     mocked_print = mocker.patch(f"{MODULE}.print")
     if platform == "Windows":
-        mocker.patch("win32serviceutil.QueryServiceStatus", side_effect=Exception)
+        mocker.patch("win32serviceutil.QueryServiceStatus",
+                     side_effect=Exception)
     else:
         mocker.patch(
             "subprocess.run",
-            side_effect=subprocess.CalledProcessError(0, "TEST", output="TEST"),
+            side_effect=subprocess.CalledProcessError(
+                0, "TEST", output="TEST"),
         )
 
     assert check_service_status(ORG_ID) is None
 
     mocked_print.assert_called()
+
 
 @pytest.mark.parametrize("platform", ("Windows", "Linux", "Darwin"))
 def test_start_service(mocker: MockerFixture, platform: str) -> None:
@@ -239,9 +246,10 @@ def test_start_service(mocker: MockerFixture, platform: str) -> None:
     else:
         mocked_runner = mocker.patch("subprocess.run")
 
-    assert start_service(ORG_ID) is None 
+    assert start_service(ORG_ID) is None
 
     mocked_runner.assert_called()
+
 
 @pytest.mark.parametrize("platform", ("Windows", "Linux", "Darwin"))
 def test_stop_service(mocker: MockerFixture, platform: str) -> None:
@@ -261,6 +269,7 @@ def test_stop_service(mocker: MockerFixture, platform: str) -> None:
     assert stop_service(ORG_ID) is None
 
     mocked_runner.assert_called()
+
 
 @pytest.mark.parametrize("platform", ("Windows", "Linux", "Darwin"))
 def test_restart_service(mocker: MockerFixture, platform: str) -> None:
