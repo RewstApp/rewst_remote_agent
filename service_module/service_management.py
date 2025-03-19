@@ -80,7 +80,7 @@ def is_service_running(org_id: str = None) -> bool|str:
     Returns:
         bool|str: Executable name as string if running, otherwise False.
     """
-    executable_path = get_agent_executable_path(org_id)
+    executable_path = get_service_executable_path(org_id) if os_type == "windows" else get_agent_executable_path(org_id)
     executable_name = os.path.basename(executable_path)
     for proc in psutil.process_iter(["pid", "name"]):
         if proc.info["name"] == executable_name:
