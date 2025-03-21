@@ -1,0 +1,44 @@
+name: Build QA
+
+on: workflow_dispatch
+
+jobs:
+  build:
+    permissions:
+      contents: write
+    runs-on: windows-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.ref }}
+          fetch-depth: 0
+
+      - name: Setup python
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.12"
+
+      - name: Install poetry
+        run: pip install poetry
+
+      - name: Install dependencies
+        run: poetry install --no-interaction
+
+      - name: Build binaries
+        run: |
+          poetry run python ./scripts/windows_version_file.py > ./version.txt
+          poetry run pyinstaller --hidden-import win32timezone --icon=assets/logo-rewsty.ico --onefile rewst_remote_agent.py    --version-file=./version.txt
+          poetry run pyinstaller --hidden-import win32timezone --icon=assets/logo-rewsty.ico --onefile rewst_service_manager.py --version-file=./version.txt
+          poetry run pyinstaller --hidden-import win32timezone --icon=assets/logo-rewsty.ico --onefile rewst_agent_config.py    --version-file=./version.txt
+          poetry run pyinstaller --hidden-import win32timezone --icon=assets/logo-rewsty.ico --onefile rewst_windows_service.py --version-file=./version.txt
+
+      - name: Upload assets
+        uses: actions/upload-artifact@v4
+        with:
+          name: windows-compiled-assets
+          path: |
+            ./dist/rewst_windows_service.exe
+            ./dist/rewst_service_manager.exe
+            ./dist/rewst_remote_agent.exe
+            ./dist/rewst_agent_config.exe

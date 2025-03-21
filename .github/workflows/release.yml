@@ -1,20 +1,12 @@
-name: Build
+name: Build Release
 
-on:
-  pull_request:
-    branches:
-      - qa
-      - staging
-      - main
-    types:
-      - closed
+on: workflow_dispatch
 
 jobs:
   build:
     permissions:
       contents: write
     runs-on: windows-latest
-    if: github.event.pull_request.merged == true
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -34,7 +26,6 @@ jobs:
         run: poetry install --no-interaction
 
       - name: Bump version and push
-        if: github.ref == 'refs/heads/main'
         run: |
           git config --local user.email "automated_builds@rewst.io"
           git config --local user.name "Rewst GitHub Actions"
@@ -62,11 +53,9 @@ jobs:
             ./dist/rewst_agent_config.exe
 
       - name: Sign binaries
-        if: (github.ref == 'refs/heads/staging' || github.ref == 'refs/heads/main')
         run: ./scripts/ssl_com_sign_binaries.ps1 -username '${{ secrets.SSL_COM_USERNAME }}' -password '${{ secrets.SSL_COM_PASSWORD }}' -credentialId '${{ secrets.SSL_COM_CREDENTIAL_ID }}' -totpSecret '${{ secrets.SSL_COM_OTP }}'
 
       - name: Generate checksums
-        if: (github.ref == 'refs/heads/staging' || github.ref == 'refs/heads/main')
         run: |
           Get-FileHash -Path ./dist/signed/rewst_remote_agent.exe    -Algorithm SHA256 | Format-List | Out-File -FilePath ./dist/signed/rewst_remote_agent.exe.sha256
           Get-FileHash -Path ./dist/signed/rewst_service_manager.exe -Algorithm SHA256 | Format-List | Out-File -FilePath ./dist/signed/rewst_service_manager.exe.sha256
@@ -74,7 +63,6 @@ jobs:
           Get-FileHash -Path ./dist/signed/rewst_windows_service.exe -Algorithm SHA256 | Format-List | Out-File -FilePath ./dist/signed/rewst_windows_service.exe.sha256
 
       - name: Upload assets
-        if: (github.ref == 'refs/heads/staging' || github.ref == 'refs/heads/main')
         uses: actions/upload-artifact@v4
         with:
           name: windows-signed-assets
@@ -89,13 +77,11 @@ jobs:
             ./dist/signed/rewst_agent_config.exe.sha256
 
       - name: Extract version
-        if: github.ref == 'refs/heads/main'
         shell: bash
         id: extract_version
         run: echo "version=v$(poetry version --short)" >> $GITHUB_OUTPUT
 
       - name: Create release and upload files
-        if: github.ref == 'refs/heads/main'
         run: |
           Get-Item ./dist/signed/*.exe | Rename-Item -NewName { $_.Name -replace '.exe','.win.exe' }
           Get-Item ./dist/signed/*.exe.sha256 | Rename-Item -NewName { $_.Name -replace '.exe.sha256','.win.exe.sha256' }
@@ -103,4 +89,3 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           VERSION: ${{ steps.extract_version.outputs.version }}
-

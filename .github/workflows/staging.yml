@@ -1,0 +1,68 @@
+name: Build Staging
+
+on: workflow_dispatch
+
+jobs:
+  build:
+    permissions:
+      contents: write
+    runs-on: windows-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.ref }}
+          fetch-depth: 0
+
+      - name: Setup python
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.12"
+
+      - name: Install poetry
+        run: pip install poetry
+
+      - name: Install dependencies
+        run: poetry install --no-interaction
+
+      - name: Build binaries
+        run: |
+          poetry run python ./scripts/windows_version_file.py > ./version.txt
+          poetry run pyinstaller --hidden-import win32timezone --icon=assets/logo-rewsty.ico --onefile rewst_remote_agent.py    --version-file=./version.txt
+          poetry run pyinstaller --hidden-import win32timezone --icon=assets/logo-rewsty.ico --onefile rewst_service_manager.py --version-file=./version.txt
+          poetry run pyinstaller --hidden-import win32timezone --icon=assets/logo-rewsty.ico --onefile rewst_agent_config.py    --version-file=./version.txt
+          poetry run pyinstaller --hidden-import win32timezone --icon=assets/logo-rewsty.ico --onefile rewst_windows_service.py --version-file=./version.txt
+
+      - name: Upload assets
+        uses: actions/upload-artifact@v4
+        with:
+          name: windows-compiled-assets
+          path: |
+            ./dist/rewst_windows_service.exe
+            ./dist/rewst_service_manager.exe
+            ./dist/rewst_remote_agent.exe
+            ./dist/rewst_agent_config.exe
+
+      - name: Sign binaries
+        run: ./scripts/ssl_com_sign_binaries.ps1 -username '${{ secrets.SSL_COM_USERNAME }}' -password '${{ secrets.SSL_COM_PASSWORD }}' -credentialId '${{ secrets.SSL_COM_CREDENTIAL_ID }}' -totpSecret '${{ secrets.SSL_COM_OTP }}'
+
+      - name: Generate checksums
+        run: |
+          Get-FileHash -Path ./dist/signed/rewst_remote_agent.exe    -Algorithm SHA256 | Format-List | Out-File -FilePath ./dist/signed/rewst_remote_agent.exe.sha256
+          Get-FileHash -Path ./dist/signed/rewst_service_manager.exe -Algorithm SHA256 | Format-List | Out-File -FilePath ./dist/signed/rewst_service_manager.exe.sha256
+          Get-FileHash -Path ./dist/signed/rewst_agent_config.exe    -Algorithm SHA256 | Format-List | Out-File -FilePath ./dist/signed/rewst_agent_config.exe.sha256
+          Get-FileHash -Path ./dist/signed/rewst_windows_service.exe -Algorithm SHA256 | Format-List | Out-File -FilePath ./dist/signed/rewst_windows_service.exe.sha256
+
+      - name: Upload assets
+        uses: actions/upload-artifact@v4
+        with:
+          name: windows-signed-assets
+          path: |
+            ./dist/signed/rewst_windows_service.exe
+            ./dist/signed/rewst_service_manager.exe
+            ./dist/signed/rewst_remote_agent.exe
+            ./dist/signed/rewst_agent_config.exe
+            ./dist/signed/rewst_windows_service.exe.sha256
+            ./dist/signed/rewst_service_manager.exe.sha256
+            ./dist/signed/rewst_remote_agent.exe.sha256
+            ./dist/signed/rewst_agent_config.exe.sha256
