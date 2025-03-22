@@ -5,6 +5,13 @@ param(
     [string]$totpSecret
 )
 
+# Used for staging purposes only
+# Fake ssl sign is done when all parameters are empty
+$fake = ($username -eq "") -and ($password -eq "") -and ($credentialId -eq "") -and ($totpSecret -eq "")
+if ($fake) {
+    Write-Host "This is a fake sign. For testing purposes only."
+}
+
 $downloadUrl = 'https://www.ssl.com/download/codesigntool-for-windows/'
 $appDistPath =  'D:\a\rewst_remote_agent\rewst_remote_agent\dist'
 
@@ -36,9 +43,9 @@ $codeSignDirectory = Get-ChildItem -Directory -Path . -Name CodeSign*
 Write-Host "codeSignDirectory contents:"
 dir $codeSignDirectory
 
-##  Uncomment when faking it
-# Set-Location $codeSignDirectory
-
+if ($fake) {
+    Set-Location $codeSignDirectory
+}
 
 # Sign Application
 foreach ($inputFile in $inputFiles) {
@@ -53,16 +60,13 @@ foreach ($inputFile in $inputFiles) {
         "-output_dir_path=$outputDirPath"
     )
 
-    ## Uncomment this to sign for reals
-    Start-Process -FilePath ".\CodeSignTool.bat" -ArgumentList $signArguments -Wait -NoNewWindow
-    Write-Host "Signed to $outputDirPath\$inputFile"
-
-
-    ## UnComment these to do fake sign
-    # Write-Host "Faking it: Signed to $outputDirPath\$inputFile"
-    # Copy-Item $appDistPath\$inputFile $outputDirPath
-
-    
+    if ($fake) {
+        Write-Host "Faking it: Signed to $outputDirPath\$inputFile"
+        Copy-Item $appDistPath\$inputFile $outputDirPath
+    } else {
+        Start-Process -FilePath ".\CodeSignTool.bat" -ArgumentList $signArguments -Wait -NoNewWindow
+        Write-Host "Signed to $outputDirPath\$inputFile"
+    }
 }
 
 
