@@ -51,6 +51,7 @@ class ConnectionManager:
         self.os_type = platform.system().lower()
 
         self.__connection_retry = connection_retry
+        self.client = self.__make_client()
 
     def __make_client(self, websockets: bool = False) -> IoTHubDeviceClient:
         """
@@ -98,7 +99,6 @@ class ConnectionManager:
         Connect the agent service to the IoT Hub.
         """
         try:
-            self.client = self.__make_client(False)
             await self.client.connect()
         except (ConnectionFailedError, ConnectionDroppedError):
             await self.connect_using_websockets()

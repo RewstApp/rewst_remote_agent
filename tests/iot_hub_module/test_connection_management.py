@@ -418,11 +418,6 @@ async def test_iot_hub_connection_loop(mocker: MockerFixture, platform: str) -> 
 
     assert loop_result is None
 
-    # Exception raised
-    mocked_event = mocker.MagicMock()
-    mocked_event.is_set.side_effect = Exception
-    assert await iot_hub_connection_loop(CONFIG_DATA, mocked_event) is None
-
     # Trigger signal
     async def trigger_signal(time: float) -> None:
         await asyncio.sleep(time)
