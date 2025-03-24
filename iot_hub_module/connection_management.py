@@ -39,17 +39,34 @@ class ConnectionManager:
     Manages the connection between the agent and IoT Hub.
     """
 
-    def __init__(self, config_data: Dict[str, Any]) -> None:
+    def __init__(self, config_data: Dict[str, Any], connection_retry: bool = True) -> None:
         """Construcs a new connection manager instance
 
         Args:
             config_data (Dict[str, Any]): Configuration data of the connection.
+            connection_retry (bool): Automatically retry connection.
         """
         self.config_data = config_data
         self.connection_string = self.get_connection_string()
         self.os_type = platform.system().lower()
-        self.client = IoTHubDeviceClient.create_from_connection_string(
-            self.connection_string)
+
+        self.__connection_retry = connection_retry
+
+    def __make_client(self, websockets: bool = False) -> IoTHubDeviceClient:
+        """
+        Make an IotHub Device client instance.
+
+        Args:
+            websockets (bool, optional): Use webosocket connection to IoTHub. Defaults to False.
+
+        Returns:
+            IoTHubDeviceClient: Client instance.
+        """
+        return IoTHubDeviceClient.create_from_connection_string(
+            self.connection_string,
+            websockets=websockets,
+            connection_retry=self.__connection_retry
+        )
 
     def get_connection_string(self) -> str:
         """
@@ -71,8 +88,7 @@ class ConnectionManager:
         """
         try:
             logging.info("Connecting over websockets...")
-            self.client = IoTHubDeviceClient.create_from_connection_string(
-                self.connection_string, websockets=True)
+            self.client = self.__make_client(True)
             await self.client.connect()
         except Exception as e:
             logging.exception("Exception in connection to the IoT Hub: %s", e)
@@ -82,6 +98,7 @@ class ConnectionManager:
         Connect the agent service to the IoT Hub.
         """
         try:
+            self.client = self.__make_client(False)
             await self.client.connect()
         except (ConnectionFailedError, ConnectionDroppedError):
             await self.connect_using_websockets()
@@ -312,9 +329,11 @@ class ConnectionManager:
         except httpx.RequestError as e:
             logging.error(f"Request to {post_url} failed: {e}")
         except httpx.HTTPStatusError as e:
-            logging.error(f"Error response {e.response.status_code} while posting to {post_url}: {e.response.text}")
+            logging.error(
+                f"Error response {e.response.status_code} while posting to {post_url}: {e.response.text}")
         except Exception as e:
-            logging.error(f"An unexpected error occurred while posting to {post_url}: {e}")
+            logging.error(
+                f"An unexpected error occurred while posting to {post_url}: {e}")
 
     def get_default_interpreter(self) -> str:
         """Get the default interpreter depending on the platform's OS type.
@@ -329,6 +348,7 @@ class ConnectionManager:
         else:
             return '/bin/bash'
 
+
 async def iot_hub_connection_loop(config_data: Dict[str, Any], stop_event: asyncio.Event = asyncio.Event(), use_signals: bool = True) -> None:
     """Connect to the IoT Hub and wait for a stop event to close the loop.
 
@@ -339,39 +359,55 @@ async def iot_hub_connection_loop(config_data: Dict[str, Any], stop_event: async
     """
     if use_signals:
         def signal_handler(signum, frame):
-            logging.info(f"Received signal {signum}. Initiating graceful shutdown.")
+            logging.info(
+                f"Received signal {signum}. Initiating graceful shutdown.")
             stop_event.set()
 
         signal.signal(signal.SIGTERM, signal_handler)
         signal.signal(signal.SIGINT, signal_handler)
 
-    try:
-        # Instantiate ConnectionManager
-        connection_manager = ConnectionManager(config_data)
+    # Set connection constants
+    connection_retry_interval = 10
 
-        # Connect to IoT Hub
-        logging.info("Connecting to IoT Hub...")
-        await connection_manager.connect()
+    while not stop_event.is_set():
+        try:
+            # Instantiate ConnectionManager
+            connection_manager = ConnectionManager(config_data, False)
 
-        # Update Device Twin reported properties to 'online'
-        logging.info("Updating device status to online...")
-        twin_patch = {"connectivity": {"status": "online"}}
-        await connection_manager.client.patch_twin_reported_properties(twin_patch)
+            # Connect to IoT Hub
+            logging.info("Connecting to IoT Hub...")
+            await connection_manager.connect()
 
-        # Set Message Handler
-        logging.info("Setting up message handler...")
-        await connection_manager.set_message_handler()
+            # Update Device Twin reported properties to 'online'
+            logging.info("Updating device status to online...")
+            twin_patch = {"connectivity": {"status": "online"}}
+            await connection_manager.client.patch_twin_reported_properties(twin_patch)
 
-        # Use an asyncio.Event to exit the loop when the service stops
-        while not stop_event.is_set():
-            await asyncio.sleep(1)
+            # Set Message Handler
+            logging.info("Setting up message handler...")
+            await connection_manager.set_message_handler()
 
-        # Before disconnecting, update Device Twin reported properties to 'offline'
-        logging.info("Updating device status to offline...")
-        twin_patch = {"connectivity": {"status": "offline"}}
-        await connection_manager.client.patch_twin_reported_properties(twin_patch)
+            # Use an asyncio.Event to exit the loop when the service stops
+            while not stop_event.is_set() and connection_manager.client.connected:
+                await asyncio.sleep(1)
 
-        await connection_manager.disconnect()
+            if connection_manager.client.connected:
+                # Before disconnecting, update Device Twin reported properties to 'offline'
+                logging.info("Updating device status to offline...")
+                twin_patch = {"connectivity": {"status": "offline"}}
+                await connection_manager.client.patch_twin_reported_properties(twin_patch)
 
-    except Exception as e:
-        logging.exception(f"Exception Caught during IoT Hub Loop: {str(e)}")
+                await connection_manager.disconnect()
+                return
+            else:
+                logging.info("Client disconnected")
+
+        except Exception as e:
+            logging.exception(
+                f"Exception Caught during IoT Hub Loop: {str(e)}")
+
+        # Reconnect
+        logging.info("Reconnecting in %d seconds...",
+                     connection_retry_interval)
+
+        await asyncio.sleep(connection_retry_interval)
