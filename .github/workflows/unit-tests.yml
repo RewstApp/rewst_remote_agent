@@ -5,6 +5,8 @@ on: pull_request
 jobs:
   unit-tests:
     runs-on: windows-latest
+    permissions:
+      contents: read
 
     steps:
       - name: Checkout code
