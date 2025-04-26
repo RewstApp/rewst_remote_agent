@@ -298,15 +298,7 @@ async def main(config_url: str, config_secret: str, org_id: str) -> None:
 
         if is_service_installed(org_id):
             service_name = get_service_name(org_id)
-
-            if is_service_running(org_id):
-                logging.info("Service %s is running", service_name)
-
-                logging.info("Stopping service %s...", service_name)
-                stop_service(org_id)
-                logging.info("Service %s stopped.", service_name)
-
-            uninstall_service(org_id, False)
+            uninstall_service(org_id)
             logging.info("Service %s uninstalled.", service_name)
 
         # Save Configuration to JSON file
