@@ -2,7 +2,8 @@
 
 [![Unit Tests](https://github.com/RewstApp/rewst_remote_agent/actions/workflows/unit-tests.yml/badge.svg)](https://github.com/RewstApp/rewst_remote_agent/actions/workflows/unit-tests.yml)
 [![Code Coverage](https://github.com/RewstApp/rewst_remote_agent/actions/workflows/code-coverage.yml/badge.svg)](https://github.com/RewstApp/rewst_remote_agent/actions/workflows/code-coverage.yml)
-[![Build](https://github.com/RewstApp/rewst_remote_agent/actions/workflows/build.yml/badge.svg)](https://github.com/RewstApp/rewst_remote_agent/actions/workflows/build.yml)
+[![CodeQL](https://github.com/RewstApp/rewst_remote_agent/actions/workflows/github-code-scanning/codeql/badge.svg)](https://github.com/RewstApp/rewst_remote_agent/actions/workflows/github-code-scanning/codeql)
+[![Build Release](https://github.com/RewstApp/rewst_remote_agent/actions/workflows/release.yml/badge.svg)](https://github.com/RewstApp/rewst_remote_agent/actions/workflows/release.yml)
 
 Rewst's lean, open-source command executor that fits right into your Rewst workflows. See [community corner](https://docs.rewst.help/community-corner/agent-smith) for more details.
 
